@@ -10,90 +10,78 @@
     color:#fff;
     margin:0;
   }
-  /* Lateral menu */
+  /* menu lateral */
   #sidebar{
-    position:fixed;
-    top:0;
-    left:0;
-    width:240px;
-    height:100%;
-    background:#0b2f4d;
-    padding-top:60px;
+    position:fixed;top:0;left:0;width:240px;height:100%;
+    background:#0b2f4d;padding-top:60px;
     box-shadow:2px 0 6px rgba(0,0,0,.3);
   }
   #sidebar a{
-    display:block;
-    padding:12px 20px;
-    color:#fff;
-    text-decoration:none;
-    font-size:1rem;
+    display:block;padding:12px 20px;font-size:1rem;
+    color:#fff;text-decoration:none;
   }
   #sidebar a:hover{background:#105b8e;}
 
-  /* Main content pushed to the right */
+  /* conteúdo */
   #content{
-    margin-left:260px; /* sidebar width + padding */
-    padding:40px 20px;
-    text-align:center;
+    margin-left:260px;          /* largura do sidebar + 20 px */
+    padding:40px 20px;text-align:center;
   }
-  #content h1{
-    font-size:2rem;
-    margin-bottom:30px;
+  h1{
+    font-size:2rem;margin-bottom:30px;line-height:1.3;
   }
-  #content a{
-    display:inline-block;
-    width:90%;
-    max-width:380px;
-    margin:12px auto;
-    padding:12px 0;
-    background:#0b2f4d;
-    border-radius:6px;
-    color:#fff;
-    text-decoration:none;
-    font-size:1rem;
+  .btn{
+    display:inline-block;width:90%;max-width:380px;
+    margin:12px auto;padding:12px 0;
+    background:#0b2f4d;border-radius:6px;
+    color:#fff;text-decoration:none;font-size:1rem;
   }
-  #content a:hover{background:#105b8e;}
+  .btn:hover{background:#105b8e;}
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
+<!-- ────────── SIDEBAR ────────── -->
 <div id="sidebar">
   <a href="notas-tecnicas.html" rel="noopener noreferrer">📄 Notas Técnicas do TJGO</a>
-  <a href="stats.html" rel="noopener noreferrer">📊 Jurimetria</a>
+  <a href="stats.html"          rel="noopener noreferrer">📊 Jurimetria</a>
 </div>
 
-<!-- Main content -->
+<!-- ───────── CONTEÚDO ───────── -->
 <div id="content">
-<h1 style="line-height:1.3">Gabinete do Desembargador FERNANDO RIBEIRO MONTEFUSCO<br>🔗 Links Úteis</h1>
+  <h1>Gabinete do Desembargador FERNANDO RIBEIRO MONTEFUSCO<br>🔗 Links Úteis</h1>
 
-<a href="https://www.tjgo.jus.br/pubtjud/ctrl/agendaCtrl.php?opc=agendaLst&lotacaoId=7007" target="_blank" rel="noopener noreferrer">📞 Agenda Eletrônica do Teleatendimento</a>
-<a href="https://pangeabnp.pdpj.jus.br/" target="_blank" rel="noopener noreferrer">⚖️ Banco Nacional de Precedentes (BNP)</a>
-<a href="https://www.tjgo.jus.br/index.php/institucional-ejug/bibliotecas-digitais" target="_blank" rel="noopener noreferrer">📚 Bibliotecas Virtuais EJUG</a>
-<a href="https://www.tjgo.jus.br/index.php/calendario-das-sessoes-colegiada" target="_blank" rel="noopener noreferrer">📅 Calendário das Sessões Colegiadas</a>
-<a href="https://app.powerbi.com/view?r=eyJrIjoiZDZhNWI2MGQtNTYxMy00ZWMzLTk4YzctODY1OTAzMjcwMWIxIiwidCI6IjdjNDQ3OGVlLTcxNWItNGFjMC1hNjAwLWY4MWI2ZGM2M2JjZCJ9" target="_blank" rel="noopener noreferrer">🌐 Comissão de Soluções Fundiária – CSF</a>
-<a href="https://www.tjgo.jus.br/index.php/institucional/composicao" target="_blank" rel="noopener noreferrer">🏛️ Composição TJGO</a>
-<a href="https://tjdocs.tjgo.jus.br/pastas/8360" target="_blank" rel="noopener noreferrer">📰 Diário da Justiça Eletrônico</a>
-<a href="https://www.tjgo.jus.br/index.php/servicos-magistrados-servidores/documentos-servidores" target="_blank" rel="noopener noreferrer">📂 Documentos de Servidoras e Servidores</a>
-<a href="https://eadejug.tjgo.jus.br/my/" target="_blank" rel="noopener noreferrer">🎓 EJUG (EaD)</a>
-<a href="https://www.pje.jus.br/e-natjus/pesquisaPublica.php" target="_blank" rel="noopener noreferrer">🔬 E-NatJus – Notas Técnicas</a>
-<a href="https://set.tjgo.jus.br/painel_judicial/inventarios" target="_blank" rel="noopener noreferrer">📊 Estatísticas Painel Judicial (SET)</a>
-<a href="https://www.tjgo.jus.br/index.php/informacoes/feriados" target="_blank" rel="noopener noreferrer">🎉 Feriados TJGO</a>
-<a href="https://www.tjgo.jus.br/index.php/institucional/recursos-humanos" target="_blank" rel="noopener noreferrer">👥 Gestão de Pessoas – RH TJGO</a>
-<a href="https://simplesefacil.tjgo.jus.br/agaia/juris_agaia" target="_blank" rel="noopener noreferrer">🔍 Jurisprudência JusAGAIA</a>
-<a href="https://malotedigital.tjgo.jus.br/malotedigital/login.jsf" target="_blank" rel="noopener noreferrer">✉️ Malote Digital</a>
-<a href="https://www.tjgo.jus.br/index.php/nugepnac-irdr" target="_blank" rel="noopener noreferrer">⚙️ NUGEPnac – IRDR</a>
-<a href="https://sge.tjgo.jus.br/painel_judicial/inventarios/busca_avancada" target="_blank" rel="noopener noreferrer">📊 Painel Judicial – Busca Avançada</a>
-<a href="https://tjdocs.tjgo.jus.br/pastas/191" target="_blank" rel="noopener noreferrer">📂 Pastas com Pautas</a>
-<a href="https://www.tjgo.jus.br/index.php/puil" target="_blank" rel="noopener noreferrer">📄 Pedido de Uniformização de Interpretação de Lei (PUIL)</a>
-<a href="https://projudi.tjgo.jus.br/ConsultaJurisprudencia" target="_blank" rel="noopener noreferrer">🔎 Pesquisa de Jurisprudência (PROJUDI)</a>
-<a href="https://processo.stj.jus.br/SCON/a" target="_blank" rel="noopener noreferrer">📖 Pesquisa Juris – STJ</a>
-<a href="https://egesp.tjgo.jus.br/users/sign_in" target="_blank" rel="noopener noreferrer">🔐 Portal Gestão de Pessoas (EGESP)</a>
-<a href="https://processo.stj.jus.br/repetitivos/temas_repetitivos/" target="_blank" rel="noopener noreferrer">📑 Precedentes Qualificados do STJ</a>
-<a href="https://portaltj.tjgo.jus.br/sistemas/index.php?s=corporativo" target="_blank" rel="noopener noreferrer">🗄️ Proad (Corporativo)</a>
-<a href="https://docs.tjgo.jus.br/publicacoes/regimento_Interno/regimentoInterno_042024.pdf" target="_blank" rel="noopener noreferrer">📘 Regimento Interno – TJGO (PDF)</a>
-<a href="https://www.tjgo.jus.br/index.php/nugepnac-repercussao-geral" target="_blank" rel="noopener noreferrer">🔔 Repercussão Geral (TJGO)</a>
-<a href="https://www.tjgo.jus.br/index.php/segunda-instancia" target="_blank" rel="noopener noreferrer">🗓️ Sessões de Julgamento (2ª instância)</a>
-<a href="https://www.tjgo.jus.br/index.php/nugepnac-sumulas" target="_blank" rel="noopener noreferrer">📜 Súmulas do Órgão Especial (TJGO)</a>
-<a href="https://tjdocs.tjgo.jus.br/pastas/1474" target="_blank" rel="noopener noreferrer">📜 Súmulas do TJGO</a>
-<a href="https://portal.stf.jus.br/textos/verTexto.asp?
+  <a class="btn" href="https://www.tjgo.jus.br/pubtjud/ctrl/agendaCtrl.php?opc=agendaLst&lotacaoId=7007"        target="_blank" rel="noopener noreferrer">📞 Agenda Eletrônica do Teleatendimento</a>
+  <a class="btn" href="https://pangeabnp.pdpj.jus.br/"                                                         target="_blank" rel="noopener noreferrer">⚖️ Banco Nacional de Precedentes (BNP)</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/institucional-ejug/bibliotecas-digitais"              target="_blank" rel="noopener noreferrer">📚 Bibliotecas Virtuais EJUG</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/calendario-das-sessoes-colegiada"                     target="_blank" rel="noopener noreferrer">📅 Calendário das Sessões Colegiadas</a>
+  <a class="btn" href="https://app.powerbi.com/view?r=eyJrIjoiZDZhNWI2MGQtNTYxMy00ZWMzLTk4YzctODY1OTAzMjcwMWIxIiwidCI6IjdjNDQ3OGVlLTcxNWItNGFjMC1hNjAwLWY4MWI2ZGM2M2JjZCJ9" target="_blank" rel="noopener noreferrer">🌐 Comissão de Soluções Fundiária – CSF</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/institucional/composicao"                             target="_blank" rel="noopener noreferrer">🏛️ Composição TJGO</a>
+  <a class="btn" href="https://tjdocs.tjgo.jus.br/pastas/8360"                                                 target="_blank" rel="noopener noreferrer">📰 Diário da Justiça Eletrônico</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/servicos-magistrados-servidores/documentos-servidores" target="_blank" rel="noopener noreferrer">📂 Documentos de Servidoras e Servidores</a>
+  <a class="btn" href="https://eadejug.tjgo.jus.br/my/"                                                        target="_blank" rel="noopener noreferrer">🎓 EJUG (EaD)</a>
+  <a class="btn" href="https://www.pje.jus.br/e-natjus/pesquisaPublica.php"                                    target="_blank" rel="noopener noreferrer">🔬 E-NatJus – Notas Técnicas</a>
+  <a class="btn" href="https://set.tjgo.jus.br/painel_judicial/inventarios"                                    target="_blank" rel="noopener noreferrer">📊 Estatísticas Painel Judicial (SET)</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/informacoes/feriados"                                 target="_blank" rel="noopener noreferrer">🎉 Feriados TJGO</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/institucional/recursos-humanos"                       target="_blank" rel="noopener noreferrer">👥 Gestão de Pessoas – RH TJGO</a>
+  <a class="btn" href="https://simplesefacil.tjgo.jus.br/agaia/juris_agaia"                                    target="_blank" rel="noopener noreferrer">🔍 Jurisprudência JusAGAIA</a>
+  <a class="btn" href="https://malotedigital.tjgo.jus.br/malotedigital/login.jsf"                              target="_blank" rel="noopener noreferrer">✉️ Malote Digital</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/nugepnac-irdr"                                        target="_blank" rel="noopener noreferrer">⚙️ NUGEPnac – IRDR</a>
+  <a class="btn" href="https://sge.tjgo.jus.br/painel_judicial/inventarios/busca_avancada"                     target="_blank" rel="noopener noreferrer">📊 Painel Judicial – Busca Avançada</a>
+  <a class="btn" href="https://tjdocs.tjgo.jus.br/pastas/191"                                                  target="_blank" rel="noopener noreferrer">📂 Pastas com Pautas</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/puil"                                                 target="_blank" rel="noopener noreferrer">📄 Pedido de Uniformização de Interpretação de Lei (PUIL)</a>
+  <a class="btn" href="https://projudi.tjgo.jus.br/ConsultaJurisprudencia"                                     target="_blank" rel="noopener noreferrer">🔎 Pesquisa de Jurisprudência (PROJUDI)</a>
+  <a class="btn" href="https://processo.stj.jus.br/SCON/a"                                                     target="_blank" rel="noopener noreferrer">📖 Pesquisa Juris – STJ</a>
+  <a class="btn" href="https://egesp.tjgo.jus.br/users/sign_in"                                                target="_blank" rel="noopener noreferrer">🔐 Portal Gestão de Pessoas (EGESP)</a>
+  <a class="btn" href="https://processo.stj.jus.br/repetitivos/temas_repetitivos/"                             target="_blank" rel="noopener noreferrer">📑 Precedentes Qualificados do STJ</a>
+  <a class="btn" href="https://portaltj.tjgo.jus.br/sistemas/index.php?s=corporativo"                          target="_blank" rel="noopener noreferrer">🗄️ Proad (Corporativo)</a>
+  <a class="btn" href="https://docs.tjgo.jus.br/publicacoes/regimento_Interno/regimentoInterno_042024.pdf"     target="_blank" rel="noopener noreferrer">📘 Regimento Interno – TJGO (PDF)</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/nugepnac-repercussao-geral"                           target="_blank" rel="noopener noreferrer">🔔 Repercussão Geral (TJGO)</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/segunda-instancia"                                    target="_blank" rel="noopener noreferrer">🗓️ Sessões de Julgamento (2ª instância)</a>
+  <a class="btn" href="https://www.tjgo.jus.br/index.php/nugepnac-sumulas"                                     target="_blank" rel="noopener noreferrer">📜 Súmulas do Órgão Especial (TJGO)</a>
+  <a class="btn" href="https://tjdocs.tjgo.jus.br/pastas/1474"                                                 target="_blank" rel="noopener noreferrer">📜 Súmulas do TJGO</a>
+  <a class="btn" href="https://portal.stf.jus.br/textos/verTexto.asp?servico=jurisprudenciaSumul"              target="_blank" rel="noopener noreferrer">📑 Súmulas STF</a>
+</div>
+
+</body>
+</html>
