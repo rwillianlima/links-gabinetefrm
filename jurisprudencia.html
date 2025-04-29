@@ -32,7 +32,7 @@
 
 <div id="content">
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
-  <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong>. Todos os termos são combinados por <strong>AND</strong>.</p>
+  <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong>. Todos são combinados por <strong>AND</strong>.</p>
 
   <div class="search-bar">
     <input type="text" id="terms" placeholder="termo1; termo2; termo3">
@@ -52,48 +52,53 @@ const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56
 const PAGE_SIZE = 50;
 let allBlocks = [], currentResults = [], currentPage = 1;
 
-/* Carrega TSV e monta blocos */
+/* util: dd/mm/aaaa → aaaa-mm-dd */
+function toISO(dmy){
+  const [d,m,y]=dmy.split('/');
+  return y && m && d ? `${y.padStart(4,'0')}-${m.padStart(2,'0')}-${d.padStart(2,'0')}` : '';
+}
+
+/* Carregar dados */
 async function loadTSV(){
-  try{
-    const res  = await fetch(TSV_URL);
-    const text = await res.text();
-    const rows = Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
+  const res = await fetch(TSV_URL);
+  const text = await res.text();
+  const rows = Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
 
-    /* popular selects */
-    const relSet=new Set(), atoSet=new Set();
-    rows.forEach(r=>{
-      if(r.Relator) relSet.add(r.Relator.trim());
-      if(r.Ato)     atoSet.add(r.Ato.trim());
-    });
-    fillSelect('relator',[...relSet].sort());
-    fillSelect('ato',[...atoSet].sort());
+  const relSet=new Set(), atoSet=new Set();
+  rows.forEach(r=>{
+    if(r.Relator) relSet.add(r.Relator.replace(/^(des\\.?\\s*)/i,'').trim());
+    if(r.Ato)     atoSet.add(r.Ato.trim());
+  });
+  fillSelect('relator',[...relSet].sort());
+  fillSelect('ato',[...atoSet].sort());
 
-    /* criar blocos */
-    const cont=document.getElementById('allBlocks'); cont.innerHTML='';
-    rows.forEach(r=>{
-      if(!r['Publicação']||!r.Ementa) return;
-      const proc=(r.Processo||'').trim();
-      const cam =(r['Câmara']||'').trim();
-      const rel =(r.Relator||'').trim();
-      const ato =(r.Ato||'').trim();
-      const pub =r['Publicação'].trim();
-      const eme =r.Ementa.trim();
+  const cont=document.getElementById('allBlocks'); cont.innerHTML='';
+  rows.forEach(r=>{
+    if(!r['Publicação']||!r.Ementa) return;
 
-      const div=document.createElement('div');
-      div.className='block';
-      div.dataset.date=pub;
-      div.dataset.relator=rel.toLowerCase();
-      div.dataset.ato=ato.toLowerCase();
+    const proc=(r.Processo||'').trim();
+    const cam =(r['Câmara']||'').trim();
+    const relRaw=(r.Relator||'').trim();
+    const rel=relRaw.replace(/^(des\\.?\\s*)/i,'');          // remove “Des.” se existir
+    const ato =(r.Ato||'').trim();
+    const pub =r['Publicação'].trim();
+    const pubISO=toISO(pub);
+    const eme =r.Ementa.trim();
 
-      div.innerHTML=`<p>${eme}</p>
-        <p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
-      cont.appendChild(div);
-    });
+    const div=document.createElement('div');
+    div.className='block';
+    div.dataset.date=pubISO;
+    div.dataset.relator=rel.toLowerCase();
+    div.dataset.ato=ato.toLowerCase();
 
-    allBlocks=[...document.querySelectorAll('#allBlocks .block')];
-    currentResults=allBlocks;
-    renderPage();
-  }catch(e){console.error('Erro TSV',e);}
+    div.innerHTML=`<p>${eme}</p>
+       <p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
+    cont.appendChild(div);
+  });
+
+  allBlocks=[...document.querySelectorAll('#allBlocks .block')];
+  currentResults=allBlocks;
+  renderPage();
 }
 
 function fillSelect(id,items){
@@ -103,7 +108,7 @@ function fillSelect(id,items){
   });
 }
 
-/* Pesquisa AND por ponto e vírgula */
+/* Filtro */
 function performSearch(){
   const terms=document.getElementById('terms').value.toLowerCase()
                .split(';').map(t=>t.trim()).filter(Boolean);
@@ -138,7 +143,7 @@ function renderPage(){
   const pag=document.getElementById('pagination'); pag.innerHTML='';
   if(total>1){
     for(let i=1;i<=total;i++){
-      const btn=document.createElement('button'); btn.textContent=i;
+      const btn=document.createElement('button');btn.textContent=i;
       if(i===currentPage) btn.classList.add('active');
       btn.onclick=()=>{currentPage=i;renderPage();};
       pag.appendChild(btn);
