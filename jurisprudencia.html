@@ -5,100 +5,151 @@
 <title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
 <style>
   body{font-family:Arial,Helvetica,sans-serif;background:#174b73;color:#fff;margin:0;}
-  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;padding-top:60px;box-shadow:2px 0 6px rgba(0,0,0,.3);}  
+  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;padding-top:60px;box-shadow:2px 0 6px rgba(0,0,0,.3);}
   #sidebar a{display:block;padding:12px 20px;color:#fff;text-decoration:none;font-size:1rem;}
   #sidebar a:hover{background:#105b8e;}
-  #content{margin-left:260px;padding:40px 20px;min-height:100vh;}
-  #content h1{font-size:2rem;margin-bottom:20px;text-align:center;}
+  #content{margin-left:260px;padding:40px 20px;min-height:100vh;text-align:center;}
+  #content h1{font-size:2rem;margin-bottom:25px;}
   .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:25px;}
-  .search-bar input[type="text"],.search-bar input[type="date"]{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
+  .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
   .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;}
   .block h3{margin:0 0 6px 0;font-size:1.05rem;color:#fff;}
-  .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.3;white-space:pre-wrap;}
+  .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;white-space:pre-wrap;}
   .pagination{display:flex;justify-content:center;gap:6px;margin:20px 0;}
   .pagination button{background:#0b2f4d;border:none;border-radius:4px;color:#fff;padding:6px 12px;cursor:pointer;}
   .pagination button.active{background:#105b8e;font-weight:bold;}
 </style>
+
 <!-- PapaParse para ler TSV -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
+<!-- Sidebar -->
 <div id="sidebar">
   <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
 </div>
 
+<!-- Conteúdo principal -->
 <div id="content">
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
 
+  <!-- Barra de pesquisa -->
   <div class="search-bar">
-    <input type="text" id="terms" placeholder="Digite termos (separados por espaço)">
-    <input type="date" id="startDate">
-    <input type="date" id="endDate">
+    <input type="text"   id="terms"     placeholder="Termos (use OR para opção)">
+    <input type="date"   id="startDate">
+    <input type="date"   id="endDate">
+    <select id="relator"><option value="">Relator (todos)</option></select>
+    <select id="ato"><option value="">Ato (todos)</option></select>
     <button onclick="performSearch()">Consultar</button>
   </div>
 
-  <div id="allBlocks"><!-- preenchido via JS --></div>
+  <!-- Blocos -->
+  <div id="allBlocks"></div>
   <div id="pagination" class="pagination"></div>
 </div>
 
 <script>
-const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
+const TSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
 const PAGE_SIZE = 50;
-let currentResults = [];
-let currentPage   = 1;
 
+let allBlocks = [], currentResults = [], currentPage = 1;
+
+/* ---------- Carregar TSV e construir blocos ---------- */
 async function loadTSV(){
   try{
     const res  = await fetch(TSV_URL);
     const text = await res.text();
-    const dados = Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
-    const cont  = document.getElementById('allBlocks');
+    const rows = Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
+
+    // Popular selects de Relator e Ato
+    const relSet = new Set(), atoSet = new Set();
+    rows.forEach(r=>{
+      if(r.Relator) relSet.add(r.Relator.trim());
+      if(r.Ato)     atoSet.add(r.Ato.trim());
+    });
+    fillSelect('relator', [...relSet].sort());
+    fillSelect('ato',     [...atoSet].sort());
+
+    // Criar blocos HTML
+    const cont = document.getElementById('allBlocks');
     cont.innerHTML='';
-    dados.forEach(l=>{
-      if(!l.date||!l.body) return; // pula linhas vazias
+    rows.forEach(r=>{
+      if(!r['Publicação'] || !r.Ementa) return;         // pula linhas incompletas
       const div = document.createElement('div');
       div.className = 'block';
-      div.setAttribute('data-date', l.date.trim());
-      const titulo = l.title && l.title.trim() ? l.title.trim() : `Decisão – ${l.date.trim()}`;
-      div.innerHTML = `<h3>${titulo}</h3><p>${l.body.trim()}</p>`;
+      div.dataset.date    = r['Publicação'].trim();     // formato AAAA-MM-DD
+      div.dataset.relator = (r.Relator||'').trim().toLowerCase();
+      div.dataset.ato     = (r.Ato||'').trim().toLowerCase();
+
+      const titulo = r.Processo ? `${r.Processo} – ${r['Publicação']}` : `Decisão – ${r['Publicação']}`;
+      div.innerHTML = `<h3>${titulo}</h3><p>${r.Ementa.trim()}</p>`;
       cont.appendChild(div);
     });
-    currentResults = Array.from(document.querySelectorAll('#allBlocks .block'));
+
+    allBlocks      = Array.from(document.querySelectorAll('#allBlocks .block'));
+    currentResults = allBlocks;
     renderPage();
-  }catch(err){
-    console.error('Erro ao carregar TSV', err);
+  }catch(e){
+    console.error('Erro ao carregar TSV:',e);
   }
 }
 
+function fillSelect(id, items){
+  const sel = document.getElementById(id);
+  items.forEach(v=>{
+    const opt=document.createElement('option');
+    opt.value=v; opt.textContent=v;
+    sel.appendChild(opt);
+  });
+}
+
+/* ---------- Pesquisa (AND / OR) ---------- */
 function performSearch(){
-  const terms = document.getElementById('terms').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  /* Interpretar AND / OR */
+  const raw = document.getElementById('terms').value.toLowerCase().trim();
+  const orGroups = raw.split(/\s+or\s+/i).map(part=>part.trim().split(/\s+/).filter(Boolean));
+
   const start = document.getElementById('startDate').value;
   const end   = document.getElementById('endDate').value;
-  currentResults = Array.from(document.querySelectorAll('#allBlocks .block')).filter(block=>{
-    const text = block.textContent.toLowerCase();
-    const date = block.getAttribute('data-date');
-    const termMatch  = terms.every(t=>text.includes(t));
-    const afterStart = !start || date >= start;
-    const beforeEnd  = !end   || date <= end;
-    return termMatch && afterStart && beforeEnd;
+  const relF  = document.getElementById('relator').value.toLowerCase();
+  const atoF  = document.getElementById('ato').value.toLowerCase();
+
+  currentResults = allBlocks.filter(b=>{
+    const text = b.textContent.toLowerCase();
+    const date = b.dataset.date;
+    const rel  = b.dataset.relator;
+    const ato  = b.dataset.ato;
+
+    // OR de grupos; cada grupo exige AND interno
+    const termOK = orGroups.length===0 || orGroups.some(group=>group.every(t=>text.includes(t)));
+
+    const dateOK = (!start||date>=start) && (!end||date<=end);
+    const relOK  = !relF || rel===relF;
+    const atoOK  = !atoF || ato===atoF;
+
+    return termOK && dateOK && relOK && atoOK;
   });
-  currentPage = 1;
+
+  currentPage=1;
   renderPage();
 }
 
+/* ---------- Paginação ---------- */
 function renderPage(){
-  const blocks = Array.from(document.querySelectorAll('#allBlocks .block'));
+  const blocks = document.querySelectorAll('#allBlocks .block');
   blocks.forEach(b=>b.style.display='none');
-  const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
-  const ini        = (currentPage-1)*PAGE_SIZE;
+
+  const total = Math.max(1, Math.ceil(currentResults.length/PAGE_SIZE));
+  const ini   = (currentPage-1)*PAGE_SIZE;
   currentResults.slice(ini, ini+PAGE_SIZE).forEach(b=>b.style.display='block');
+
   const pag = document.getElementById('pagination');
   pag.innerHTML='';
-  if(totalPages>1){
-    for(let i=1;i<=totalPages;i++){
+  if(total>1){
+    for(let i=1;i<=total;i++){
       const btn=document.createElement('button');
       btn.textContent=i;
       if(i===currentPage) btn.classList.add('active');
@@ -108,6 +159,7 @@ function renderPage(){
   }
 }
 
+/* ---------- Inicialização ---------- */
 window.onload = loadTSV;
 </script>
 </body>
