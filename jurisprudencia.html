@@ -5,21 +5,27 @@
 <title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
 <style>
   body{font-family:Arial,Helvetica,sans-serif;background:#174b73;color:#fff;margin:0;}
+  /* Sidebar */
   #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;box-shadow:2px 0 6px rgba(0,0,0,.3);}  
   #sidebar a{display:block;padding:12px 20px;color:#fff;text-decoration:none;font-size:1rem;}
   #sidebar a:hover{background:#105b8e;}
+  /* Content */
   #content{margin-left:260px;padding:40px 25px;min-height:100vh;text-align:center;}
   #content h1{font-size:2rem;margin-bottom:20px;}
   .notice{font-size:.85rem;margin-bottom:6px;}
+  /* Banner */
   .alert{background:#ffd54f;color:#17324d;border-radius:6px;padding:12px 18px;margin:-10px auto 25px auto;max-width:920px;font-size:.95rem;line-height:1.3;text-align:center;font-weight:600;}
   .alert a{color:#17324d;text-decoration:underline;font-weight:700;}
+  /* Search */
   .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:25px;}
   .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
+  /* Blocks */
   .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;}
   .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;color:#fff;text-align:justify;}
   .meta{margin-top:8px;font-size:.85rem;color:#cfd8dc;text-align:center;}
+  /* Pagination */
   .pagination{display:flex;justify-content:center;gap:6px;margin:20px 0;}
   .pagination button{background:#0b2f4d;border:none;border-radius:4px;color:#fff;padding:6px 12px;cursor:pointer;}
   .pagination button.active{background:#105b8e;font-weight:bold;}
@@ -42,14 +48,75 @@
   <div id="allBlocks"></div>
   <div id="pagination" class="pagination"></div>
 </div>
+
 <script>
 const TSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
-const PAGE_SIZE=50;let allBlocks=[],currentResults=[],currentPage=1;
-function toISO(dmy){const[p,d,y]=dmy.split('/');return y?`${y}-${d.padStart(2,'0')}-${p.padStart(2,'0')}`:'';}
-async function loadTSV(){try{const res=await fetch(TSV_URL);const text=await res.text();const rows=Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;const relSet=new Set(),atoSet=new Set();rows.forEach(r=>{if(r.Relator)relSet.add(r.Relator.replace(/^(des\.?\s*)/i,'').trim());if(r.Ato)atoSet.add(r.Ato.trim())});fill('relator',relSet);fill('ato',atoSet);const cont=document.getElementById('allBlocks');rows.forEach(r=>{if(!r['Publicação']||!r.Ementa)return;const proc=(r.Processo||'').trim();const cam=(r['Câmara']||'').trim();const rel=r.Relator? r.Relator.replace(/^(des\.?\s*)/i,'').trim():'';const ato=(r.Ato||'').trim();const pub=r['Publicação'].trim();const iso=toISO(pub);const eme=r.Ementa.trim();const div=document.createElement('div');div.className='block';div.dataset.date=iso;div.dataset.relator=rel.toLowerCase();div.dataset.ato=ato.toLowerCase();div.innerHTML=`<p>${eme}</p><p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;cont.appendChild(div)});allBlocks=[...document.querySelectorAll('#allBlocks .block')];currentResults=allBlocks;renderPage()}catch(e){console.error(e)}}
-function fill(id,set){const sel=document.getElementById(id);[...set].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)})}
-function performSearch(){const terms=document.getElementById('terms').value.toLowerCase().split(';').map(t=>t.trim()).filter(Boolean);const start=document.getElementById('startDate').value;const end=document.getElementById('endDate').value;const relF=document.getElementById('relator').value.toLowerCase();const atoF=document.getElementById('ato').value.toLowerCase();currentResults=allBlocks.filter(b=>{const txt=b.textContent.toLowerCase();const date=b.dataset.date;const rel=b.dataset.relator;const ato=b.dataset.ato;return terms.every(t=>txt.includes(t))&&(!start||date>=start)&&(!end||date<=end)&&(!relF||rel===relF)&&(!atoF||ato===atoF)});currentPage=1;renderPage()}
-function renderPage(){document.querySelectorAll('#allBlocks .block').forEach(b=>b.style.display='none');const total=Math.max(1,Math.ceil(currentResults.length/PAGE_SIZE));const ini=(currentPage-1)*PAGE_SIZE;currentResults.slice(ini,ini+PAGE_SIZE).forEach(b=>b.style.display='block');const pag=document.getElementById('pagination');pag.innerHTML='';if(total>1){for(let i=1;i<=total;i++){const btn=document.createElement('button');btn.textContent=i;if(i===currentPage)btn.classList.add('active');btn.onclick=()=>{currentPage=i;renderPage()};pag.appendChild(btn)}}}
+const PAGE_SIZE=50;
+let allBlocks=[],currentResults=[],currentPage=1;
+
+/* dd/mm/aaaa → aaaa-mm-dd */
+function toISO(dmy){const [d,m,y]=dmy.split('/');return y?`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`:'';}
+
+async function loadTSV(){
+  try{
+    const res=await fetch(TSV_URL);
+    const text=await res.text();
+    const rows=Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
+    const relSet=new Set(),atoSet=new Set();
+    rows.forEach(r=>{
+      if(r.Relator) relSet.add(r.Relator.replace(/^(des\.?\s*|desa\.?\s*)/i,'').trim());
+      if(r.Ato)     atoSet.add(r.Ato.trim());
+    });
+    populateSelect('relator',relSet);populateSelect('ato',atoSet);
+
+    const cont=document.getElementById('allBlocks');
+    rows.forEach(r=>{
+      if(!r['Publicação']||!r.Ementa) return;
+      const proc=(r.Processo||'').trim();
+      const cam =(r['Câmara']||'').trim();
+      const relRaw=(r.Relator||'').trim();
+      const rel=relRaw.replace(/^(des\.?\s*|desa\.?\s*)/i,'');
+      const ato =(r.Ato||'').trim();
+      const pub =r['Publicação'].trim();
+      const iso =toISO(pub);
+      const eme =r.Ementa.trim();
+
+      const div=document.createElement('div');div.className='block';
+      div.dataset.date=iso;div.dataset.relator=rel.toLowerCase();div.dataset.ato=ato.toLowerCase();
+      div.innerHTML=`<p>${eme}</p><p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
+      cont.appendChild(div);
+    });
+
+    allBlocks=[...document.querySelectorAll('#allBlocks .block')];currentResults=allBlocks;renderPage();
+  }catch(e){console.error('Erro ao carregar TSV',e);}
+}
+
+function populateSelect(id,set){const sel=document.getElementById(id);[...set].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});}
+
+function performSearch(){
+  const terms=document.getElementById('terms').value.toLowerCase().split(';').map(t=>t.trim()).filter(Boolean);
+  const start=document.getElementById('startDate').value;
+  const end=document.getElementById('endDate').value;
+  const relF=document.getElementById('relator').value.toLowerCase();
+  const atoF=document.getElementById('ato').value.toLowerCase();
+  currentResults=allBlocks.filter(b=>{
+    const text=b.textContent.toLowerCase();
+    const date=b.dataset.date;
+    const rel=b.dataset.relator;
+    const ato=b.dataset.ato;
+    return terms.every(t=>text.includes(t))&&(!start||date>=start)&&(!end||date<=end)&&(!relF||rel===relF)&&(!atoF||ato===atoF);
+  });
+  currentPage=1;renderPage();
+}
+
+function renderPage(){
+  document.querySelectorAll('#allBlocks .block').forEach(b=>b.style.display='none');
+  const total=Math.max(1,Math.ceil(currentResults.length/PAGE_SIZE));
+  const ini=(currentPage-1)*PAGE_SIZE;currentResults.slice(ini,ini+PAGE_SIZE).forEach(b=>b.style.display='block');
+  const pag=document.getElementById('pagination');pag.innerHTML='';
+  if(total>1){for(let i=1;i<=total;i++){const btn=document.createElement('button');btn.textContent=i;if(i===currentPage)btn.classList.add('active');btn.onclick=()=>{currentPage=i;renderPage();};pag.appendChild(btn);}}
+}
+
 window.onload=loadTSV;
 </script>
 </body>
