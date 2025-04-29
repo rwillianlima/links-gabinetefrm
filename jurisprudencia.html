@@ -57,6 +57,9 @@ let allBlocks=[],currentResults=[],currentPage=1;
 /* dd/mm/aaaa → aaaa-mm-dd */
 function toISO(dmy){const [d,m,y]=dmy.split('/');return y?`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`:'';}
 
+/* Remove apenas abreviações Des. / Desa. no início */
+function cleanRelator(name){return name.replace(/^(des\.?\s+|desa\.?\s+)/i,'').trim();}
+
 async function loadTSV(){
   try{
     const res=await fetch(TSV_URL);
@@ -64,7 +67,7 @@ async function loadTSV(){
     const rows=Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
     const relSet=new Set(),atoSet=new Set();
     rows.forEach(r=>{
-      if(r.Relator) relSet.add(r.Relator.replace(/^(des\.?\s*|desa\.?\s*)/i,'').trim());
+      if(r.Relator) relSet.add(cleanRelator(r.Relator));
       if(r.Ato)     atoSet.add(r.Ato.trim());
     });
     populateSelect('relator',relSet);populateSelect('ato',atoSet);
@@ -74,12 +77,11 @@ async function loadTSV(){
       if(!r['Publicação']||!r.Ementa) return;
       const proc=(r.Processo||'').trim();
       const cam =(r['Câmara']||'').trim();
-      const relRaw=(r.Relator||'').trim();
-      const rel=relRaw.replace(/^(des\.?\s*|desa\.?\s*)/i,'');
+      const rel = cleanRelator(r.Relator||'');
       const ato =(r.Ato||'').trim();
-      const pub =r['Publicação'].trim();
-      const iso =toISO(pub);
-      const eme =r.Ementa.trim();
+      const pub = r['Publicação'].trim();
+      const iso = toISO(pub);
+      const eme = r.Ementa.trim();
 
       const div=document.createElement('div');div.className='block';
       div.dataset.date=iso;div.dataset.relator=rel.toLowerCase();div.dataset.ato=ato.toLowerCase();
@@ -96,7 +98,7 @@ function populateSelect(id,set){const sel=document.getElementById(id);[...set].s
 function performSearch(){
   const terms=document.getElementById('terms').value.toLowerCase().split(';').map(t=>t.trim()).filter(Boolean);
   const start=document.getElementById('startDate').value;
-  const end=document.getElementById('endDate').value;
+  const end  =document.getElementById('endDate').value;
   const relF=document.getElementById('relator').value.toLowerCase();
   const atoF=document.getElementById('ato').value.toLowerCase();
   currentResults=allBlocks.filter(b=>{
@@ -120,4 +122,4 @@ function renderPage(){
 window.onload=loadTSV;
 </script>
 </body>
-</html>
+</
