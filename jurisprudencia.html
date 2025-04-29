@@ -5,7 +5,7 @@
 <title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
 <style>
   body{font-family:Arial,Helvetica,sans-serif;background:#174b73;color:#fff;margin:0;}
-  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;padding-top:60px;box-shadow:2px 0 6px rgba(0,0,0,.3);}  
+  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;padding-top:60px;box-shadow:2px 0 6px rgba(0,0,0,.3);}
   #sidebar a{display:block;padding:12px 20px;color:#fff;text-decoration:none;font-size:1rem;}
   #sidebar a:hover{background:#105b8e;}
   #content{margin-left:260px;padding:40px 20px;min-height:100vh;text-align:center;}
@@ -35,9 +35,9 @@
   <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong>. Todos os termos são combinados por <strong>AND</strong>.</p>
 
   <div class="search-bar">
-    <input type="text"   id="terms"     placeholder="termo1; termo2; termo3">
-    <input type="date"   id="startDate">
-    <input type="date"   id="endDate">
+    <input type="text" id="terms" placeholder="termo1; termo2; termo3">
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
     <select id="relator"><option value="">Relator (todos)</option></select>
     <select id="ato"><option value="">Ato (todos)</option></select>
     <button onclick="performSearch()">Consultar</button>
@@ -48,93 +48,97 @@
 </div>
 
 <script>
-const TSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
+const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
 const PAGE_SIZE = 50;
 let allBlocks = [], currentResults = [], currentPage = 1;
 
+/* Carrega TSV e monta blocos */
 async function loadTSV(){
   try{
     const res  = await fetch(TSV_URL);
     const text = await res.text();
     const rows = Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
 
-    const relSet = new Set(), atoSet = new Set();
+    /* popular selects */
+    const relSet=new Set(), atoSet=new Set();
     rows.forEach(r=>{
       if(r.Relator) relSet.add(r.Relator.trim());
       if(r.Ato)     atoSet.add(r.Ato.trim());
     });
-    fillSelect('relator', [...relSet].sort());
-    fillSelect('ato',     [...atoSet].sort());
+    fillSelect('relator',[...relSet].sort());
+    fillSelect('ato',[...atoSet].sort());
 
-    const cont = document.getElementById('allBlocks');
-    cont.innerHTML = '';
-
+    /* criar blocos */
+    const cont=document.getElementById('allBlocks'); cont.innerHTML='';
     rows.forEach(r=>{
-      if(!r['Publicação'] || !r.Ementa) return;
-      const proc   = (r.Processo||'').trim();
-      const camara = (r['Câmara']||'').trim();
-      const rel    = (r.Relator||'').trim();
-      const ato    = (r.Ato||'').trim();
-      const pub    = r['Publicação'].trim();
-      const ementa = r.Ementa.trim();
+      if(!r['Publicação']||!r.Ementa) return;
+      const proc=(r.Processo||'').trim();
+      const cam =(r['Câmara']||'').trim();
+      const rel =(r.Relator||'').trim();
+      const ato =(r.Ato||'').trim();
+      const pub =r['Publicação'].trim();
+      const eme =r.Ementa.trim();
 
-      const div = document.createElement('div');
-      div.className = 'block';
-      div.dataset.date    = pub;
-      div.dataset.relator = rel.toLowerCase();
-      div.dataset.ato     = ato.toLowerCase();
+      const div=document.createElement('div');
+      div.className='block';
+      div.dataset.date=pub;
+      div.dataset.relator=rel.toLowerCase();
+      div.dataset.ato=ato.toLowerCase();
 
-      div.innerHTML = `
-        <p>${ementa}</p>
-        <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel. Des. ${rel || 'N/I'}, ${camara || 'N/I'}, Publicado ${pub})</p>`;
+      div.innerHTML=`<p>${eme}</p>
+        <p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
       cont.appendChild(div);
     });
 
-    allBlocks = Array.from(document.querySelectorAll('#allBlocks .block'));
-    currentResults = allBlocks;
+    allBlocks=[...document.querySelectorAll('#allBlocks .block')];
+    currentResults=allBlocks;
     renderPage();
-  }catch(e){ console.error('Erro ao carregar TSV:',e); }
+  }catch(e){console.error('Erro TSV',e);}
 }
 
-function fillSelect(id, items){
-  const sel = document.getElementById(id);
-  items.forEach(v=>{ const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o); });
+function fillSelect(id,items){
+  const sel=document.getElementById(id);
+  items.forEach(v=>{
+    const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);
+  });
 }
 
+/* Pesquisa AND por ponto e vírgula */
 function performSearch(){
-  const termStr = document.getElementById('terms').value.toLowerCase();
-  const terms   = termStr.split(';').map(t=>t.trim()).filter(Boolean);
-  const start   = document.getElementById('startDate').value;
-  const end     = document.getElementById('endDate').value;
-  const relF    = document.getElementById('relator').value.toLowerCase();
-  const atoF    = document.getElementById('ato').value.toLowerCase();
+  const terms=document.getElementById('terms').value.toLowerCase()
+               .split(';').map(t=>t.trim()).filter(Boolean);
+  const start=document.getElementById('startDate').value;
+  const end  =document.getElementById('endDate').value;
+  const relF=document.getElementById('relator').value.toLowerCase();
+  const atoF=document.getElementById('ato').value.toLowerCase();
 
-  currentResults = allBlocks.filter(b=>{
-    const text = b.textContent.toLowerCase();
-    const date = b.dataset.date;
-    const rel  = b.dataset.relator;
-    const ato  = b.dataset.ato;
+  currentResults=allBlocks.filter(b=>{
+    const txt=b.textContent.toLowerCase();
+    const date=b.dataset.date;
+    const rel =b.dataset.relator;
+    const ato =b.dataset.ato;
 
-    const termOK = terms.every(t=>text.includes(t));
-    const dateOK = (!start||date>=start) && (!end||date<=end);
-    const relOK  = !relF || rel===relF;
-    const atoOK  = !atoF || ato===atoF;
-    return termOK && dateOK && relOK && atoOK;
+    const termOK=terms.every(t=>txt.includes(t));
+    const dateOK=(!start||date>=start)&&(!end||date<=end);
+    const relOK =!relF||rel===relF;
+    const atoOK =!atoF||ato===atoF;
+    return termOK&&dateOK&&relOK&&atoOK;
   });
   currentPage=1;
   renderPage();
 }
 
+/* Paginação */
 function renderPage(){
   document.querySelectorAll('#allBlocks .block').forEach(b=>b.style.display='none');
-  const total = Math.max(1, Math.ceil(currentResults.length/PAGE_SIZE));
-  const ini   = (currentPage-1)*PAGE_SIZE;
-  currentResults.slice(ini, ini+PAGE_SIZE).forEach(b=>b.style.display='block');
-  const pag = document.getElementById('pagination');
-  pag.innerHTML='';
+  const total=Math.max(1,Math.ceil(currentResults.length/PAGE_SIZE));
+  const ini=(currentPage-1)*PAGE_SIZE;
+  currentResults.slice(ini,ini+PAGE_SIZE).forEach(b=>b.style.display='block');
+
+  const pag=document.getElementById('pagination'); pag.innerHTML='';
   if(total>1){
     for(let i=1;i<=total;i++){
-      const btn=document.createElement('button');btn.textContent=i;
+      const btn=document.createElement('button'); btn.textContent=i;
       if(i===currentPage) btn.classList.add('active');
       btn.onclick=()=>{currentPage=i;renderPage();};
       pag.appendChild(btn);
@@ -142,7 +146,7 @@ function renderPage(){
   }
 }
 
-window.onload = loadTSV;
+window.onload=loadTSV;
 </script>
 </body>
 </html>
