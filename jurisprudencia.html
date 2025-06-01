@@ -17,10 +17,12 @@
   .alert{background:#ffd54f;color:#17324d;border-radius:6px;padding:12px 18px;margin:-10px auto 25px auto;max-width:920px;font-size:.95rem;line-height:1.3;text-align:center;font-weight:600;}
   .alert a{color:#17324d;text-decoration:underline;font-weight:700;}
   /* Search */
-  .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:25px;}
+  .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:10px;}
   .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
+  /* Result count */
+  #resultCount{font-size:.95rem;margin:10px auto;max-width:900px;text-align:left;color:#fff;}
   /* Blocks */
   .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;}
   .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;color:#fff;text-align:justify;}
@@ -45,6 +47,7 @@
     <select id="ato"><option value="">Ato (todos)</option></select>
     <button onclick="performSearch()">Consultar</button>
   </div>
+  <div id="resultCount"></div>
   <div id="allBlocks"></div>
   <div id="pagination" class="pagination"></div>
 </div>
@@ -163,6 +166,12 @@ function populateSelect(id, set){
   });
 }
 
+/* Atualiza a contagem de resultados */
+function updateResultCount(){
+  const count = currentResults.length;
+  document.getElementById('resultCount').textContent = `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
+}
+
 /* Realiza a busca considerando AND, OR e frases exatas */
 function performSearch(){
   const raw = document.getElementById('terms').value.trim();
@@ -196,6 +205,7 @@ function performSearch(){
     });
   });
 
+  updateResultCount();
   currentPage = 1;
   renderPage();
 }
