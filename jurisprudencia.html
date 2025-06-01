@@ -37,9 +37,9 @@
 <div id="content">
   <div class="alert">Esta consulta abrange apenas <strong>julgados da 6ª Câmara Cível a partir de 2025</strong>.<br>Para pesquisar todo o acervo do TJGO utilize o sistema oficial <a href="https://projudi.tjgo.jus.br/ConsultaJurisprudencia" target="_blank" rel="noopener noreferrer">PROJUDI</a>.</div>
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
-  <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong>. Todos são combinados por <strong>AND</strong>.</p>
+  <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong> ou utilize <strong>OR</strong> para operador lógico.<br>Para frases exatas, envolva em <strong>aspas</strong>.</p>
   <div class="search-bar">
-    <input type="text" id="terms" placeholder="termo1; termo2; termo3">
+    <input type="text" id="terms" placeholder="ex.: &quot;termo exato&quot; termo2 OR termo3">
     <input type="date" id="startDate"><input type="date" id="endDate">
     <select id="relator"><option value="">Relator (todos)</option></select>
     <select id="ato"><option value="">Ato (todos)</option></select>
@@ -52,73 +52,174 @@
 <script>
 const TSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
 const PAGE_SIZE=50;
-let allBlocks=[],currentResults=[],currentPage=1;
+let allBlocks=[], currentResults=[], currentPage=1;
 
-/* dd/mm/aaaa → aaaa-mm-dd */
-function toISO(dmy){const [d,m,y]=dmy.split('/');return y?`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`:'';}
+/* Converte dd/mm/aaaa → aaaa-mm-dd */
+function toISO(dmy){
+  const [d,m,y]=dmy.split('/');
+  return y?`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`:'';
+}
 
-/* Remove apenas abreviações Des. / Desa. no início */
-function cleanRelator(name){return name.replace(/^(des\.?\s+|desa\.?\s+)/i,'').trim();}
+/* Remove abreviações Des. / Desa. no início */
+function cleanRelator(name){
+  return name.replace(/^(des\.?\s+|desa\.?\s+)/i,'').trim();
+}
 
+/**
+ * Analisa a string de busca e retorna array de cláusulas.
+ * Cada cláusula é um array de termos (AND). Cláusulas são separadas por OR fora de aspas.
+ */
+function parseSearchQuery(raw){
+  const clauses = [];
+  let buffer = '';
+  let inQuotes = false;
+  const tokens = [];
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      buffer += ch;
+    } else if (!inQuotes && raw.substr(i, 3).toUpperCase() === ' OR' && (raw[i-1]===' ' || i===0)) {
+      tokens.push(buffer.trim());
+      tokens.push('OR');
+      buffer = '';
+      i += 2;
+    } else {
+      buffer += ch;
+    }
+  }
+  if (buffer.trim()) tokens.push(buffer.trim());
+  let current = [];
+  tokens.forEach(tok => {
+    if (tok === 'OR') {
+      clauses.push(current);
+      current = [];
+    } else {
+      // Dentro de cada cláusula, separar por ponto e vírgula para termos AND
+      const parts = tok.split(';').map(p => p.trim()).filter(Boolean);
+      parts.forEach(p => {
+        // Remover aspas externas se existirem
+        if (p.startsWith('"') && p.endsWith('"')) {
+          current.push({ phrase: p.slice(1, -1).toLowerCase(), exact: true });
+        } else {
+          current.push({ phrase: p.toLowerCase(), exact: false });
+        }
+      });
+    }
+  });
+  if (current.length) clauses.push(current);
+  return clauses;
+}
+
+/* Carrega TSV e popula elementos */
 async function loadTSV(){
-  try{
-    const res=await fetch(TSV_URL);
-    const text=await res.text();
-    const rows=Papa.parse(text,{header:true,delimiter:'\t',skipEmptyLines:true}).data;
-    const relSet=new Set(),atoSet=new Set();
-    rows.forEach(r=>{
-      if(r.Relator) relSet.add(cleanRelator(r.Relator));
-      if(r.Ato)     atoSet.add(r.Ato.trim());
+  try {
+    const res = await fetch(TSV_URL);
+    const text = await res.text();
+    const rows = Papa.parse(text, { header:true, delimiter:'\t', skipEmptyLines:true }).data;
+    const relSet = new Set(), atoSet = new Set();
+    rows.forEach(r => {
+      if (r.Relator) relSet.add(cleanRelator(r.Relator));
+      if (r.Ato)     atoSet.add(r.Ato.trim());
     });
-    populateSelect('relator',relSet);populateSelect('ato',atoSet);
+    populateSelect('relator', relSet);
+    populateSelect('ato', atoSet);
 
-    const cont=document.getElementById('allBlocks');
-    rows.forEach(r=>{
-      if(!r['Publicação']||!r.Ementa) return;
-      const proc=(r.Processo||'').trim();
-      const cam =(r['Câmara']||'').trim();
-      const rel = cleanRelator(r.Relator||'');
-      const ato =(r.Ato||'').trim();
-      const pub = r['Publicação'].trim();
-      const iso = toISO(pub);
-      const eme = r.Ementa.trim();
+    const cont = document.getElementById('allBlocks');
+    rows.forEach(r => {
+      if (!r['Publicação'] || !r.Ementa) return;
+      const proc = (r.Processo||'').trim();
+      const cam  = (r['Câmara']||'').trim();
+      const rel  = cleanRelator(r.Relator||'');
+      const ato  = (r.Ato||'').trim();
+      const pub  = r['Publicação'].trim();
+      const iso  = toISO(pub);
+      const eme  = r.Ementa.trim();
 
-      const div=document.createElement('div');div.className='block';
-      div.dataset.date=iso;div.dataset.relator=rel.toLowerCase();div.dataset.ato=ato.toLowerCase();
-      div.innerHTML=`<p>${eme}</p><p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
+      const div = document.createElement('div');
+      div.className = 'block';
+      div.dataset.date = iso;
+      div.dataset.relator = rel.toLowerCase();
+      div.dataset.ato = ato.toLowerCase();
+      div.innerHTML = `<p>${eme}</p><p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
       cont.appendChild(div);
     });
 
-    allBlocks=[...document.querySelectorAll('#allBlocks .block')];currentResults=allBlocks;renderPage();
-  }catch(e){console.error('Erro ao carregar TSV',e);}
+    allBlocks = [...document.querySelectorAll('#allBlocks .block')];
+    currentResults = allBlocks;
+    renderPage();
+  } catch(e) {
+    console.error('Erro ao carregar TSV', e);
+  }
 }
 
-function populateSelect(id,set){const sel=document.getElementById(id);[...set].sort().forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});}
-
-function performSearch(){
-  const terms=document.getElementById('terms').value.toLowerCase().split(';').map(t=>t.trim()).filter(Boolean);
-  const start=document.getElementById('startDate').value;
-  const end  =document.getElementById('endDate').value;
-  const relF=document.getElementById('relator').value.toLowerCase();
-  const atoF=document.getElementById('ato').value.toLowerCase();
-  currentResults=allBlocks.filter(b=>{
-    const text=b.textContent.toLowerCase();
-    const date=b.dataset.date;
-    const rel=b.dataset.relator;
-    const ato=b.dataset.ato;
-    return terms.every(t=>text.includes(t))&&(!start||date>=start)&&(!end||date<=end)&&(!relF||rel===relF)&&(!atoF||ato===atoF);
+function populateSelect(id, set){
+  const sel = document.getElementById(id);
+  [...set].sort().forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
   });
-  currentPage=1;renderPage();
+}
+
+/* Realiza a busca considerando AND, OR e frases exatas */
+function performSearch(){
+  const raw = document.getElementById('terms').value.trim();
+  const start = document.getElementById('startDate').value;
+  const end   = document.getElementById('endDate').value;
+  const relF  = document.getElementById('relator').value.toLowerCase();
+  const atoF  = document.getElementById('ato').value.toLowerCase();
+  const clauses = parseSearchQuery(raw);
+
+  currentResults = allBlocks.filter(block => {
+    const text = block.textContent.toLowerCase();
+    const date = block.dataset.date;
+    const rel  = block.dataset.relator;
+    const ato  = block.dataset.ato;
+
+    if (start && date < start) return false;
+    if (end && date > end) return false;
+    if (relF && rel !== relF) return false;
+    if (atoF && ato !== atoF) return false;
+
+    if (!clauses.length) return true;
+    // Verifica se algum conjunto de termos (cláusula) é atendido
+    return clauses.some(clause => {
+      return clause.every(termObj => {
+        if (termObj.exact) {
+          return text.includes(termObj.phrase);
+        } else {
+          return text.includes(termObj.phrase);
+        }
+      });
+    });
+  });
+
+  currentPage = 1;
+  renderPage();
 }
 
 function renderPage(){
-  document.querySelectorAll('#allBlocks .block').forEach(b=>b.style.display='none');
-  const total=Math.max(1,Math.ceil(currentResults.length/PAGE_SIZE));
-  const ini=(currentPage-1)*PAGE_SIZE;currentResults.slice(ini,ini+PAGE_SIZE).forEach(b=>b.style.display='block');
-  const pag=document.getElementById('pagination');pag.innerHTML='';
-  if(total>1){for(let i=1;i<=total;i++){const btn=document.createElement('button');btn.textContent=i;if(i===currentPage)btn.classList.add('active');btn.onclick=()=>{currentPage=i;renderPage();};pag.appendChild(btn);}}
+  document.querySelectorAll('#allBlocks .block').forEach(b => b.style.display = 'none');
+  const total = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach(b => b.style.display = 'block');
+
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = '';
+  if (total > 1) {
+    for (let i = 1; i <= total; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      if (i === currentPage) btn.classList.add('active');
+      btn.onclick = () => { currentPage = i; renderPage(); };
+      pag.appendChild(btn);
+    }
+  }
 }
 
-window.onload=loadTSV;
+window.onload = loadTSV;
 </script>
 </body>
+</html>
