@@ -146,9 +146,10 @@ async function loadTSV(){
       div.dataset.relator = rel.toLowerCase();
       div.dataset.ato = ato.toLowerCase();
       div.innerHTML = `
+        <p><strong>Processo: ${proc || 's/ nº'}</strong></p>
         <p>${eme}</p>
         <p class="type">${ato || 'N/I'}</p>
-        <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel. ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado ${pub})</p>
+        <p class="meta">(TJGO, Rel. ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado ${pub})</p>
       `;
       cont.appendChild(div);
     });
