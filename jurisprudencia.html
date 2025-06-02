@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -127,13 +128,13 @@ async function loadTSV() {
     const text = await res.text();
     const rows = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true }).data;
     const relSet = new Set(),
-      cameraSet = new Set(),
-      atoSet = new Set();
+          cameraSet = new Set(),
+          atoSet = new Set();
 
     rows.forEach((r) => {
-      if (r.Relator) relSet.add(cleanRelator(r.Relator));
-      if (r['Câmara']) cameraSet.add(r['Câmara'].trim());
-      if (r.Ato) atoSet.add(r.Ato.trim());
+      if (r.Relator)      relSet.add(cleanRelator(r.Relator));
+      if (r['Câmara'])   cameraSet.add(r['Câmara'].trim());
+      if (r.Ato)          atoSet.add(r.Ato.trim());
     });
 
     populateSelect('relator', relSet);
@@ -143,25 +144,25 @@ async function loadTSV() {
     const cont = document.getElementById('allBlocks');
     rows.forEach((r) => {
       if (!r['Publicação'] || !r.Ementa) return;
-      const proc = (r.Processo || '').trim();
-      const cam = (r['Câmara'] || '').trim();
-      const rel = cleanRelator(r.Relator || '');
-      const ato = (r.Ato || '').trim();
-      const pub = r['Publicação'].trim();
-      const iso = toISO(pub);
-      const eme = r.Ementa.trim();
+      const proc = (r['Processo'] || '').trim();
+      const cam  = (r['Câmara'] || '').trim();
+      const rel  = cleanRelator(r.Relator || '');
+      const ato  = (r.Ato || '').trim();
+      const pub  = r['Publicação'].trim();
+      const iso  = toISO(pub);
+      const eme  = r.Ementa.trim();
 
       const div = document.createElement('div');
       div.className = 'block';
-      div.dataset.date = iso;
+      div.dataset.date    = iso;
       div.dataset.relator = rel.toLowerCase();
-      div.dataset.camera = cam.toLowerCase();
-      div.dataset.ato = ato.toLowerCase();
+      div.dataset.camera  = cam.toLowerCase();
+      div.dataset.ato     = ato.toLowerCase();
       div.innerHTML = `
         <p><strong>Processo: ${proc || 's/ nº'}</strong></p>
         <p>${eme}</p>
         <p class="type">${ato || 'N/I'}</p>
-        <p class="meta">(TJGO, Rel. ${rel || 'N/I'}, Câmara ${cam || 'N/I'}, Publicado ${pub})</p>
+        <p class="meta">(TJGO, Processo ${proc || 's/ nº'}, Rel. ${rel || 'N/I'}, Câmara ${cam || 'N/I'}, Publicado ${pub})</p>
       `;
       cont.appendChild(div);
     });
@@ -189,31 +190,32 @@ function populateSelect(id, set) {
 /* Atualiza a contagem de resultados */
 function updateResultCount() {
   const count = currentResults.length;
-  document.getElementById('resultCount').textContent = `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
+  document.getElementById('resultCount').textContent =
+    `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
 }
 
 /* Realiza a busca considerando AND, OR e frases exatas */
 function performSearch() {
-  const raw = document.getElementById('terms').value.trim();
+  const raw   = document.getElementById('terms').value.trim();
   const start = document.getElementById('startDate').value;
-  const end = document.getElementById('endDate').value;
-  const relF = document.getElementById('relator').value.toLowerCase();
-  const camF = document.getElementById('camera').value.toLowerCase();
-  const atoF = document.getElementById('ato').value.toLowerCase();
+  const end   = document.getElementById('endDate').value;
+  const relF  = document.getElementById('relator').value.toLowerCase();
+  const camF  = document.getElementById('camera').value.toLowerCase();
+  const atoF  = document.getElementById('ato').value.toLowerCase();
   const clauses = parseSearchQuery(raw);
 
   currentResults = allBlocks.filter((block) => {
     const text = block.textContent.toLowerCase();
     const date = block.dataset.date;
-    const rel = block.dataset.relator;
-    const cam = block.dataset.camera;
-    const ato = block.dataset.ato;
+    const rel  = block.dataset.relator;
+    const cam  = block.dataset.camera;
+    const ato  = block.dataset.ato;
 
     if (start && date < start) return false;
-    if (end && date > end) return false;
-    if (relF && rel !== relF) return false;
-    if (camF && cam !== camF) return false;
-    if (atoF && ato !== atoF) return false;
+    if (end   && date > end)   return false;
+    if (relF  && rel  !== relF) return false;
+    if (camF  && cam  !== camF) return false;
+    if (atoF  && ato  !== atoF) return false;
 
     if (!clauses.length) return true;
     // Verifica se algum conjunto de termos (cláusula) é atendido
@@ -259,3 +261,4 @@ window.onload = loadTSV;
 </script>
 </body>
 </html>
+```
