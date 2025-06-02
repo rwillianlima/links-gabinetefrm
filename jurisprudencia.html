@@ -26,6 +26,7 @@
   /* Blocks */
   .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;}
   .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;color:#fff;text-align:justify;}
+  .type{margin-top:6px;font-size:.85rem;color:#cfd8dc;text-align:center;}
   .meta{margin-top:8px;font-size:.85rem;color:#cfd8dc;text-align:center;}
   /* Pagination */
   .pagination{display:flex;justify-content:center;gap:6px;margin:20px 0;}
@@ -134,7 +135,7 @@ async function loadTSV(){
       const proc = (r.Processo||'').trim();
       const cam  = (r['Câmara']||'').trim();
       const rel  = cleanRelator(r.Relator||'');
-      const ato  = (r.Ato||'').trim();
+      const ato  = (r.Ato||'').trim();  // Valor da coluna D
       const pub  = r['Publicação'].trim();
       const iso  = toISO(pub);
       const eme  = r.Ementa.trim();
@@ -144,7 +145,11 @@ async function loadTSV(){
       div.dataset.date = iso;
       div.dataset.relator = rel.toLowerCase();
       div.dataset.ato = ato.toLowerCase();
-      div.innerHTML = `<p>${eme}</p><p class="meta">(TJGO, ${proc||'s/ nº'}, Rel. ${rel||'N/I'}, ${cam||'N/I'}, Publicado ${pub})</p>`;
+      div.innerHTML = `
+        <p>${eme}</p>
+        <p class="type">${ato || 'N/I'}</p>
+        <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel. ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado ${pub})</p>
+      `;
       cont.appendChild(div);
     });
 
