@@ -11,11 +11,9 @@
   #sidebar a:hover{background:#105b8e;}
   /* Content */
   #content{margin-left:260px;padding:40px 25px;min-height:100vh;text-align:center;}
-  #content h1{font-size:2rem;margin-bottom:20px;}
+  #content h1{font-size:2rem;margin-bottom:8px;}
+  .dataset-info{font-size:.92rem;color:#e0f2ff;margin:2px auto 18px auto;max-width:920px}
   .notice{font-size:.85rem;margin-bottom:6px;}
-  /* Banner */
-  .alert{background:#ffd54f;color:#17324d;border-radius:6px;padding:12px 18px;margin:-10px auto 25px auto;max-width:920px;font-size:.95rem;line-height:1.3;text-align:center;font-weight:600;}
-  .alert a{color:#17324d;text-decoration:underline;font-weight:700;}
   /* Search */
   .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:10px;}
   .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
@@ -56,8 +54,9 @@
 <body>
 <div id="sidebar"><a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a></div>
 <div id="content">
-  <div class="alert">Esta consulta abrange apenas <strong>julgados da 6ª Câmara Cível a partir de 2025</strong>.<br>Para pesquisar todo o acervo do TJGO utilize o sistema oficial <a href="https://projudi.tjgo.jus.br/ConsultaJurisprudencia" target="_blank" rel="noopener noreferrer">PROJUDI</a>.</div>
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
+  <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
+
   <p class="notice">Use <strong>aspas</strong> para frases exatas; <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; <strong>*</strong> como curinga. Acentos são ignorados.</p>
 
   <!-- Ajuda ao usuário -->
@@ -65,17 +64,18 @@
     <details>
       <summary>Como pesquisar (clique para expandir)</summary>
       <div style="margin-top:10px">
-        <p><strong>Aspas</strong>: <code>"frase exata"</code></p>
+        <p><strong>Aspas</strong>: <code>"frase exata"</code> — ex.: <code>"ação revisional"</code></p>
         <p><strong>AND</strong> (todos os termos): <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
         <p><strong>OR</strong> (alternância): <code>cláusulaA OR cláusulaB</code></p>
         <p><strong>NOT</strong> (excluir): <code>-termo</code> ou <code>NOT termo</code> (aceita também <code>-"frase exata"</code>)</p>
-        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra “contrato”, “contratual”…</p>
+        <p><strong>Curinga *</strong> (prefixo/sufixo): <code>contrat*</code> encontra “contrato”, “contratual”; <code>"dano *"</code> encontra “dano moral/material/...”.</p>
         <p><strong>Exemplos</strong>:</p>
         <ul style="margin:6px 0 0 18px">
           <li><code>"ação revisional";plano</code> → contém a frase exata e “plano”.</li>
           <li><code>"dano moral" OR "responsabilidade civil"</code> → uma ou outra frase.</li>
           <li><code>ISS;-"fato gerador"</code> → contém “ISS” e exclui a expressão “fato gerador”.</li>
           <li><code>segur*;regress*</code> → aproximações por radical.</li>
+          <li><code>"dano *"; BACEN</code> → “dano moral/material/…” e “BACEN”.</li>
         </ul>
         <p style="margin-top:8px;color:#cfd8dc">Dica: acentos são ignorados. “ação” ≡ “acao”.</p>
       </div>
@@ -83,13 +83,14 @@
   </div>
 
   <div class="search-bar">
-    <input type="text" id="terms" placeholder="Ex.: &quot;ação revisional&quot; OR dano;segur* -&quot;fato gerador&quot;">
+    <input type="text" id="terms" placeholder="Ex.: &quot;dano *&quot; ; BACEN OR &quot;dano moral&quot; -&quot;fato gerador&quot;">
     <input type="date" id="startDate"><input type="date" id="endDate">
     <select id="relator"><option value="">Relator (todos)</option></select>
     <select id="camera"><option value="">Câmara (todas)</option></select>
     <select id="ato"><option value="">Ato (todos)</option></select>
     <button onclick="performSearch()">Consultar</button>
   </div>
+
   <div id="resultCount"></div>
   <div id="allBlocks"></div>
   <div id="pagination" class="pagination"></div>
@@ -98,28 +99,25 @@
 <script>
 const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
 const PAGE_SIZE = 50;
-const MAX_PAGE_BUTTONS = 9; // janela de paginação (ex.: 9 botões visíveis)
+const MAX_PAGE_BUTTONS = 9;
 let allBlocks = [], currentResults = [], currentPage = 1;
 
 /* ---------- Utilidades ---------- */
 
-/* Converte dd/mm/aaaa → aaaa-mm-dd */
+/* dd/mm/aaaa → aaaa-mm-dd */
 function toISO(dmy) {
-  const [d, m, y] = (dmy||'').split('/');
-  return y ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : '';
+  const [d,m,y] = (dmy||'').split('/');
+  return y ? `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}` : '';
 }
 
-/* Remove abreviações Des. / Desa. no início */
+/* Remove 'Des.' / 'Desa.' no início */
 function cleanRelator(name) {
   return (name||'').replace(/^(des\.?\s+|desa\.?\s+)/i, '').trim();
 }
 
-/* Normaliza texto: minúsculas e sem acentos (para busca mais ampla) */
+/* Normaliza: minúsculas sem acentos */
 function normalizeStr(s){
-  return (s||'')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,''); // remove acentos
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 
 /* Escapa metacaracteres de regex */
@@ -127,31 +125,32 @@ function escapeRegex(s){
   return s.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
 }
 
-/* ---------- Parser de consulta (ampliado e robusto a \s) ---------- */
+/* ---------- Parser (AND/OR/NOT; curingas dentro e fora de aspas; robusto a \s) ---------- */
 /**
- * Retorna array de cláusulas. Cada cláusula possui:
- *   { must: [matcherFn], not: [matcherFn] }
- * As cláusulas são separadas por OR (fora de aspas).
- * Dentro da cláusula, ; ou AND (fora de aspas) separam termos (AND).
- * Suporta: "frase", NOT / - , curingas * e busca sem acentos.
+ * Saída: array de cláusulas { must: [fn], not: [fn] }
+ * - OR separa cláusulas (fora de aspas)
+ * - ; ou AND separam termos (AND) dentro da cláusula
+ * - "-" ou NOT no início → exclusão (NOT)
+ * - Aspas para frase, aceita curinga * dentro de aspas ("dano *")
+ * - Comparação sempre sobre texto normalizado (sem acento)
  */
 function parseSearchQuery(raw) {
   const clauses = [];
   if (!raw) return clauses;
 
-  // Split por OR fora de aspas (aceita qualquer whitespace \s ao redor)
+  // Divide por OR (fora de aspas), aceitando qualquer whitespace ao redor
   const tokens = [];
   let buf = '', inQ = false;
   for (let i=0;i<raw.length;i++){
     const ch = raw[i];
     if (ch === '"'){ inQ = !inQ; buf += ch; continue; }
     if (!inQ){
-      const m = raw.slice(i).match(/^\s+OR\s+/i); // <-- robusto a NBSP, quebras, etc.
+      const m = raw.slice(i).match(/^\s+OR\s+/i);
       if (m){
         tokens.push(buf.trim());
         tokens.push('OR');
         buf = '';
-        i += m[0].length - 1; // avança sobre o " OR "
+        i += m[0].length - 1;
         continue;
       }
     }
@@ -165,35 +164,39 @@ function parseSearchQuery(raw) {
     let part = rawPart.trim();
     if (!part) return;
 
-    // Trata NOT / - no início
+    // Prefixos de negação
     let isNot = false;
     if (/^NOT\s+/i.test(part)) { isNot = true; part = part.replace(/^NOT\s+/i,'').trim(); }
     else if (part.startsWith('-')) { isNot = true; part = part.slice(1).trim(); }
 
-    // Aspas (frase exata)
-    let isExact = false;
-    if (part.startsWith('"') && part.endsWith('"') && part.length>=2){
+    // Aspas (frase) — mas aceitando curinga * dentro
+    let inQuotes = false;
+    if (part.startsWith('"') && part.endsWith('"') && part.length >= 2){
+      inQuotes = true;
       part = part.slice(1,-1);
-      isExact = true;
     }
 
-    const norm = normalizeStr(part);
+    // Monta regex sobre TEXTO NORMALIZADO:
+    // - Normaliza o termo
+    // - Converte * → coringa (qualquer sequência)
+    // - Converte espaços → \s+ (espaços flexíveis)
+    // - Escapa o restante
+    const buildNormalizedRegex = (t) => {
+      const norm = normalizeStr(t);
+      // separa por '*' preservando ordem
+      const chunks = norm.split('*').map(c => c.replace(/\s+/g, '\\s+').split('').map(ch => escapeRegex(ch)).join(''));
+      // junta com coringa "qualquer coisa" (não ganancioso)
+      const body = chunks.join('[\\s\\S]*?');
+      // caso especial: se o termo começar com *, não ancora no início do trecho
+      // aqui deixamos livre (substring), pois a busca é ampla
+      return new RegExp(body, 'i'); // i: case-insensitive (já normalizado)
+    };
 
-    // Monta função de correspondência para o texto normalizado do bloco
-    let matcher;
-    if (!isExact && norm.includes('*')){
-      // Transforma * em .* (qualquer sequência), âncoras frouxas
-      const pattern = '.*' + norm.split('*').map(escapeRegex).join('.*') + '.*';
-      const re = new RegExp(pattern);
-      matcher = (text) => re.test(text);
-    } else {
-      // exata (frase) ou termo simples → substring no texto normalizado
-      const needle = normalizeStr(part);
-      matcher = (text) => text.includes(needle);
-    }
+    const re = buildNormalizedRegex(part);
 
-    // Necessário para highlight: guarda o termo "cru"
-    matcher.__raw = part;
+    // matcher: recebe TEXTO NORMALIZADO e aplica regex
+    const matcher = (textNorm) => re.test(textNorm);
+    matcher.__raw = part; // para destaque
 
     (isNot ? current.not : current.must).push(matcher);
   };
@@ -207,7 +210,7 @@ function parseSearchQuery(raw) {
     if (tok === 'OR'){
       if (current.must.length || current.not.length) flushClause();
     } else {
-      // Dentro da cláusula, separar por ; ou AND (fora de aspas), aceitando qualquer \s
+      // Dentro da cláusula, ; ou AND (fora de aspas), aceitando \s
       let partBuf = '', q = false;
       const parts = [];
       const pushBuf = ()=>{ if (partBuf.trim()) parts.push(partBuf.trim()); partBuf=''; };
@@ -215,18 +218,11 @@ function parseSearchQuery(raw) {
       for (let i=0;i<tok.length;i++){
         const c = tok[i];
         if (c === '"'){ q=!q; partBuf+=c; continue; }
-
         if (!q && c === ';'){ pushBuf(); continue; }
-
         if (!q){
           const mAnd = tok.slice(i).match(/^\s+AND\s+/i);
-          if (mAnd){
-            pushBuf();
-            i += mAnd[0].length - 1;
-            continue;
-          }
+          if (mAnd){ pushBuf(); i += mAnd[0].length - 1; continue; }
         }
-
         partBuf += c;
       }
       pushBuf();
@@ -239,7 +235,7 @@ function parseSearchQuery(raw) {
   return clauses;
 }
 
-/* Termos POSITIVOS (must) para destacar — usa prefixo antes de '*' */
+/* Extrai termos POSITIVOS para destaque; se houver '*', usa prefixo (antes do 1º '*') */
 function extractTermsForHighlight(clauses){
   const terms = [];
   clauses.forEach(clause => {
@@ -262,7 +258,6 @@ function getCopyText(block){
   return `${ementa} ${meta}`.replace(/\s+/g,' ').replace(/\s+\)/,')').trim();
 }
 
-/* Cria botão de copiar em um bloco (copia só ementa + meta) */
 function attachCopyButton(block) {
   const btn = document.createElement('button');
   btn.className = 'copy-btn';
@@ -286,27 +281,45 @@ function attachCopyButton(block) {
   block.appendChild(btn);
 }
 
-/* ---------- Carregamento e montagem dos blocos ---------- */
+/* ---------- Carregamento e montagem ---------- */
 async function loadTSV() {
   try {
     const res = await fetch(TSV_URL);
     const text = await res.text();
     const rows = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true }).data;
+
+    // Coleta filtros e métricas do dataset
     const relSet = new Set(), cameraSet = new Set(), atoSet = new Set();
+    let totalPesquisaveis = 0;
+    let maxDateISO = '';
+    let maxDateBr = '';
 
     rows.forEach((r) => {
+      const pub = (r['Publicação'] || '').trim();
+      const eme = (r.Ementa || '').trim();
+      if (pub && eme) {
+        totalPesquisaveis++;
+        const iso = toISO(pub);
+        if (iso && (!maxDateISO || iso > maxDateISO)) { maxDateISO = iso; maxDateBr = pub; }
+      }
       if (r.Relator)    relSet.add(cleanRelator(r.Relator));
       if (r['Câmara'])  cameraSet.add((r['Câmara']||'').trim());
       if (r.Ato)        atoSet.add((r.Ato||'').trim());
     });
 
+    // Atualiza info do dataset
+    const ds = document.getElementById('datasetInfo');
+    ds.textContent = `${totalPesquisaveis} linha${totalPesquisaveis!==1?'s':''} disponíveis para pesquisa • Última atualização do banco de dados: ${maxDateBr || 'N/I'}`;
+
     populateSelect('relator', relSet);
     populateSelect('camera', cameraSet);
     populateSelect('ato', atoSet);
 
+    // Monta blocos (somente linhas pesquisáveis)
     const cont = document.getElementById('allBlocks');
     rows.forEach((r) => {
       if (!r['Publicação'] || !r.Ementa) return;
+
       const proc = (r['Processo'] || '').trim();
       const cam  = (r['Câmara'] || '').trim();
       const rel  = cleanRelator(r.Relator || '');
@@ -318,7 +331,6 @@ async function loadTSV() {
       const div = document.createElement('div');
       div.className = 'block';
       div.dataset.date    = iso;
-      // Filtros normalizados para comparação sem acento
       div.dataset.relator = normalizeStr(rel);
       div.dataset.camera  = normalizeStr(cam);
       div.dataset.ato     = normalizeStr(ato);
@@ -331,7 +343,7 @@ async function loadTSV() {
       attachCopyButton(div);
       cont.appendChild(div);
 
-      // Guarda o texto "limpo" para evitar acúmulo de <mark>
+      // Texto "limpo" para destaque
       const ementaEl = div.querySelector('p:nth-of-type(2)');
       const metaEl   = div.querySelector('.meta');
       if (ementaEl && !ementaEl.dataset.original) ementaEl.dataset.original = ementaEl.textContent;
@@ -344,6 +356,7 @@ async function loadTSV() {
 
   } catch (e) {
     console.error('Erro ao carregar TSV', e);
+    document.getElementById('datasetInfo').textContent = 'Não foi possível carregar o banco de dados.';
   }
 }
 
@@ -357,20 +370,17 @@ function populateSelect(id, set) {
   });
 }
 
-/* ---------- UI: mostrar/ocultar resultados ---------- */
+/* ---------- UI ---------- */
 function hideResultsUI() {
   document.getElementById('resultCount').style.display = 'none';
   document.getElementById('allBlocks').style.display = 'none';
   document.getElementById('pagination').style.display = 'none';
 }
-
 function showResultsUI() {
   document.getElementById('resultCount').style.display = 'block';
   document.getElementById('allBlocks').style.display = 'block';
   document.getElementById('pagination').style.display = 'flex';
 }
-
-/* Atualiza a contagem de resultados */
 function updateResultCount() {
   const count = currentResults.length;
   const el = document.getElementById('resultCount');
@@ -405,7 +415,6 @@ function performSearch() {
 
     if (!clauses.length) return true;
 
-    // Uma cláusula OR basta: todos os must verdadeiros e nenhum not verdadeiro
     return clauses.some(clause => {
       const allMust = clause.must.every(fn => fn(text));
       const noneNot = clause.not.every(fn => !fn(text));
@@ -419,37 +428,34 @@ function performSearch() {
   showResultsUI();
 }
 
-/* ---------- Destaque acento-insensível ---------- */
+/* ---------- Destaque (acento-insensível; respeita *) ---------- */
 function highlightText(baseText, terms) {
   if (!terms || !terms.length) return baseText;
 
-  // Normaliza para minúsculo e sem acento
-  const normalize = (str) =>
-    (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // Normaliza
+  const normalize = (str) => (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
   let html = baseText;
   const ordered = [...terms].sort((a,b)=>b.length - a.length);
 
   ordered.forEach(term => {
     if (!term) return;
-    const base = term.includes('*') ? term.split('*')[0] : term;
-    const normTerm = normalize(base);
-    if (!normTerm) return;
+    const base = term; // aqui usamos o termo como veio; regex cuidará do *
+    // Constrói regex acento-insensível com suporte a * e espaços flexíveis
+    const norm = normalize(base);
+    const parts = norm.split('*').map(p => p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join(''));
+    // curinga entre partes: [\s\S]*? (qualquer coisa, não ganancioso)
+    const body = parts.join('[\\s\\S]*?');
+    // mapeia letras com acento: substituímos classes simples no CORPO já escapado
+    const withClasses = body
+      .replace(/a/gi,'[aàáâãä]')
+      .replace(/e/gi,'[eèéêë]')
+      .replace(/i/gi,'[iìíîï]')
+      .replace(/o/gi,'[oòóôõö]')
+      .replace(/u/gi,'[uùúûü]')
+      .replace(/c/gi,'[cç]');
 
-    // Constrói regex acento-insensível por classes e aceita variações de espaço
-    const pattern = new RegExp(normTerm.split('').map(ch=>{
-      if (/\s/.test(ch)) return '\\s+';
-      switch(ch){
-        case 'a': return '[aàáâãä]';
-        case 'e': return '[eèéêë]';
-        case 'i': return '[iìíîï]';
-        case 'o': return '[oòóôõö]';
-        case 'u': return '[uùúûü]';
-        case 'c': return '[cç]';
-        default:  return escapeRegex(ch);
-      }
-    }).join(''), 'gi');
-
+    const pattern = new RegExp(withClasses, 'gi');
     html = html.replace(pattern, m => `<mark>${m}</mark>`);
   });
 
@@ -458,18 +464,16 @@ function highlightText(baseText, terms) {
 
 /* ---------- Renderização e paginação ---------- */
 function renderPage() {
-  // Oculta todos
   document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
 
   const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
   const startIdx = (currentPage - 1) * PAGE_SIZE;
 
-  // Termos para destaque (derivados da mesma sintaxe de busca)
+  // Termos para destaque a partir da mesma sintaxe de busca
   const searchRaw = document.getElementById('terms').value.trim();
   const clausesForHL = parseSearchQuery(searchRaw);
   const termsForHL = extractTermsForHighlight(clausesForHL);
 
-  // Mostra a página atual e aplica destaque na ementa e meta
   currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => {
     const ementaEl = b.querySelector('p:nth-of-type(2)');
     const metaEl   = b.querySelector('.meta');
@@ -508,11 +512,9 @@ function renderPagination(total) {
     pag.appendChild(btn);
   };
 
-  // Primeira / Anterior
   addBtn('« Primeira', 1, currentPage === 1);
   addBtn('‹ Anterior', Math.max(1, currentPage - 1), currentPage === 1);
 
-  // Janela de páginas (ex.: 9 botões)
   const half = Math.floor(MAX_PAGE_BUTTONS / 2);
   let start = Math.max(1, currentPage - half);
   let end = Math.min(total, start + MAX_PAGE_BUTTONS - 1);
@@ -524,7 +526,6 @@ function renderPagination(total) {
     addBtn(String(i), i, false, i === currentPage);
   }
 
-  // Próxima / Última
   addBtn('Próxima ›', Math.min(total, currentPage + 1), currentPage === total);
   addBtn('Última »', total, currentPage === total);
 }
