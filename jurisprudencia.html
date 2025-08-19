@@ -15,10 +15,12 @@
   .dataset-info{font-size:.92rem;color:#e0f2ff;margin:2px auto 18px auto;max-width:920px}
   .notice{font-size:.85rem;margin-bottom:6px;}
   /* Search */
-  .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:10px;}
+  .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px auto;}
   .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
+  .opts{display:flex;align-items:center;gap:12px;color:#e0f2ff;font-size:.9rem}
+  .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
   /* Help */
   .help{max-width:920px;margin:10px auto 0 auto;text-align:left;background:#0b2f4d;padding:12px 16px;border-radius:6px;font-size:.92rem;line-height:1.45}
   .help code{background:rgba(255,255,255,.1);padding:0 4px;border-radius:3px}
@@ -53,42 +55,44 @@
 </head>
 <body>
 <div id="sidebar"><a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a></div>
+
 <div id="content">
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
   <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
 
-  <p class="notice">Use <strong>aspas</strong> para frases exatas; <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; <strong>*</strong> como curinga. Acentos são ignorados.</p>
+  <p class="notice">
+    Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
+    <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
+    <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
+  </p>
+
+  <div class="search-bar">
+    <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
+    <input type="date" id="startDate"><input type="date" id="endDate">
+    <select id="relator"><option value="">Relator (todos)</option></select>
+    <select id="camera"><option value="">Câmara (todas)</option></select>
+    <select id="ato"><option value="">Ato (todos)</option></select>
+    <div class="opts">
+      <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
+    </div>
+    <button onclick="performSearch()">Consultar</button>
+  </div>
 
   <!-- Ajuda ao usuário -->
   <div class="help" id="helpBox">
     <details>
       <summary>Como pesquisar (clique para expandir)</summary>
       <div style="margin-top:10px">
-        <p><strong>Aspas</strong>: <code>"frase exata"</code> — ex.: <code>"ação revisional"</code></p>
-        <p><strong>AND</strong> (todos os termos): <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
-        <p><strong>OR</strong> (alternância): <code>cláusulaA OR cláusulaB</code></p>
-        <p><strong>NOT</strong> (excluir): <code>-termo</code> ou <code>NOT termo</code> (aceita também <code>-"frase exata"</code>)</p>
-        <p><strong>Curinga *</strong> (prefixo/sufixo): <code>contrat*</code> encontra “contrato”, “contratual”; <code>"dano *"</code> encontra “dano moral/material/...”.</p>
-        <p><strong>Exemplos</strong>:</p>
-        <ul style="margin:6px 0 0 18px">
-          <li><code>"ação revisional";plano</code> → contém a frase exata e “plano”.</li>
-          <li><code>"dano moral" OR "responsabilidade civil"</code> → uma ou outra frase.</li>
-          <li><code>ISS;-"fato gerador"</code> → contém “ISS” e exclui a expressão “fato gerador”.</li>
-          <li><code>segur*;regress*</code> → aproximações por radical.</li>
-          <li><code>"dano *"; BACEN</code> → “dano moral/material/…” e “BACEN”.</li>
-        </ul>
-        <p style="margin-top:8px;color:#cfd8dc">Dica: acentos são ignorados. “ação” ≡ “acao”.</p>
+        <p><strong>Exato com aspas</strong>: <code>"erro material"</code> (não aceita <code>*</code> dentro de aspas; exige igualdade, acento indiferente)</p>
+        <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
+        <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
+        <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code>; também funciona com aspas: <code>-"frase exata"</code></p>
+        <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
+        <p><strong>Curinga *</strong> (somente fora das aspas): <code>contrat*</code> encontra “contrato”, “contratual”; <code>dano *</code> encontra “dano moral/material/…”</p>
+        <p><strong>Fuzzy</strong>: marque “Fuzzy” para aceitar pequenas variações nos <u>termos não citados com aspas</u> e sem <code>*</code>.</p>
+        <p style="margin-top:8px;color:#cfd8dc">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
       </div>
     </details>
-  </div>
-
-  <div class="search-bar">
-    <input type="text" id="terms" placeholder="Ex.: &quot;dano *&quot; ; BACEN OR &quot;dano moral&quot; -&quot;fato gerador&quot;">
-    <input type="date" id="startDate"><input type="date" id="endDate">
-    <select id="relator"><option value="">Relator (todos)</option></select>
-    <select id="camera"><option value="">Câmara (todas)</option></select>
-    <select id="ato"><option value="">Ato (todos)</option></select>
-    <button onclick="performSearch()">Consultar</button>
   </div>
 
   <div id="resultCount"></div>
@@ -103,6 +107,7 @@ const MAX_PAGE_BUTTONS = 9;
 let allBlocks = [], currentResults = [], currentPage = 1;
 
 /* ---------- Utilidades ---------- */
+const FUZZY_ENABLED = () => !!document.getElementById('fuzzy')?.checked;
 
 /* dd/mm/aaaa → aaaa-mm-dd */
 function toISO(dmy) {
@@ -125,128 +130,248 @@ function escapeRegex(s){
   return s.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
 }
 
-/* ---------- Parser (AND/OR/NOT; curingas dentro e fora de aspas; robusto a \s) ---------- */
-/**
- * Saída: array de cláusulas { must: [fn], not: [fn] }
- * - OR separa cláusulas (fora de aspas)
- * - ; ou AND separam termos (AND) dentro da cláusula
- * - "-" ou NOT no início → exclusão (NOT)
- * - Aspas para frase, aceita curinga * dentro de aspas ("dano *")
- * - Comparação sempre sobre texto normalizado (sem acento)
- */
-function parseSearchQuery(raw) {
-  const clauses = [];
-  if (!raw) return clauses;
-
-  // Divide por OR (fora de aspas), aceitando qualquer whitespace ao redor
-  const tokens = [];
-  let buf = '', inQ = false;
-  for (let i=0;i<raw.length;i++){
-    const ch = raw[i];
-    if (ch === '"'){ inQ = !inQ; buf += ch; continue; }
-    if (!inQ){
-      const m = raw.slice(i).match(/^\s+OR\s+/i);
-      if (m){
-        tokens.push(buf.trim());
-        tokens.push('OR');
-        buf = '';
-        i += m[0].length - 1;
-        continue;
-      }
+/* ---------- Fuzzy (Levenshtein com corte) ---------- */
+function levenshtein(a, b, maxDist) {
+  const la = a.length, lb = b.length;
+  if (Math.abs(la - lb) > maxDist) return maxDist + 1;
+  const dp = new Array(lb + 1);
+  for (let j=0;j<=lb;j++) dp[j] = j;
+  for (let i=1;i<=la;i++){
+    let prev = dp[0];
+    dp[0] = i;
+    let bestRow = dp[0];
+    for (let j=1;j<=lb;j++){
+      const tmp = dp[j];
+      const cost = a[i-1] === b[j-1] ? 0 : 1;
+      dp[j] = Math.min(
+        dp[j] + 1,        // deleção
+        dp[j-1] + 1,      // inserção
+        prev + cost       // substituição
+      );
+      prev = tmp;
+      if (dp[j] < bestRow) bestRow = dp[j];
     }
-    buf += ch;
+    if (bestRow > maxDist) return maxDist + 1; // poda
   }
-  if (buf.trim()) tokens.push(buf.trim());
-
-  let current = { must: [], not: [] };
-
-  const pushTerm = (rawPart) => {
-    let part = rawPart.trim();
-    if (!part) return;
-
-    // Prefixos de negação
-    let isNot = false;
-    if (/^NOT\s+/i.test(part)) { isNot = true; part = part.replace(/^NOT\s+/i,'').trim(); }
-    else if (part.startsWith('-')) { isNot = true; part = part.slice(1).trim(); }
-
-    // Aspas (frase) — mas aceitando curinga * dentro
-    let inQuotes = false;
-    if (part.startsWith('"') && part.endsWith('"') && part.length >= 2){
-      inQuotes = true;
-      part = part.slice(1,-1);
-    }
-
-    // Monta regex sobre TEXTO NORMALIZADO:
-    // - Normaliza o termo
-    // - Converte * → coringa (qualquer sequência)
-    // - Converte espaços → \s+ (espaços flexíveis)
-    // - Escapa o restante
-    const buildNormalizedRegex = (t) => {
-      const norm = normalizeStr(t);
-      // separa por '*' preservando ordem
-      const chunks = norm.split('*').map(c => c.replace(/\s+/g, '\\s+').split('').map(ch => escapeRegex(ch)).join(''));
-      // junta com coringa "qualquer coisa" (não ganancioso)
-      const body = chunks.join('[\\s\\S]*?');
-      // caso especial: se o termo começar com *, não ancora no início do trecho
-      // aqui deixamos livre (substring), pois a busca é ampla
-      return new RegExp(body, 'i'); // i: case-insensitive (já normalizado)
-    };
-
-    const re = buildNormalizedRegex(part);
-
-    // matcher: recebe TEXTO NORMALIZADO e aplica regex
-    const matcher = (textNorm) => re.test(textNorm);
-    matcher.__raw = part; // para destaque
-
-    (isNot ? current.not : current.must).push(matcher);
-  };
-
-  const flushClause = () => {
-    clauses.push(current);
-    current = { must: [], not: [] };
-  };
-
-  tokens.forEach(tok=>{
-    if (tok === 'OR'){
-      if (current.must.length || current.not.length) flushClause();
-    } else {
-      // Dentro da cláusula, ; ou AND (fora de aspas), aceitando \s
-      let partBuf = '', q = false;
-      const parts = [];
-      const pushBuf = ()=>{ if (partBuf.trim()) parts.push(partBuf.trim()); partBuf=''; };
-
-      for (let i=0;i<tok.length;i++){
-        const c = tok[i];
-        if (c === '"'){ q=!q; partBuf+=c; continue; }
-        if (!q && c === ';'){ pushBuf(); continue; }
-        if (!q){
-          const mAnd = tok.slice(i).match(/^\s+AND\s+/i);
-          if (mAnd){ pushBuf(); i += mAnd[0].length - 1; continue; }
-        }
-        partBuf += c;
-      }
-      pushBuf();
-
-      parts.forEach(pushTerm);
-    }
-  });
-  if (current.must.length || current.not.length) flushClause();
-
-  return clauses;
+  return dp[lb];
 }
 
-/* Extrai termos POSITIVOS para destaque; se houver '*', usa prefixo (antes do 1º '*') */
-function extractTermsForHighlight(clauses){
-  const terms = [];
-  clauses.forEach(clause => {
-    (clause.must || []).forEach(fn => {
-      const raw = fn && fn.__raw ? String(fn.__raw) : '';
-      if (!raw) return;
-      const base = raw.includes('*') ? raw.split('*')[0] : raw;
-      if (base && !terms.includes(base)) terms.push(base);
-    });
-  });
-  return terms;
+function fuzzyMatches(term, textTokens){
+  // distância máxima adaptativa
+  let maxDist = term.length <= 5 ? 1 : (term.length <= 8 ? 2 : 3);
+  for (const tok of textTokens){
+    if (Math.abs(tok.length - term.length) > maxDist + 1) continue;
+    if (levenshtein(term, tok, maxDist) <= maxDist) return true;
+  }
+  return false;
+}
+
+/* ---------- Tokenização e Parser com Parênteses (Shunting-yard) ---------- */
+/**
+ * TOKENS:
+ *  - {type:'TERM', value:'texto', quoted:boolean}
+ *  - {type:'OP', value:'AND'|'OR'|'NOT'|';'}
+ *  - {type:'LPAREN'} {type:'RPAREN'}
+ */
+function tokenize(input){
+  const tokens = [];
+  let i = 0, n = input.length;
+  while (i < n){
+    const ch = input[i];
+
+    // Espaços
+    if (/\s/.test(ch)) { i++; continue; }
+
+    // Parênteses
+    if (ch === '('){ tokens.push({type:'LPAREN'}); i++; continue; }
+    if (ch === ')'){ tokens.push({type:'RPAREN'}); i++; continue; }
+
+    // Aspas → termo exato
+    if (ch === '"'){
+      let j = i + 1, buf = '';
+      while (j < n && input[j] !== '"'){ buf += input[j++]; }
+      // se não fechar aspas, considera até o fim
+      if (j >= n) { i = n; tokens.push({type:'TERM', value:buf, quoted:true}); break; }
+      tokens.push({type:'TERM', value:buf, quoted:true});
+      i = j + 1;
+      continue;
+    }
+
+    // Operadores textuais (AND/OR/NOT) e ponto e vírgula
+    if (ch === ';'){ tokens.push({type:'OP', value:'AND'}); i++; continue; }
+
+    const rest = input.slice(i);
+    const mOp = rest.match(/^(AND|OR|NOT)\b/i);
+    if (mOp){
+      tokens.push({type:'OP', value:mOp[1].toUpperCase()});
+      i += mOp[0].length;
+      continue;
+    }
+
+    // Termo simples (até próximo espaço/op/parênteses/;)
+    let j = i, buf = '';
+    while (j < n){
+      const c = input[j];
+      if (c === '"' || c === '(' || c === ')' || c === ';' || /\s/.test(c)) break;
+      buf += c; j++;
+    }
+    tokens.push({type:'TERM', value:buf, quoted:false});
+    i = j;
+  }
+
+  // Inserir AND implícito entre TERM/)/" e ( / TERM / " / NOT
+  const out = [];
+  for (let k=0; k<tokens.length; k++){
+    const t = tokens[k];
+    out.push(t);
+    const next = tokens[k+1];
+    if (!next) break;
+    const isLeft = (t.type==='TERM' || t.type==='RPAREN');
+    const isRight = (next.type==='TERM' || next.type==='LPAREN' || (next.type==='OP' && next.value==='NOT'));
+    if (isLeft && isRight){
+      out.push({type:'OP', value:'AND'});
+    }
+  }
+  return out;
+}
+
+// Precedência: NOT (3), AND (2), OR (1)
+const PREC = { 'NOT':3, 'AND':2, 'OR':1 };
+
+/**
+ * AST:
+ *  - {type:'TERM', value:'...', quoted:boolean}
+ *  - {type:'NOT', child:Node}
+ *  - {type:'AND'|'OR', left:Node, right:Node}
+ */
+function parseToAST(input){
+  const tokens = tokenize(input);
+  const output = [];
+  const ops = [];
+
+  function popOp(){
+    const op = ops.pop();
+    if (op.value === 'NOT'){
+      const child = output.pop();
+      output.push({type:'NOT', child});
+    } else {
+      const right = output.pop();
+      const left  = output.pop();
+      output.push({type:op.value, left, right});
+    }
+  }
+
+  for (const t of tokens){
+    if (t.type === 'TERM'){
+      output.push({type:'TERM', value:t.value, quoted:t.quoted});
+    } else if (t.type === 'OP'){
+      const v = t.value;
+      if (v === 'NOT'){
+        ops.push(t);
+      } else {
+        while (ops.length && ops[ops.length-1].type==='OP' && PREC[ops[ops.length-1].value] >= PREC[v]){
+          popOp();
+        }
+        ops.push(t);
+      }
+    } else if (t.type === 'LPAREN'){
+      ops.push(t);
+    } else if (t.type === 'RPAREN'){
+      while (ops.length && ops[ops.length-1].type !== 'LPAREN') popOp();
+      if (ops.length && ops[ops.length-1].type === 'LPAREN') ops.pop(); // descarta '('
+    }
+  }
+  while (ops.length) popOp();
+  return output.pop() || null;
+}
+
+/* ---------- Matchers a partir do AST ---------- */
+// Constrói função (textNorm, tokensNorm) -> boolean
+function buildMatcher(node){
+  if (!node) return () => true;
+
+  if (node.type === 'TERM'){
+    const raw = node.value.trim();
+    const quoted = !!node.quoted;
+    const normRaw = normalizeStr(raw);
+
+    // Quoted: EXATO (sem curinga), com fronteiras de palavra
+    if (quoted){
+      const hasSpace = /\s/.test(normRaw);
+      // fronteiras: (^|[^a-z0-9]) ... ([^a-z0-9]|$)
+      const body = hasSpace
+        ? normRaw.replace(/\s+/g,'\\s+')  // conserva espaços flexíveis
+        : normRaw;
+      const pattern = hasSpace
+        ? new RegExp(`(^|[^a-z0-9])${body}([^a-z0-9]|$)`, 'i')
+        : new RegExp(`(^|[^a-z0-9])${escapeRegex(body)}([^a-z0-9]|$)`, 'i');
+
+      const fn = (textNorm) => pattern.test(textNorm);
+      fn.__hl = raw; // para highlight
+      return fn;
+    }
+
+    // NÃO quoted
+    const hasStar = normRaw.includes('*');
+
+    // 1) com '*': vira regex ampla (substring)
+    if (hasStar){
+      const parts = normRaw.split('*').map(p=>p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join(''));
+      const body = parts.join('[\\s\\S]*?');
+      const re = new RegExp(body, 'i');
+      const fn = (textNorm) => re.test(textNorm);
+      // para highlight usamos o prefixo anterior ao 1º '*'
+      const base = raw.split('*')[0];
+      fn.__hl = base;
+      return fn;
+    }
+
+    // 2) sem '*' e sem aspas: substring OU fuzzy (se habilitado)
+    const fn = (textNorm, textTokensNorm) => {
+      if (textNorm.includes(normRaw)) return true;
+      if (FUZZY_ENABLED() && normRaw.length >= 4){
+        return fuzzyMatches(normRaw, textTokensNorm);
+      }
+      return false;
+    };
+    fn.__hl = raw; // highlight do termo base
+    return fn;
+  }
+
+  if (node.type === 'NOT'){
+    const child = buildMatcher(node.child);
+    return (textNorm, textTokensNorm) => !child(textNorm, textTokensNorm);
+  }
+
+  if (node.type === 'AND'){
+    const L = buildMatcher(node.left);
+    const R = buildMatcher(node.right);
+    return (textNorm, textTokensNorm) => L(textNorm, textTokensNorm) && R(textNorm, textTokensNorm);
+  }
+
+  if (node.type === 'OR'){
+    const L = buildMatcher(node.left);
+    const R = buildMatcher(node.right);
+    return (textNorm, textTokensNorm) => L(textNorm, textTokensNorm) || R(textNorm, textTokensNorm);
+  }
+
+  return () => true;
+}
+
+/* Extrai termos (para highlight) percorrendo AST – apenas positivos */
+function collectTermsForHighlight(node, acc = []){
+  if (!node) return acc;
+  if (node.type === 'TERM'){
+    if (node.value) acc.push(node.value);
+    return acc;
+  }
+  if (node.type === 'NOT'){
+    // não destacar termos negados
+    return acc;
+  }
+  if (node.left) collectTermsForHighlight(node.left, acc);
+  if (node.right) collectTermsForHighlight(node.right, acc);
+  return acc;
 }
 
 /* ---------- Copiar (ementa + meta) ---------- */
@@ -288,7 +413,6 @@ async function loadTSV() {
     const text = await res.text();
     const rows = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true }).data;
 
-    // Coleta filtros e métricas do dataset
     const relSet = new Set(), cameraSet = new Set(), atoSet = new Set();
     let totalPesquisaveis = 0;
     let maxDateISO = '';
@@ -307,7 +431,7 @@ async function loadTSV() {
       if (r.Ato)        atoSet.add((r.Ato||'').trim());
     });
 
-    // Atualiza info do dataset
+    // Info dataset
     const ds = document.getElementById('datasetInfo');
     ds.textContent = `${totalPesquisaveis} linha${totalPesquisaveis!==1?'s':''} disponíveis para pesquisa • Última atualização do banco de dados: ${maxDateBr || 'N/I'}`;
 
@@ -315,7 +439,7 @@ async function loadTSV() {
     populateSelect('camera', cameraSet);
     populateSelect('ato', atoSet);
 
-    // Monta blocos (somente linhas pesquisáveis)
+    // Monta blocos
     const cont = document.getElementById('allBlocks');
     rows.forEach((r) => {
       if (!r['Publicação'] || !r.Ementa) return;
@@ -343,7 +467,7 @@ async function loadTSV() {
       attachCopyButton(div);
       cont.appendChild(div);
 
-      // Texto "limpo" para destaque
+      // Guarda texto "limpo" p/ highlight
       const ementaEl = div.querySelector('p:nth-of-type(2)');
       const metaEl   = div.querySelector('.meta');
       if (ementaEl && !ementaEl.dataset.original) ementaEl.dataset.original = ementaEl.textContent;
@@ -391,17 +515,21 @@ function updateResultCount() {
 
 /* ---------- Busca ---------- */
 function performSearch() {
-  const raw   = document.getElementById('terms').value.trim();
+  const query = document.getElementById('terms').value.trim();
   const start = document.getElementById('startDate').value;
   const end   = document.getElementById('endDate').value;
   const relF  = normalizeStr(document.getElementById('relator').value);
   const camF  = normalizeStr(document.getElementById('camera').value);
   const atoF  = normalizeStr(document.getElementById('ato').value);
-  const clauses = parseSearchQuery(raw);
+
+  const ast = parseToAST(query);
+  const matcher = buildMatcher(ast);
 
   currentResults = allBlocks.filter((block) => {
     const rawText = block.textContent || '';
-    const text = normalizeStr(rawText);
+    const textNorm = normalizeStr(rawText);
+    const tokensNorm = textNorm.split(/[^a-z0-9]+/).filter(Boolean);
+
     const date = block.dataset.date;
     const rel  = block.dataset.relator;
     const cam  = block.dataset.camera;
@@ -413,40 +541,33 @@ function performSearch() {
     if (camF  && cam  !== camF) return false;
     if (atoF  && ato  !== atoF) return false;
 
-    if (!clauses.length) return true;
-
-    return clauses.some(clause => {
-      const allMust = clause.must.every(fn => fn(text));
-      const noneNot = clause.not.every(fn => !fn(text));
-      return allMust && noneNot;
-    });
+    return matcher(textNorm, tokensNorm);
   });
 
   currentPage = 1;
   updateResultCount();
-  renderPage();
+  renderPage(ast);
   showResultsUI();
 }
 
-/* ---------- Destaque (acento-insensível; respeita *) ---------- */
+/* ---------- Destaque (acento-indiferente; sem coringa em aspas) ---------- */
 function highlightText(baseText, terms) {
   if (!terms || !terms.length) return baseText;
 
-  // Normaliza
   const normalize = (str) => (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
   let html = baseText;
+  // Ordena por tamanho desc p/ evitar quebra de frases longas
   const ordered = [...terms].sort((a,b)=>b.length - a.length);
 
   ordered.forEach(term => {
     if (!term) return;
-    const base = term; // aqui usamos o termo como veio; regex cuidará do *
-    // Constrói regex acento-insensível com suporte a * e espaços flexíveis
-    const norm = normalize(base);
-    const parts = norm.split('*').map(p => p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join(''));
-    // curinga entre partes: [\s\S]*? (qualquer coisa, não ganancioso)
-    const body = parts.join('[\\s\\S]*?');
-    // mapeia letras com acento: substituímos classes simples no CORPO já escapado
+    // Se veio com aspas na origem, já é exato; aqui recebemos só o valor cru
+    const norm = normalize(term);
+    const parts = norm.split('*'); // '*' só fora das aspas; aqui serve para prefixar highlight
+    const body = parts.map(p => p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join('')).join('[\\s\\S]*?');
+
+    // substitui vogais por classes simples para aceitar acentos no texto original
     const withClasses = body
       .replace(/a/gi,'[aàáâãä]')
       .replace(/e/gi,'[eèéêë]')
@@ -463,16 +584,14 @@ function highlightText(baseText, terms) {
 }
 
 /* ---------- Renderização e paginação ---------- */
-function renderPage() {
+function renderPage(ast) {
   document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
 
   const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
   const startIdx = (currentPage - 1) * PAGE_SIZE;
 
-  // Termos para destaque a partir da mesma sintaxe de busca
-  const searchRaw = document.getElementById('terms').value.trim();
-  const clausesForHL = parseSearchQuery(searchRaw);
-  const termsForHL = extractTermsForHighlight(clausesForHL);
+  // termos p/ destaque a partir do AST (apenas positivos)
+  const termsForHL = collectTermsForHighlight(ast);
 
   currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => {
     const ementaEl = b.querySelector('p:nth-of-type(2)');
@@ -506,7 +625,7 @@ function renderPagination(total) {
     btn.onclick = () => {
       if (!disabled && page !== currentPage) {
         currentPage = page;
-        renderPage();
+        renderPage(parseToAST(document.getElementById('terms').value.trim()));
       }
     };
     pag.appendChild(btn);
@@ -522,9 +641,7 @@ function renderPagination(total) {
     start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
   }
 
-  for (let i = start; i <= end; i++) {
-    addBtn(String(i), i, false, i === currentPage);
-  }
+  for (let i = start; i <= end; i++) addBtn(String(i), i, false, i === currentPage);
 
   addBtn('Próxima ›', Math.min(total, currentPage + 1), currentPage === total);
   addBtn('Última »', total, currentPage === total);
