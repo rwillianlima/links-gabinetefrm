@@ -1,7 +1,3 @@
-Segue o **arquivo completo**, já com a pesquisa “o mais ampla possível” (aspas, `;`, `AND`, `OR`, exclusão com `-` ou `NOT`, curingas `*`, e **busca sem acentos**), com **ajuda ao usuário** embutida, **paginação compacta** (sem rolagem horizontal infinita) e **botão de copiar** que pega apenas **ementa + referência** em **uma única linha**.
-A exibição dos resultados permanece **inalterada**.
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -46,6 +42,14 @@ A exibição dos resultados permanece **inalterada**.
   .pagination button[disabled]{opacity:.5;cursor:not-allowed}
   /* Contêiner de resultados (oculto até a busca) */
   #allBlocks{display:none;}
+  /* Destaque dos termos encontrados */
+  mark{
+    background:#ffd54f;
+    color:#17324d;
+    font-weight:bold;
+    padding:0 2px;
+    border-radius:2px;
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
@@ -182,6 +186,9 @@ function parseSearchQuery(raw) {
       matcher = (text) => text.includes(needle);
     }
 
+    // <<< necessário para highlight: guarda o termo "cru"
+    matcher.__raw = part;
+
     (isNot ? current.not : current.must).push(matcher);
   };
 
@@ -223,6 +230,21 @@ function parseSearchQuery(raw) {
   if (current.must.length || current.not.length) flushClause();
 
   return clauses;
+}
+
+/* Gera lista de termos POSITIVOS (must) para destacar */
+function extractTermsForHighlight(clauses){
+  const terms = [];
+  clauses.forEach(clause => {
+    (clause.must || []).forEach(fn => {
+      const raw = fn && fn.__raw ? String(fn.__raw) : '';
+      if (!raw) return;
+      // Para destaque: se houver curinga, usa prefixo antes do primeiro *
+      const base = raw.includes('*') ? raw.split('*')[0] : raw;
+      if (base && !terms.includes(base)) terms.push(base);
+    });
+  });
+  return terms;
 }
 
 /* ---------- Copiar (ementa + meta) ---------- */
@@ -307,6 +329,16 @@ async function loadTSV() {
       `;
       attachCopyButton(div);
       cont.appendChild(div);
+
+      // Armazena o texto "limpo" para evitar acúmulo de marcações
+      const ementaEl = div.querySelector('p:nth-of-type(2)');
+      const metaEl   = div.querySelector('.meta');
+      if (ementaEl && !ementaEl.dataset.original){
+        ementaEl.dataset.original = ementaEl.textContent;
+      }
+      if (metaEl && !metaEl.dataset.original){
+        metaEl.dataset.original = metaEl.textContent;
+      }
     });
 
     allBlocks = [...document.querySelectorAll('#allBlocks .block')];
@@ -347,7 +379,8 @@ function showResultsUI() {
 function updateResultCount() {
   const count = currentResults.length;
   const el = document.getElementById('resultCount');
-  el.textContent = `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
+  const plural = count !== 1 ? 's' : '';
+  el.textContent = `${count} linha${plural} localizada${plural}`;
   el.style.display = 'block';
 }
 
@@ -392,13 +425,74 @@ function performSearch() {
   showResultsUI();
 }
 
+/* ---------- Destaque acento-insensível ---------- */
+function highlightText(baseText, terms) {
+  if (!terms || !terms.length) return baseText;
+
+  // Normaliza para minúsculo e sem acento
+  const normalize = (str) =>
+    (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+
+  let html = baseText;
+  // Ordena por tamanho desc para evitar que termos curtos quebrem os longos
+  const ordered = [...terms].sort((a,b)=>b.length - a.length);
+
+  ordered.forEach(term => {
+    if (!term) return;
+    // usa prefixo antes do primeiro * (se houver)
+    const base = term.includes('*') ? term.split('*')[0] : term;
+    const normTerm = normalize(base);
+    if (!normTerm) return;
+
+    // Constrói regex acento-insensível por classes e aceita variações de espaço
+    const pattern = new RegExp(normTerm.split('').map(ch=>{
+      if (/\s/.test(ch)) return '\\s+';
+      switch(ch){
+        case 'a': return '[aàáâãä]';
+        case 'e': return '[eèéêë]';
+        case 'i': return '[iìíîï]';
+        case 'o': return '[oòóôõö]';
+        case 'u': return '[uùúûü]';
+        case 'c': return '[cç]';
+        default:  return escapeRegex(ch);
+      }
+    }).join(''), 'gi');
+
+    html = html.replace(pattern, m => `<mark>${m}</mark>`);
+  });
+
+  return html;
+}
+
 /* ---------- Renderização e paginação ---------- */
 function renderPage() {
-  // Oculta todos e mostra somente a página atual
+  // Oculta todos
   document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
+
   const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
   const startIdx = (currentPage - 1) * PAGE_SIZE;
-  currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => (b.style.display = 'block'));
+
+  // Termos para destaque (derivados da mesma sintaxe de busca)
+  const searchRaw = document.getElementById('terms').value.trim();
+  const clausesForHL = parseSearchQuery(searchRaw);
+  const termsForHL = extractTermsForHighlight(clausesForHL);
+
+  // Mostra a página atual e aplica destaque na ementa e meta
+  currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => {
+    const ementaEl = b.querySelector('p:nth-of-type(2)');
+    const metaEl   = b.querySelector('.meta');
+
+    // Reaplica o texto original (limpo) e então destaca
+    if (ementaEl && ementaEl.dataset.original){
+      ementaEl.innerHTML = highlightText(ementaEl.dataset.original, termsForHL);
+    }
+    if (metaEl && metaEl.dataset.original){
+      metaEl.innerHTML   = highlightText(metaEl.dataset.original, termsForHL);
+    }
+
+    b.style.display = 'block';
+  });
+
   renderPagination(totalPages);
 }
 
@@ -448,5 +542,3 @@ window.onload = loadTSV;
 </script>
 </body>
 </html>
-```
-
