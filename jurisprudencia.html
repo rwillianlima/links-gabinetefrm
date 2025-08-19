@@ -115,7 +115,25 @@ function parseSearchQuery(raw) {
   return clauses;
 }
 
-/* Cria botão de copiar em um bloco */
+/* Gera o texto a copiar: somente ementa + referência (meta), em uma linha */
+function getCopyText(block){
+  // 1º <p> = "Processo", 2º <p> = ementa
+  const ementaEl = block.querySelector('p:nth-of-type(2)');
+  const metaEl   = block.querySelector('.meta');
+
+  const ementa = (ementaEl?.textContent || '').trim();
+  const meta   = (metaEl?.textContent || '').trim(); // já vem entre parênteses
+
+  // Junta e normaliza espaços/quebras de linha
+  const joined = `${ementa} ${meta}`
+    .replace(/\s+/g, ' ')     // comprime múltiplos espaços/linhas em um espaço
+    .replace(/\s+\)/g, ')')   // remove espaço antes de fechar parêntese
+    .trim();
+
+  return joined;
+}
+
+/* Cria botão de copiar em um bloco (copia só ementa + meta) */
 function attachCopyButton(block) {
   const btn = document.createElement('button');
   btn.className = 'copy-btn';
@@ -125,7 +143,7 @@ function attachCopyButton(block) {
   btn.textContent = '📋 Copiar';
   btn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const text = block.textContent.replace(/\s+\n/g,'\n').trim();
+    const text = getCopyText(block);
     try {
       await navigator.clipboard.writeText(text);
       const old = btn.textContent;
@@ -138,6 +156,7 @@ function attachCopyButton(block) {
   });
   block.appendChild(btn);
 }
+
 
 /* Carrega TSV e popula filtros e blocos (sem exibir resultados até consulta) */
 async function loadTSV() {
