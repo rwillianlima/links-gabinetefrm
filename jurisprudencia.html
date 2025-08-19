@@ -22,16 +22,22 @@
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
   /* Result count */
-  #resultCount{font-size:.95rem;margin:10px auto;max-width:900px;text-align:left;color:#fff;}
+  #resultCount{font-size:.95rem;margin:10px auto;max-width:900px;text-align:left;color:#fff;display:none;}
   /* Blocks */
-  .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;}
+  .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;position:relative;}
   .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;color:#fff;text-align:justify;}
   .type{margin-top:6px;font-size:.85rem;color:#cfd8dc;text-align:center;}
   .meta{margin-top:8px;font-size:.85rem;color:#cfd8dc;text-align:center;}
+  /* Copy button (em cada bloco) */
+  .copy-btn{position:absolute;top:10px;right:10px;border:none;border-radius:4px;padding:6px 10px;background:#17324d;color:#fff;cursor:pointer;font-size:.8rem}
+  .copy-btn:hover{background:#105b8e;}
   /* Pagination */
-  .pagination{display:flex;justify-content:center;gap:6px;margin:20px 0;}
-  .pagination button{background:#0b2f4d;border:none;border-radius:4px;color:#fff;padding:6px 12px;cursor:pointer;}
+  .pagination{display:none;justify-content:center;gap:6px;margin:20px auto;max-width:900px;flex-wrap:wrap}
+  .pagination button{background:#0b2f4d;border:none;border-radius:4px;color:#fff;padding:6px 12px;cursor:pointer}
   .pagination button.active{background:#105b8e;font-weight:bold;}
+  .pagination button[disabled]{opacity:.5;cursor:not-allowed}
+  /* Contêiner de resultados (oculto até a busca) */
+  #allBlocks{display:none;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
@@ -57,22 +63,22 @@
 <script>
 const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
 const PAGE_SIZE = 50;
+const MAX_PAGE_BUTTONS = 9; // janela de paginação (ex.: 9 botões visíveis)
 let allBlocks = [], currentResults = [], currentPage = 1;
 
 /* Converte dd/mm/aaaa → aaaa-mm-dd */
 function toISO(dmy) {
-  const [d, m, y] = dmy.split('/');
+  const [d, m, y] = (dmy||'').split('/');
   return y ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : '';
 }
 
 /* Remove abreviações Des. / Desa. no início */
 function cleanRelator(name) {
-  return name.replace(/^(des\.?\s+|desa\.?\s+)/i, '').trim();
+  return (name||'').replace(/^(des\.?\s+|desa\.?\s+)/i, '').trim();
 }
 
 /**
- * Analisa a string de busca e retorna array de cláusulas.
- * Cada cláusula é um array de termos (AND). Cláusulas são separadas por OR fora de aspas.
+ * Analisa a string de busca e retorna array de cláusulas (AND dentro; OR entre cláusulas).
  */
 function parseSearchQuery(raw) {
   const clauses = [];
@@ -82,17 +88,9 @@ function parseSearchQuery(raw) {
   for (let i = 0; i < raw.length; i++) {
     const ch = raw[i];
     if (ch === '"') {
-      inQuotes = !inQuotes;
-      buffer += ch;
-    } else if (
-      !inQuotes &&
-      raw.substr(i, 3).toUpperCase() === ' OR' &&
-      (raw[i - 1] === ' ' || i === 0)
-    ) {
-      tokens.push(buffer.trim());
-      tokens.push('OR');
-      buffer = '';
-      i += 2;
+      inQuotes = !inQuotes; buffer += ch;
+    } else if (!inQuotes && raw.substr(i, 3).toUpperCase() === ' OR' && (raw[i - 1] === ' ' || i === 0)) {
+      tokens.push(buffer.trim()); tokens.push('OR'); buffer = ''; i += 2;
     } else {
       buffer += ch;
     }
@@ -101,13 +99,10 @@ function parseSearchQuery(raw) {
   let current = [];
   tokens.forEach((tok) => {
     if (tok === 'OR') {
-      clauses.push(current);
-      current = [];
+      clauses.push(current); current = [];
     } else {
-      // Dentro de cada cláusula, separar por ponto e vírgula para termos AND
       const parts = tok.split(';').map((p) => p.trim()).filter(Boolean);
       parts.forEach((p) => {
-        // Remover aspas externas se existirem
         if (p.startsWith('"') && p.endsWith('"')) {
           current.push({ phrase: p.slice(1, -1).toLowerCase(), exact: true });
         } else {
@@ -120,20 +115,42 @@ function parseSearchQuery(raw) {
   return clauses;
 }
 
-/* Carrega TSV e popula filtros e blocos */
+/* Cria botão de copiar em um bloco */
+function attachCopyButton(block) {
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.type = 'button';
+  btn.title = 'Copiar este resultado';
+  btn.setAttribute('aria-label', 'Copiar este resultado');
+  btn.textContent = '📋 Copiar';
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const text = block.textContent.replace(/\s+\n/g,'\n').trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = '✔ Copiado';
+      btn.disabled = true;
+      setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 1400);
+    } catch {
+      alert('Não foi possível copiar automaticamente. Selecione e copie manualmente.');
+    }
+  });
+  block.appendChild(btn);
+}
+
+/* Carrega TSV e popula filtros e blocos (sem exibir resultados até consulta) */
 async function loadTSV() {
   try {
     const res = await fetch(TSV_URL);
     const text = await res.text();
     const rows = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true }).data;
-    const relSet = new Set(),
-          cameraSet = new Set(),
-          atoSet = new Set();
+    const relSet = new Set(), cameraSet = new Set(), atoSet = new Set();
 
     rows.forEach((r) => {
-      if (r.Relator)      relSet.add(cleanRelator(r.Relator));
-      if (r['Câmara'])   cameraSet.add(r['Câmara'].trim());
-      if (r.Ato)          atoSet.add(r.Ato.trim());
+      if (r.Relator)    relSet.add(cleanRelator(r.Relator));
+      if (r['Câmara'])  cameraSet.add((r['Câmara']||'').trim());
+      if (r.Ato)        atoSet.add((r.Ato||'').trim());
     });
 
     populateSelect('relator', relSet);
@@ -147,9 +164,9 @@ async function loadTSV() {
       const cam  = (r['Câmara'] || '').trim();
       const rel  = cleanRelator(r.Relator || '');
       const ato  = (r.Ato || '').trim();
-      const pub  = r['Publicação'].trim();
+      const pub  = (r['Publicação'] || '').trim();
       const iso  = toISO(pub);
-      const eme  = r.Ementa.trim();
+      const eme  = (r.Ementa || '').trim();
 
       const div = document.createElement('div');
       div.className = 'block';
@@ -163,12 +180,16 @@ async function loadTSV() {
         <p class="type">${ato || 'N/I'}</p>
         <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel(a). ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado em ${pub})</p>
       `;
+      attachCopyButton(div); // adiciona botão de copiar
       cont.appendChild(div);
     });
 
     allBlocks = [...document.querySelectorAll('#allBlocks .block')];
-    currentResults = allBlocks;
-    renderPage();
+
+    // Não exibir nada ainda – somente após o clique em "Consultar"
+    currentResults = [];
+    hideResultsUI();
+
   } catch (e) {
     console.error('Erro ao carregar TSV', e);
   }
@@ -176,24 +197,37 @@ async function loadTSV() {
 
 function populateSelect(id, set) {
   const sel = document.getElementById(id);
-  [...set]
-    .sort()
-    .forEach((v) => {
-      const o = document.createElement('option');
-      o.value = v;
-      o.textContent = v;
-      sel.appendChild(o);
-    });
+  [...set].sort().forEach((v) => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+/* Oculta UI de resultados até a busca */
+function hideResultsUI() {
+  document.getElementById('resultCount').style.display = 'none';
+  document.getElementById('allBlocks').style.display = 'none';
+  document.getElementById('pagination').style.display = 'none';
+}
+
+/* Exibe UI de resultados após a busca */
+function showResultsUI() {
+  document.getElementById('resultCount').style.display = 'block';
+  document.getElementById('allBlocks').style.display = 'block';
+  document.getElementById('pagination').style.display = 'flex';
 }
 
 /* Atualiza a contagem de resultados */
 function updateResultCount() {
   const count = currentResults.length;
-  document.getElementById('resultCount').textContent =
-    `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
+  const el = document.getElementById('resultCount');
+  el.textContent = `${count} linha${count !== 1 ? 's' : ''} localizada${count !== 1 ? 's' : ''}`;
+  el.style.display = 'block';
 }
 
-/* Realiza a busca considerando AND, OR e frases exatas */
+/* Realiza a busca (mantido o mecanismo) */
 function performSearch() {
   const raw   = document.getElementById('terms').value.trim();
   const start = document.getElementById('startDate').value;
@@ -217,43 +251,66 @@ function performSearch() {
     if (atoF  && ato  !== atoF) return false;
 
     if (!clauses.length) return true;
-    // Verifica se algum conjunto de termos (cláusula) é atendido
-    return clauses.some((clause) => {
-      return clause.every((termObj) => {
-        if (termObj.exact) {
-          return text.includes(termObj.phrase);
-        } else {
-          return text.includes(termObj.phrase);
-        }
-      });
-    });
+    return clauses.some((clause) => clause.every((termObj) => text.includes(termObj.phrase)));
   });
 
-  updateResultCount();
   currentPage = 1;
+  updateResultCount();
   renderPage();
+  showResultsUI();
 }
 
+/* Renderização com paginação compacta */
 function renderPage() {
+  // Oculta todos e mostra somente a página atual
   document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
-  const total = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => (b.style.display = 'block'));
+  renderPagination(totalPages);
+}
 
+/* Paginação: janela limitada + controles */
+function renderPagination(total) {
   const pag = document.getElementById('pagination');
   pag.innerHTML = '';
-  if (total > 1) {
-    for (let i = 1; i <= total; i++) {
-      const btn = document.createElement('button');
-      btn.textContent = i;
-      if (i === currentPage) btn.classList.add('active');
-      btn.onclick = () => {
-        currentPage = i;
+
+  if (total <= 1) { pag.style.display = 'none'; return; }
+  pag.style.display = 'flex';
+
+  const addBtn = (label, page, disabled=false, isActive=false) => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    if (isActive) btn.classList.add('active');
+    if (disabled) btn.setAttribute('disabled','disabled');
+    btn.onclick = () => {
+      if (!disabled && page !== currentPage) {
+        currentPage = page;
         renderPage();
-      };
-      pag.appendChild(btn);
-    }
+      }
+    };
+    pag.appendChild(btn);
+  };
+
+  // Primeira / Anterior
+  addBtn('« Primeira', 1, currentPage === 1);
+  addBtn('‹ Anterior', Math.max(1, currentPage - 1), currentPage === 1);
+
+  // Janela de páginas (ex.: 9 botões)
+  const half = Math.floor(MAX_PAGE_BUTTONS / 2);
+  let start = Math.max(1, currentPage - half);
+  let end = Math.min(total, start + MAX_PAGE_BUTTONS - 1);
+  if (end - start + 1 < MAX_PAGE_BUTTONS) {
+    start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
   }
+
+  for (let i = start; i <= end; i++) {
+    addBtn(String(i), i, false, i === currentPage);
+  }
+
+  // Próxima / Última
+  addBtn('Próxima ›', Math.min(total, currentPage + 1), currentPage === total);
+  addBtn('Última »', total, currentPage === total);
 }
 
 window.onload = loadTSV;
