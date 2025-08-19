@@ -1,3 +1,7 @@
+Segue o **arquivo completo**, já com a pesquisa “o mais ampla possível” (aspas, `;`, `AND`, `OR`, exclusão com `-` ou `NOT`, curingas `*`, e **busca sem acentos**), com **ajuda ao usuário** embutida, **paginação compacta** (sem rolagem horizontal infinita) e **botão de copiar** que pega apenas **ementa + referência** em **uma única linha**.
+A exibição dos resultados permanece **inalterada**.
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -21,6 +25,10 @@
   .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
   .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
   .search-bar button:hover{background:#105b8e;}
+  /* Help */
+  .help{max-width:920px;margin:10px auto 0 auto;text-align:left;background:#0b2f4d;padding:12px 16px;border-radius:6px;font-size:.92rem;line-height:1.45}
+  .help code{background:rgba(255,255,255,.1);padding:0 4px;border-radius:3px}
+  .help summary{cursor:pointer;font-weight:700}
   /* Result count */
   #resultCount{font-size:.95rem;margin:10px auto;max-width:900px;text-align:left;color:#fff;display:none;}
   /* Blocks */
@@ -46,9 +54,32 @@
 <div id="content">
   <div class="alert">Esta consulta abrange apenas <strong>julgados da 6ª Câmara Cível a partir de 2025</strong>.<br>Para pesquisar todo o acervo do TJGO utilize o sistema oficial <a href="https://projudi.tjgo.jus.br/ConsultaJurisprudencia" target="_blank" rel="noopener noreferrer">PROJUDI</a>.</div>
   <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
-  <p class="notice">Separe <strong>cada termo</strong> por <strong>ponto e vírgula (;)</strong> ou utilize <strong>OR</strong> para operador lógico.<br>Para frases exatas, envolva em <strong>aspas</strong>.</p>
+  <p class="notice">Use <strong>aspas</strong> para frases exatas; <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; <strong>*</strong> como curinga. Acentos são ignorados.</p>
+
+  <!-- Ajuda ao usuário -->
+  <div class="help" id="helpBox">
+    <details>
+      <summary>Como pesquisar (clique para expandir)</summary>
+      <div style="margin-top:10px">
+        <p><strong>Aspas</strong>: <code>"frase exata"</code></p>
+        <p><strong>AND</strong> (todos os termos): <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
+        <p><strong>OR</strong> (alternância): <code>cláusulaA OR cláusulaB</code></p>
+        <p><strong>NOT</strong> (excluir): <code>-termo</code> ou <code>NOT termo</code> (aceita também <code>-"frase exata"</code>)</p>
+        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra “contrato”, “contratual”…</p>
+        <p><strong>Exemplos</strong>:</p>
+        <ul style="margin:6px 0 0 18px">
+          <li><code>"ação revisional";plano</code> → contém a frase exata e “plano”.</li>
+          <li><code>"dano moral" OR "responsabilidade civil"</code> → uma ou outra frase.</li>
+          <li><code>ISS;-"fato gerador"</code> → contém “ISS” e exclui a expressão “fato gerador”.</li>
+          <li><code>segur*;regress*</code> → aproximações por radical.</li>
+        </ul>
+        <p style="margin-top:8px;color:#cfd8dc">Dica: acentos são ignorados. “ação” ≡ “acao”.</p>
+      </div>
+    </details>
+  </div>
+
   <div class="search-bar">
-    <input type="text" id="terms" placeholder="ex.: &quot;termo exato&quot; termo2 OR termo3">
+    <input type="text" id="terms" placeholder="Ex.: &quot;ação revisional&quot; OR dano;segur* -&quot;fato gerador&quot;">
     <input type="date" id="startDate"><input type="date" id="endDate">
     <select id="relator"><option value="">Relator (todos)</option></select>
     <select id="camera"><option value="">Câmara (todas)</option></select>
@@ -66,6 +97,8 @@ const PAGE_SIZE = 50;
 const MAX_PAGE_BUTTONS = 9; // janela de paginação (ex.: 9 botões visíveis)
 let allBlocks = [], currentResults = [], currentPage = 1;
 
+/* ---------- Utilidades ---------- */
+
 /* Converte dd/mm/aaaa → aaaa-mm-dd */
 function toISO(dmy) {
   const [d, m, y] = (dmy||'').split('/');
@@ -77,59 +110,132 @@ function cleanRelator(name) {
   return (name||'').replace(/^(des\.?\s+|desa\.?\s+)/i, '').trim();
 }
 
+/* Normaliza texto: minúsculas e sem acentos (para busca mais ampla) */
+function normalizeStr(s){
+  return (s||'')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,''); // remove acentos
+}
+
+/* Escapa metacaracteres de regex */
+function escapeRegex(s){
+  return s.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
+}
+
+/* ---------- Parser de consulta (ampliado) ---------- */
 /**
- * Analisa a string de busca e retorna array de cláusulas (AND dentro; OR entre cláusulas).
+ * Retorna array de cláusulas. Cada cláusula possui:
+ *   { must: [matcherFn], not: [matcherFn] }
+ * As cláusulas são separadas por OR (fora de aspas).
+ * Dentro da cláusula, ; ou AND (fora de aspas) separam termos (AND).
+ * Suporta: "frase", NOT / - , curingas * e busca sem acentos.
  */
 function parseSearchQuery(raw) {
   const clauses = [];
-  let buffer = '';
-  let inQuotes = false;
+  if (!raw) return clauses;
+
+  // Split por OR fora de aspas (case-insensitive)
   const tokens = [];
-  for (let i = 0; i < raw.length; i++) {
+  let buf = '', inQ = false;
+  for (let i=0;i<raw.length;i++){
     const ch = raw[i];
-    if (ch === '"') {
-      inQuotes = !inQuotes; buffer += ch;
-    } else if (!inQuotes && raw.substr(i, 3).toUpperCase() === ' OR' && (raw[i - 1] === ' ' || i === 0)) {
-      tokens.push(buffer.trim()); tokens.push('OR'); buffer = ''; i += 2;
-    } else {
-      buffer += ch;
+    if (ch === '"'){ inQ = !inQ; buf += ch; continue; }
+    const maybe = raw.substr(i,3);
+    if (!inQ && /^ or$/i.test(maybe) && (i===0 || raw[i-1]===' ')){
+      tokens.push(buf.trim()); tokens.push('OR'); buf=''; i+=2; continue;
     }
+    buf += ch;
   }
-  if (buffer.trim()) tokens.push(buffer.trim());
-  let current = [];
-  tokens.forEach((tok) => {
-    if (tok === 'OR') {
-      clauses.push(current); current = [];
+  if (buf.trim()) tokens.push(buf.trim());
+
+  let current = { must: [], not: [] };
+
+  const pushTerm = (rawPart) => {
+    let part = rawPart.trim();
+    if (!part) return;
+
+    // Trata NOT / - no início
+    let isNot = false;
+    if (/^NOT\s+/i.test(part)) { isNot = true; part = part.replace(/^NOT\s+/i,'').trim(); }
+    else if (part.startsWith('-')) { isNot = true; part = part.slice(1).trim(); }
+
+    // Aspas (frase exata)
+    let isExact = false;
+    if (part.startsWith('"') && part.endsWith('"') && part.length>=2){
+      part = part.slice(1,-1);
+      isExact = true;
+    }
+
+    const norm = normalizeStr(part);
+
+    // Monta função de correspondência para o texto normalizado do bloco
+    let matcher;
+    if (!isExact && norm.includes('*')){
+      // Transforma * em .* (qualquer sequência), âncoras frouxas
+      const pattern = '.*' + norm.split('*').map(escapeRegex).join('.*') + '.*';
+      const re = new RegExp(pattern);
+      matcher = (text) => re.test(text);
     } else {
-      const parts = tok.split(';').map((p) => p.trim()).filter(Boolean);
-      parts.forEach((p) => {
-        if (p.startsWith('"') && p.endsWith('"')) {
-          current.push({ phrase: p.slice(1, -1).toLowerCase(), exact: true });
-        } else {
-          current.push({ phrase: p.toLowerCase(), exact: false });
+      // exata (frase) ou termo simples → substring no texto normalizado
+      const needle = normalizeStr(part);
+      matcher = (text) => text.includes(needle);
+    }
+
+    (isNot ? current.not : current.must).push(matcher);
+  };
+
+  const flushClause = () => {
+    clauses.push(current);
+    current = { must: [], not: [] };
+  };
+
+  tokens.forEach(tok=>{
+    if (tok === 'OR'){
+      // fecha a cláusula anterior
+      if (current.must.length || current.not.length) flushClause();
+    } else {
+      // Dentro da cláusula, separar por ; ou AND (fora de aspas)
+      let partBuf = '', q = false;
+      const parts = [];
+      const pushBuf = ()=>{ if (partBuf.trim()) parts.push(partBuf.trim()); partBuf=''; };
+
+      for (let i=0;i<tok.length;i++){
+        const c = tok[i];
+        if (c === '"'){ q=!q; partBuf+=c; continue; }
+
+        if (!q && c === ';'){ pushBuf(); continue; }
+
+        // Detecta " AND" fora de aspas (case-insensitive)
+        const maybeAnd = tok.substr(i,4);
+        if (!q && /^ and$/i.test(maybeAnd) && (i===0 || tok[i-1]===' ')){
+          pushBuf(); i+=3; continue;
         }
-      });
+
+        partBuf += c;
+      }
+      pushBuf();
+
+      parts.forEach(pushTerm);
     }
   });
-  if (current.length) clauses.push(current);
+  // última cláusula
+  if (current.must.length || current.not.length) flushClause();
+
   return clauses;
 }
 
+/* ---------- Copiar (ementa + meta) ---------- */
 /* Gera o texto a copiar: somente ementa + referência (meta), em uma linha */
 function getCopyText(block){
-  // 1º <p> = "Processo", 2º <p> = ementa
   const ementaEl = block.querySelector('p:nth-of-type(2)');
   const metaEl   = block.querySelector('.meta');
-
   const ementa = (ementaEl?.textContent || '').trim();
   const meta   = (metaEl?.textContent || '').trim(); // já vem entre parênteses
-
-  // Junta e normaliza espaços/quebras de linha
   const joined = `${ementa} ${meta}`
-    .replace(/\s+/g, ' ')     // comprime múltiplos espaços/linhas em um espaço
-    .replace(/\s+\)/g, ')')   // remove espaço antes de fechar parêntese
+    .replace(/\s+/g, ' ')
+    .replace(/\s+\)/g, ')')
     .trim();
-
   return joined;
 }
 
@@ -157,8 +263,7 @@ function attachCopyButton(block) {
   block.appendChild(btn);
 }
 
-
-/* Carrega TSV e popula filtros e blocos (sem exibir resultados até consulta) */
+/* ---------- Carregamento e montagem dos blocos ---------- */
 async function loadTSV() {
   try {
     const res = await fetch(TSV_URL);
@@ -190,16 +295,17 @@ async function loadTSV() {
       const div = document.createElement('div');
       div.className = 'block';
       div.dataset.date    = iso;
-      div.dataset.relator = rel.toLowerCase();
-      div.dataset.camera  = cam.toLowerCase();
-      div.dataset.ato     = ato.toLowerCase();
+      // Armazenamos filtros normalizados para comparação sem acento
+      div.dataset.relator = normalizeStr(rel);
+      div.dataset.camera  = normalizeStr(cam);
+      div.dataset.ato     = normalizeStr(ato);
       div.innerHTML = `
         <p><strong>Processo: ${proc || 's/ nº'}</strong></p>
         <p>${eme}</p>
         <p class="type">${ato || 'N/I'}</p>
         <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel(a). ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado em ${pub})</p>
       `;
-      attachCopyButton(div); // adiciona botão de copiar
+      attachCopyButton(div);
       cont.appendChild(div);
     });
 
@@ -224,14 +330,13 @@ function populateSelect(id, set) {
   });
 }
 
-/* Oculta UI de resultados até a busca */
+/* ---------- UI: mostrar/ocultar resultados ---------- */
 function hideResultsUI() {
   document.getElementById('resultCount').style.display = 'none';
   document.getElementById('allBlocks').style.display = 'none';
   document.getElementById('pagination').style.display = 'none';
 }
 
-/* Exibe UI de resultados após a busca */
 function showResultsUI() {
   document.getElementById('resultCount').style.display = 'block';
   document.getElementById('allBlocks').style.display = 'block';
@@ -246,22 +351,24 @@ function updateResultCount() {
   el.style.display = 'block';
 }
 
-/* Realiza a busca (mantido o mecanismo) */
+/* ---------- Busca ---------- */
 function performSearch() {
   const raw   = document.getElementById('terms').value.trim();
   const start = document.getElementById('startDate').value;
   const end   = document.getElementById('endDate').value;
-  const relF  = document.getElementById('relator').value.toLowerCase();
-  const camF  = document.getElementById('camera').value.toLowerCase();
-  const atoF  = document.getElementById('ato').value.toLowerCase();
+  // Normalizamos os filtros para equivalência sem acento
+  const relF  = normalizeStr(document.getElementById('relator').value);
+  const camF  = normalizeStr(document.getElementById('camera').value);
+  const atoF  = normalizeStr(document.getElementById('ato').value);
   const clauses = parseSearchQuery(raw);
 
   currentResults = allBlocks.filter((block) => {
-    const text = block.textContent.toLowerCase();
+    const rawText = block.textContent || '';
+    const text = normalizeStr(rawText);
     const date = block.dataset.date;
-    const rel  = block.dataset.relator;
-    const cam  = block.dataset.camera;
-    const ato  = block.dataset.ato;
+    const rel  = block.dataset.relator; // já normalizado
+    const cam  = block.dataset.camera;  // já normalizado
+    const ato  = block.dataset.ato;     // já normalizado
 
     if (start && date < start) return false;
     if (end   && date > end)   return false;
@@ -270,7 +377,13 @@ function performSearch() {
     if (atoF  && ato  !== atoF) return false;
 
     if (!clauses.length) return true;
-    return clauses.some((clause) => clause.every((termObj) => text.includes(termObj.phrase)));
+
+    // Uma cláusula OR basta: todos os must verdadeiros e nenhum not verdadeiro
+    return clauses.some(clause => {
+      const allMust = clause.must.every(fn => fn(text));
+      const noneNot = clause.not.every(fn => !fn(text));
+      return allMust && noneNot;
+    });
   });
 
   currentPage = 1;
@@ -279,7 +392,7 @@ function performSearch() {
   showResultsUI();
 }
 
-/* Renderização com paginação compacta */
+/* ---------- Renderização e paginação ---------- */
 function renderPage() {
   // Oculta todos e mostra somente a página atual
   document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
@@ -289,7 +402,6 @@ function renderPage() {
   renderPagination(totalPages);
 }
 
-/* Paginação: janela limitada + controles */
 function renderPagination(total) {
   const pag = document.getElementById('pagination');
   pag.innerHTML = '';
@@ -336,3 +448,5 @@ window.onload = loadTSV;
 </script>
 </body>
 </html>
+```
+
