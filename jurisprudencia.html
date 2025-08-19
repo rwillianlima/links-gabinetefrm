@@ -127,7 +127,7 @@ function escapeRegex(s){
   return s.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
 }
 
-/* ---------- Parser de consulta (ampliado) ---------- */
+/* ---------- Parser de consulta (ampliado e robusto a \s) ---------- */
 /**
  * Retorna array de cláusulas. Cada cláusula possui:
  *   { must: [matcherFn], not: [matcherFn] }
@@ -139,15 +139,21 @@ function parseSearchQuery(raw) {
   const clauses = [];
   if (!raw) return clauses;
 
-  // Split por OR fora de aspas (case-insensitive)
+  // Split por OR fora de aspas (aceita qualquer whitespace \s ao redor)
   const tokens = [];
   let buf = '', inQ = false;
   for (let i=0;i<raw.length;i++){
     const ch = raw[i];
     if (ch === '"'){ inQ = !inQ; buf += ch; continue; }
-    const maybe = raw.substr(i,3);
-    if (!inQ && /^ or$/i.test(maybe) && (i===0 || raw[i-1]===' ')){
-      tokens.push(buf.trim()); tokens.push('OR'); buf=''; i+=2; continue;
+    if (!inQ){
+      const m = raw.slice(i).match(/^\s+OR\s+/i); // <-- robusto a NBSP, quebras, etc.
+      if (m){
+        tokens.push(buf.trim());
+        tokens.push('OR');
+        buf = '';
+        i += m[0].length - 1; // avança sobre o " OR "
+        continue;
+      }
     }
     buf += ch;
   }
@@ -186,7 +192,7 @@ function parseSearchQuery(raw) {
       matcher = (text) => text.includes(needle);
     }
 
-    // <<< necessário para highlight: guarda o termo "cru"
+    // Necessário para highlight: guarda o termo "cru"
     matcher.__raw = part;
 
     (isNot ? current.not : current.must).push(matcher);
@@ -199,10 +205,9 @@ function parseSearchQuery(raw) {
 
   tokens.forEach(tok=>{
     if (tok === 'OR'){
-      // fecha a cláusula anterior
       if (current.must.length || current.not.length) flushClause();
     } else {
-      // Dentro da cláusula, separar por ; ou AND (fora de aspas)
+      // Dentro da cláusula, separar por ; ou AND (fora de aspas), aceitando qualquer \s
       let partBuf = '', q = false;
       const parts = [];
       const pushBuf = ()=>{ if (partBuf.trim()) parts.push(partBuf.trim()); partBuf=''; };
@@ -213,10 +218,13 @@ function parseSearchQuery(raw) {
 
         if (!q && c === ';'){ pushBuf(); continue; }
 
-        // Detecta " AND" fora de aspas (case-insensitive)
-        const maybeAnd = tok.substr(i,4);
-        if (!q && /^ and$/i.test(maybeAnd) && (i===0 || tok[i-1]===' ')){
-          pushBuf(); i+=3; continue;
+        if (!q){
+          const mAnd = tok.slice(i).match(/^\s+AND\s+/i);
+          if (mAnd){
+            pushBuf();
+            i += mAnd[0].length - 1;
+            continue;
+          }
         }
 
         partBuf += c;
@@ -226,20 +234,18 @@ function parseSearchQuery(raw) {
       parts.forEach(pushTerm);
     }
   });
-  // última cláusula
   if (current.must.length || current.not.length) flushClause();
 
   return clauses;
 }
 
-/* Gera lista de termos POSITIVOS (must) para destacar */
+/* Termos POSITIVOS (must) para destacar — usa prefixo antes de '*' */
 function extractTermsForHighlight(clauses){
   const terms = [];
   clauses.forEach(clause => {
     (clause.must || []).forEach(fn => {
       const raw = fn && fn.__raw ? String(fn.__raw) : '';
       if (!raw) return;
-      // Para destaque: se houver curinga, usa prefixo antes do primeiro *
       const base = raw.includes('*') ? raw.split('*')[0] : raw;
       if (base && !terms.includes(base)) terms.push(base);
     });
@@ -248,17 +254,12 @@ function extractTermsForHighlight(clauses){
 }
 
 /* ---------- Copiar (ementa + meta) ---------- */
-/* Gera o texto a copiar: somente ementa + referência (meta), em uma linha */
 function getCopyText(block){
   const ementaEl = block.querySelector('p:nth-of-type(2)');
   const metaEl   = block.querySelector('.meta');
   const ementa = (ementaEl?.textContent || '').trim();
-  const meta   = (metaEl?.textContent || '').trim(); // já vem entre parênteses
-  const joined = `${ementa} ${meta}`
-    .replace(/\s+/g, ' ')
-    .replace(/\s+\)/g, ')')
-    .trim();
-  return joined;
+  const meta   = (metaEl?.textContent || '').trim();
+  return `${ementa} ${meta}`.replace(/\s+/g,' ').replace(/\s+\)/,')').trim();
 }
 
 /* Cria botão de copiar em um bloco (copia só ementa + meta) */
@@ -317,7 +318,7 @@ async function loadTSV() {
       const div = document.createElement('div');
       div.className = 'block';
       div.dataset.date    = iso;
-      // Armazenamos filtros normalizados para comparação sem acento
+      // Filtros normalizados para comparação sem acento
       div.dataset.relator = normalizeStr(rel);
       div.dataset.camera  = normalizeStr(cam);
       div.dataset.ato     = normalizeStr(ato);
@@ -330,20 +331,14 @@ async function loadTSV() {
       attachCopyButton(div);
       cont.appendChild(div);
 
-      // Armazena o texto "limpo" para evitar acúmulo de marcações
+      // Guarda o texto "limpo" para evitar acúmulo de <mark>
       const ementaEl = div.querySelector('p:nth-of-type(2)');
       const metaEl   = div.querySelector('.meta');
-      if (ementaEl && !ementaEl.dataset.original){
-        ementaEl.dataset.original = ementaEl.textContent;
-      }
-      if (metaEl && !metaEl.dataset.original){
-        metaEl.dataset.original = metaEl.textContent;
-      }
+      if (ementaEl && !ementaEl.dataset.original) ementaEl.dataset.original = ementaEl.textContent;
+      if (metaEl   && !metaEl.dataset.original)   metaEl.dataset.original   = metaEl.textContent;
     });
 
     allBlocks = [...document.querySelectorAll('#allBlocks .block')];
-
-    // Não exibir nada ainda – somente após o clique em "Consultar"
     currentResults = [];
     hideResultsUI();
 
@@ -389,7 +384,6 @@ function performSearch() {
   const raw   = document.getElementById('terms').value.trim();
   const start = document.getElementById('startDate').value;
   const end   = document.getElementById('endDate').value;
-  // Normalizamos os filtros para equivalência sem acento
   const relF  = normalizeStr(document.getElementById('relator').value);
   const camF  = normalizeStr(document.getElementById('camera').value);
   const atoF  = normalizeStr(document.getElementById('ato').value);
@@ -399,9 +393,9 @@ function performSearch() {
     const rawText = block.textContent || '';
     const text = normalizeStr(rawText);
     const date = block.dataset.date;
-    const rel  = block.dataset.relator; // já normalizado
-    const cam  = block.dataset.camera;  // já normalizado
-    const ato  = block.dataset.ato;     // já normalizado
+    const rel  = block.dataset.relator;
+    const cam  = block.dataset.camera;
+    const ato  = block.dataset.ato;
 
     if (start && date < start) return false;
     if (end   && date > end)   return false;
@@ -434,12 +428,10 @@ function highlightText(baseText, terms) {
     (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
   let html = baseText;
-  // Ordena por tamanho desc para evitar que termos curtos quebrem os longos
   const ordered = [...terms].sort((a,b)=>b.length - a.length);
 
   ordered.forEach(term => {
     if (!term) return;
-    // usa prefixo antes do primeiro * (se houver)
     const base = term.includes('*') ? term.split('*')[0] : term;
     const normTerm = normalize(base);
     if (!normTerm) return;
@@ -482,7 +474,6 @@ function renderPage() {
     const ementaEl = b.querySelector('p:nth-of-type(2)');
     const metaEl   = b.querySelector('.meta');
 
-    // Reaplica o texto original (limpo) e então destaca
     if (ementaEl && ementaEl.dataset.original){
       ementaEl.innerHTML = highlightText(ementaEl.dataset.original, termsForHL);
     }
