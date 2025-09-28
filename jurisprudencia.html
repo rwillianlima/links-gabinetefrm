@@ -1,651 +1,120 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#174b73;color:#fff;margin:0;}
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f4f4; /* cinza claro, menos agressivo */
+    color: #222; /* texto em tom escuro para contraste */
+    margin: 0;
+  }
+
   /* Sidebar */
-  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;box-shadow:2px 0 6px rgba(0,0,0,.3);}  
-  #sidebar a{display:block;padding:12px 20px;color:#fff;text-decoration:none;font-size:1rem;}
-  #sidebar a:hover{background:#105b8e;}
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100%;
+    background: #2f4050; /* azul acinzentado mais suave */
+    box-shadow: 2px 0 6px rgba(0,0,0,.2);
+  }
+  #sidebar a {
+    display: block;
+    padding: 12px 20px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1rem;
+  }
+  #sidebar a:hover {
+    background: #3b5165;
+  }
+
   /* Content */
-  #content{margin-left:260px;padding:40px 25px;min-height:100vh;text-align:center;}
-  #content h1{font-size:2rem;margin-bottom:8px;}
-  .dataset-info{font-size:.92rem;color:#e0f2ff;margin:2px auto 18px auto;max-width:920px}
-  .notice{font-size:.85rem;margin-bottom:6px;}
-  /* Search */
-  .search-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:10px auto;}
-  .search-bar input,.search-bar select{padding:8px;border:none;border-radius:4px;width:200px;max-width:90%;}
-  .search-bar button{padding:8px 18px;border:none;border-radius:4px;background:#0b2f4d;color:#fff;font-weight:bold;cursor:pointer;}
-  .search-bar button:hover{background:#105b8e;}
-  .opts{display:flex;align-items:center;gap:12px;color:#e0f2ff;font-size:.9rem}
-  .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
-  /* Help */
-  .help{max-width:920px;margin:10px auto 0 auto;text-align:left;background:#0b2f4d;padding:12px 16px;border-radius:6px;font-size:.92rem;line-height:1.45}
-  .help code{background:rgba(255,255,255,.1);padding:0 4px;border-radius:3px}
-  .help summary{cursor:pointer;font-weight:700}
-  /* Result count */
-  #resultCount{font-size:.95rem;margin:10px auto;max-width:900px;text-align:left;color:#fff;display:none;}
-  /* Blocks */
-  .block{background:#0b2f4d;border-radius:6px;padding:16px;margin:10px auto;max-width:900px;display:none;position:relative;}
-  .block p{margin:4px 0 0 0;font-size:.9rem;line-height:1.35;color:#fff;text-align:justify;}
-  .type{margin-top:6px;font-size:.85rem;color:#cfd8dc;text-align:center;}
-  .meta{margin-top:8px;font-size:.85rem;color:#cfd8dc;text-align:center;}
-  /* Copy button (em cada bloco) */
-  .copy-btn{position:absolute;top:10px;right:10px;border:none;border-radius:4px;padding:6px 10px;background:#17324d;color:#fff;cursor:pointer;font-size:.8rem}
-  .copy-btn:hover{background:#105b8e;}
-  /* Pagination */
-  .pagination{display:none;justify-content:center;gap:6px;margin:20px auto;max-width:900px;flex-wrap:wrap}
-  .pagination button{background:#0b2f4d;border:none;border-radius:4px;color:#fff;padding:6px 12px;cursor:pointer}
-  .pagination button.active{background:#105b8e;font-weight:bold;}
-  .pagination button[disabled]{opacity:.5;cursor:not-allowed}
-  /* Contêiner de resultados (oculto até a busca) */
-  #allBlocks{display:none;}
+  #content {
+    margin-left: 260px;
+    padding: 40px 25px;
+    min-height: 100vh;
+    text-align: center;
+    color: #222;
+  }
+  #content h1 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    color: #2f4050;
+  }
+  .dataset-info {
+    font-size: .92rem;
+    color: #444;
+    margin: 2px auto 18px auto;
+    max-width: 920px;
+  }
+  .notice {
+    font-size: .85rem;
+    margin-bottom: 6px;
+    color: #333;
+  }
+
+  /* Blocos de resultado */
+  .block {
+    background: #fff; /* fundo branco */
+    border-radius: 6px;
+    padding: 16px;
+    margin: 10px auto;
+    max-width: 900px;
+    display: none;
+    position: relative;
+    border: 1px solid #ddd;
+  }
+  .block p {
+    margin: 4px 0 0 0;
+    font-size: .9rem;
+    line-height: 1.45;
+    color: #222;
+    text-align: justify;
+  }
+  .type, .meta {
+    margin-top: 6px;
+    font-size: .85rem;
+    color: #666;
+    text-align: center;
+  }
+
+  /* Botões */
+  .search-bar button, .copy-btn, .pagination button {
+    background: #2f4050;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .search-bar button:hover, .copy-btn:hover, .pagination button:hover {
+    background: #3b5165;
+  }
+  .pagination button.active {
+    background: #1c87c9; /* azul de destaque */
+    font-weight: bold;
+  }
+
+  /* Caixa de ajuda */
+  .help {
+    max-width: 920px;
+    margin: 10px auto 0 auto;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: .92rem;
+    line-height: 1.45;
+    color: #222;
+  }
+
   /* Destaque dos termos encontrados */
-  mark{
-    background:#ffd54f;
-    color:#17324d;
-    font-weight:bold;
-    padding:0 2px;
-    border-radius:2px;
-  }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-</head>
-<body>
-<div id="sidebar"><a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a></div>
-
-<div id="content">
-  <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
-  <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
-
-  <p class="notice">
-    Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
-    <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
-    <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
-  </p>
-
-  <div class="search-bar">
-    <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
-    <input type="date" id="startDate"><input type="date" id="endDate">
-    <select id="relator"><option value="">Relator (todos)</option></select>
-    <select id="camera"><option value="">Câmara (todas)</option></select>
-    <select id="ato"><option value="">Ato (todos)</option></select>
-    <div class="opts">
-      <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
-    </div>
-    <button onclick="performSearch()">Consultar</button>
-  </div>
-
-  <!-- Ajuda ao usuário -->
-  <div class="help" id="helpBox">
-    <details>
-      <summary>Como pesquisar (clique para expandir)</summary>
-      <div style="margin-top:10px">
-        <p><strong>Exato com aspas</strong>: <code>"erro material"</code> (não aceita <code>*</code> dentro de aspas; exige igualdade, acento indiferente)</p>
-        <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
-        <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
-        <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code>; também funciona com aspas: <code>-"frase exata"</code></p>
-        <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
-        <p><strong>Curinga *</strong> (somente fora das aspas): <code>contrat*</code> encontra “contrato”, “contratual”; <code>dano *</code> encontra “dano moral/material/…”</p>
-        <p><strong>Fuzzy</strong>: marque “Fuzzy” para aceitar pequenas variações nos <u>termos não citados com aspas</u> e sem <code>*</code>.</p>
-        <p style="margin-top:8px;color:#cfd8dc">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
-      </div>
-    </details>
-  </div>
-
-  <div id="resultCount"></div>
-  <div id="allBlocks"></div>
-  <div id="pagination" class="pagination"></div>
-</div>
-
-<script>
-const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&single=true&output=tsv';
-const PAGE_SIZE = 50;
-const MAX_PAGE_BUTTONS = 9;
-let allBlocks = [], currentResults = [], currentPage = 1;
-
-/* ---------- Utilidades ---------- */
-const FUZZY_ENABLED = () => !!document.getElementById('fuzzy')?.checked;
-
-/* dd/mm/aaaa → aaaa-mm-dd */
-function toISO(dmy) {
-  const [d,m,y] = (dmy||'').split('/');
-  return y ? `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}` : '';
-}
-
-/* Remove 'Des.' / 'Desa.' no início */
-function cleanRelator(name) {
-  return (name||'').replace(/^(des\.?\s+|desa\.?\s+)/i, '').trim();
-}
-
-/* Normaliza: minúsculas sem acentos */
-function normalizeStr(s){
-  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-}
-
-/* Escapa metacaracteres de regex */
-function escapeRegex(s){
-  return s.replace(/[-/\\^$+?.()|[\]{}]/g, '\\$&');
-}
-
-/* ---------- Fuzzy (Levenshtein com corte) ---------- */
-function levenshtein(a, b, maxDist) {
-  const la = a.length, lb = b.length;
-  if (Math.abs(la - lb) > maxDist) return maxDist + 1;
-  const dp = new Array(lb + 1);
-  for (let j=0;j<=lb;j++) dp[j] = j;
-  for (let i=1;i<=la;i++){
-    let prev = dp[0];
-    dp[0] = i;
-    let bestRow = dp[0];
-    for (let j=1;j<=lb;j++){
-      const tmp = dp[j];
-      const cost = a[i-1] === b[j-1] ? 0 : 1;
-      dp[j] = Math.min(
-        dp[j] + 1,        // deleção
-        dp[j-1] + 1,      // inserção
-        prev + cost       // substituição
-      );
-      prev = tmp;
-      if (dp[j] < bestRow) bestRow = dp[j];
-    }
-    if (bestRow > maxDist) return maxDist + 1; // poda
-  }
-  return dp[lb];
-}
-
-function fuzzyMatches(term, textTokens){
-  // distância máxima adaptativa
-  let maxDist = term.length <= 5 ? 1 : (term.length <= 8 ? 2 : 3);
-  for (const tok of textTokens){
-    if (Math.abs(tok.length - term.length) > maxDist + 1) continue;
-    if (levenshtein(term, tok, maxDist) <= maxDist) return true;
-  }
-  return false;
-}
-
-/* ---------- Tokenização e Parser com Parênteses (Shunting-yard) ---------- */
-/**
- * TOKENS:
- *  - {type:'TERM', value:'texto', quoted:boolean}
- *  - {type:'OP', value:'AND'|'OR'|'NOT'|';'}
- *  - {type:'LPAREN'} {type:'RPAREN'}
- */
-function tokenize(input){
-  const tokens = [];
-  let i = 0, n = input.length;
-  while (i < n){
-    const ch = input[i];
-
-    // Espaços
-    if (/\s/.test(ch)) { i++; continue; }
-
-    // Parênteses
-    if (ch === '('){ tokens.push({type:'LPAREN'}); i++; continue; }
-    if (ch === ')'){ tokens.push({type:'RPAREN'}); i++; continue; }
-
-    // Aspas → termo exato
-    if (ch === '"'){
-      let j = i + 1, buf = '';
-      while (j < n && input[j] !== '"'){ buf += input[j++]; }
-      // se não fechar aspas, considera até o fim
-      if (j >= n) { i = n; tokens.push({type:'TERM', value:buf, quoted:true}); break; }
-      tokens.push({type:'TERM', value:buf, quoted:true});
-      i = j + 1;
-      continue;
-    }
-
-    // Operadores textuais (AND/OR/NOT) e ponto e vírgula
-    if (ch === ';'){ tokens.push({type:'OP', value:'AND'}); i++; continue; }
-
-    const rest = input.slice(i);
-    const mOp = rest.match(/^(AND|OR|NOT)\b/i);
-    if (mOp){
-      tokens.push({type:'OP', value:mOp[1].toUpperCase()});
-      i += mOp[0].length;
-      continue;
-    }
-
-    // Termo simples (até próximo espaço/op/parênteses/;)
-    let j = i, buf = '';
-    while (j < n){
-      const c = input[j];
-      if (c === '"' || c === '(' || c === ')' || c === ';' || /\s/.test(c)) break;
-      buf += c; j++;
-    }
-    tokens.push({type:'TERM', value:buf, quoted:false});
-    i = j;
+  mark {
+    background: #ffeb3b; /* amarelo claro */
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
   }
 
-  // Inserir AND implícito entre TERM/)/" e ( / TERM / " / NOT
-  const out = [];
-  for (let k=0; k<tokens.length; k++){
-    const t = tokens[k];
-    out.push(t);
-    const next = tokens[k+1];
-    if (!next) break;
-    const isLeft = (t.type==='TERM' || t.type==='RPAREN');
-    const isRight = (next.type==='TERM' || next.type==='LPAREN' || (next.type==='OP' && next.value==='NOT'));
-    if (isLeft && isRight){
-      out.push({type:'OP', value:'AND'});
-    }
-  }
-  return out;
-}
-
-// Precedência: NOT (3), AND (2), OR (1)
-const PREC = { 'NOT':3, 'AND':2, 'OR':1 };
-
-/**
- * AST:
- *  - {type:'TERM', value:'...', quoted:boolean}
- *  - {type:'NOT', child:Node}
- *  - {type:'AND'|'OR', left:Node, right:Node}
- */
-function parseToAST(input){
-  const tokens = tokenize(input);
-  const output = [];
-  const ops = [];
-
-  function popOp(){
-    const op = ops.pop();
-    if (op.value === 'NOT'){
-      const child = output.pop();
-      output.push({type:'NOT', child});
-    } else {
-      const right = output.pop();
-      const left  = output.pop();
-      output.push({type:op.value, left, right});
-    }
-  }
-
-  for (const t of tokens){
-    if (t.type === 'TERM'){
-      output.push({type:'TERM', value:t.value, quoted:t.quoted});
-    } else if (t.type === 'OP'){
-      const v = t.value;
-      if (v === 'NOT'){
-        ops.push(t);
-      } else {
-        while (ops.length && ops[ops.length-1].type==='OP' && PREC[ops[ops.length-1].value] >= PREC[v]){
-          popOp();
-        }
-        ops.push(t);
-      }
-    } else if (t.type === 'LPAREN'){
-      ops.push(t);
-    } else if (t.type === 'RPAREN'){
-      while (ops.length && ops[ops.length-1].type !== 'LPAREN') popOp();
-      if (ops.length && ops[ops.length-1].type === 'LPAREN') ops.pop(); // descarta '('
-    }
-  }
-  while (ops.length) popOp();
-  return output.pop() || null;
-}
-
-/* ---------- Matchers a partir do AST ---------- */
-// Constrói função (textNorm, tokensNorm) -> boolean
-function buildMatcher(node){
-  if (!node) return () => true;
-
-  if (node.type === 'TERM'){
-    const raw = node.value.trim();
-    const quoted = !!node.quoted;
-    const normRaw = normalizeStr(raw);
-
-    // Quoted: EXATO (sem curinga), com fronteiras de palavra
-    if (quoted){
-      const hasSpace = /\s/.test(normRaw);
-      // fronteiras: (^|[^a-z0-9]) ... ([^a-z0-9]|$)
-      const body = hasSpace
-        ? normRaw.replace(/\s+/g,'\\s+')  // conserva espaços flexíveis
-        : normRaw;
-      const pattern = hasSpace
-        ? new RegExp(`(^|[^a-z0-9])${body}([^a-z0-9]|$)`, 'i')
-        : new RegExp(`(^|[^a-z0-9])${escapeRegex(body)}([^a-z0-9]|$)`, 'i');
-
-      const fn = (textNorm) => pattern.test(textNorm);
-      fn.__hl = raw; // para highlight
-      return fn;
-    }
-
-    // NÃO quoted
-    const hasStar = normRaw.includes('*');
-
-    // 1) com '*': vira regex ampla (substring)
-    if (hasStar){
-      const parts = normRaw.split('*').map(p=>p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join(''));
-      const body = parts.join('[\\s\\S]*?');
-      const re = new RegExp(body, 'i');
-      const fn = (textNorm) => re.test(textNorm);
-      // para highlight usamos o prefixo anterior ao 1º '*'
-      const base = raw.split('*')[0];
-      fn.__hl = base;
-      return fn;
-    }
-
-    // 2) sem '*' e sem aspas: substring OU fuzzy (se habilitado)
-    const fn = (textNorm, textTokensNorm) => {
-      if (textNorm.includes(normRaw)) return true;
-      if (FUZZY_ENABLED() && normRaw.length >= 4){
-        return fuzzyMatches(normRaw, textTokensNorm);
-      }
-      return false;
-    };
-    fn.__hl = raw; // highlight do termo base
-    return fn;
-  }
-
-  if (node.type === 'NOT'){
-    const child = buildMatcher(node.child);
-    return (textNorm, textTokensNorm) => !child(textNorm, textTokensNorm);
-  }
-
-  if (node.type === 'AND'){
-    const L = buildMatcher(node.left);
-    const R = buildMatcher(node.right);
-    return (textNorm, textTokensNorm) => L(textNorm, textTokensNorm) && R(textNorm, textTokensNorm);
-  }
-
-  if (node.type === 'OR'){
-    const L = buildMatcher(node.left);
-    const R = buildMatcher(node.right);
-    return (textNorm, textTokensNorm) => L(textNorm, textTokensNorm) || R(textNorm, textTokensNorm);
-  }
-
-  return () => true;
-}
-
-/* Extrai termos (para highlight) percorrendo AST – apenas positivos */
-function collectTermsForHighlight(node, acc = []){
-  if (!node) return acc;
-  if (node.type === 'TERM'){
-    if (node.value) acc.push(node.value);
-    return acc;
-  }
-  if (node.type === 'NOT'){
-    // não destacar termos negados
-    return acc;
-  }
-  if (node.left) collectTermsForHighlight(node.left, acc);
-  if (node.right) collectTermsForHighlight(node.right, acc);
-  return acc;
-}
-
-/* ---------- Copiar (ementa + meta) ---------- */
-function getCopyText(block){
-  const ementaEl = block.querySelector('p:nth-of-type(2)');
-  const metaEl   = block.querySelector('.meta');
-  const ementa = (ementaEl?.textContent || '').trim();
-  const meta   = (metaEl?.textContent || '').trim();
-  return `${ementa} ${meta}`.replace(/\s+/g,' ').replace(/\s+\)/,')').trim();
-}
-
-function attachCopyButton(block) {
-  const btn = document.createElement('button');
-  btn.className = 'copy-btn';
-  btn.type = 'button';
-  btn.title = 'Copiar este resultado';
-  btn.setAttribute('aria-label', 'Copiar este resultado');
-  btn.textContent = '📋 Copiar';
-  btn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    const text = getCopyText(block);
-    try {
-      await navigator.clipboard.writeText(text);
-      const old = btn.textContent;
-      btn.textContent = '✔ Copiado';
-      btn.disabled = true;
-      setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 1400);
-    } catch {
-      alert('Não foi possível copiar automaticamente. Selecione e copie manualmente.');
-    }
-  });
-  block.appendChild(btn);
-}
-
-/* ---------- Carregamento e montagem ---------- */
-async function loadTSV() {
-  try {
-    const res = await fetch(TSV_URL);
-    const text = await res.text();
-    const rows = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true }).data;
-
-    const relSet = new Set(), cameraSet = new Set(), atoSet = new Set();
-    let totalPesquisaveis = 0;
-    let maxDateISO = '';
-    let maxDateBr = '';
-
-    rows.forEach((r) => {
-      const pub = (r['Publicação'] || '').trim();
-      const eme = (r.Ementa || '').trim();
-      if (pub && eme) {
-        totalPesquisaveis++;
-        const iso = toISO(pub);
-        if (iso && (!maxDateISO || iso > maxDateISO)) { maxDateISO = iso; maxDateBr = pub; }
-      }
-      if (r.Relator)    relSet.add(cleanRelator(r.Relator));
-      if (r['Câmara'])  cameraSet.add((r['Câmara']||'').trim());
-      if (r.Ato)        atoSet.add((r.Ato||'').trim());
-    });
-
-    // Info dataset
-    const ds = document.getElementById('datasetInfo');
-    ds.textContent = `${totalPesquisaveis} linha${totalPesquisaveis!==1?'s':''} disponíveis para pesquisa • Última atualização do banco de dados: ${maxDateBr || 'N/I'}`;
-
-    populateSelect('relator', relSet);
-    populateSelect('camera', cameraSet);
-    populateSelect('ato', atoSet);
-
-    // Monta blocos
-    const cont = document.getElementById('allBlocks');
-    rows.forEach((r) => {
-      if (!r['Publicação'] || !r.Ementa) return;
-
-      const proc = (r['Processo'] || '').trim();
-      const cam  = (r['Câmara'] || '').trim();
-      const rel  = cleanRelator(r.Relator || '');
-      const ato  = (r.Ato || '').trim();
-      const pub  = (r['Publicação'] || '').trim();
-      const iso  = toISO(pub);
-      const eme  = (r.Ementa || '').trim();
-
-      const div = document.createElement('div');
-      div.className = 'block';
-      div.dataset.date    = iso;
-      div.dataset.relator = normalizeStr(rel);
-      div.dataset.camera  = normalizeStr(cam);
-      div.dataset.ato     = normalizeStr(ato);
-      div.innerHTML = `
-        <p><strong>Processo: ${proc || 's/ nº'}</strong></p>
-        <p>${eme}</p>
-        <p class="type">${ato || 'N/I'}</p>
-        <p class="meta">(TJGO, ${proc || 's/ nº'}, Rel(a). ${rel || 'N/I'}, ${cam || 'N/I'}, Publicado em ${pub})</p>
-      `;
-      attachCopyButton(div);
-      cont.appendChild(div);
-
-      // Guarda texto "limpo" p/ highlight
-      const ementaEl = div.querySelector('p:nth-of-type(2)');
-      const metaEl   = div.querySelector('.meta');
-      if (ementaEl && !ementaEl.dataset.original) ementaEl.dataset.original = ementaEl.textContent;
-      if (metaEl   && !metaEl.dataset.original)   metaEl.dataset.original   = metaEl.textContent;
-    });
-
-    allBlocks = [...document.querySelectorAll('#allBlocks .block')];
-    currentResults = [];
-    hideResultsUI();
-
-  } catch (e) {
-    console.error('Erro ao carregar TSV', e);
-    document.getElementById('datasetInfo').textContent = 'Não foi possível carregar o banco de dados.';
-  }
-}
-
-function populateSelect(id, set) {
-  const sel = document.getElementById(id);
-  [...set].sort().forEach((v) => {
-    const o = document.createElement('option');
-    o.value = v;
-    o.textContent = v;
-    sel.appendChild(o);
-  });
-}
-
-/* ---------- UI ---------- */
-function hideResultsUI() {
-  document.getElementById('resultCount').style.display = 'none';
-  document.getElementById('allBlocks').style.display = 'none';
-  document.getElementById('pagination').style.display = 'none';
-}
-function showResultsUI() {
-  document.getElementById('resultCount').style.display = 'block';
-  document.getElementById('allBlocks').style.display = 'block';
-  document.getElementById('pagination').style.display = 'flex';
-}
-function updateResultCount() {
-  const count = currentResults.length;
-  const el = document.getElementById('resultCount');
-  const plural = count !== 1 ? 's' : '';
-  el.textContent = `${count} linha${plural} localizada${plural}`;
-  el.style.display = 'block';
-}
-
-/* ---------- Busca ---------- */
-function performSearch() {
-  const query = document.getElementById('terms').value.trim();
-  const start = document.getElementById('startDate').value;
-  const end   = document.getElementById('endDate').value;
-  const relF  = normalizeStr(document.getElementById('relator').value);
-  const camF  = normalizeStr(document.getElementById('camera').value);
-  const atoF  = normalizeStr(document.getElementById('ato').value);
-
-  const ast = parseToAST(query);
-  const matcher = buildMatcher(ast);
-
-  currentResults = allBlocks.filter((block) => {
-    const rawText = block.textContent || '';
-    const textNorm = normalizeStr(rawText);
-    const tokensNorm = textNorm.split(/[^a-z0-9]+/).filter(Boolean);
-
-    const date = block.dataset.date;
-    const rel  = block.dataset.relator;
-    const cam  = block.dataset.camera;
-    const ato  = block.dataset.ato;
-
-    if (start && date < start) return false;
-    if (end   && date > end)   return false;
-    if (relF  && rel  !== relF) return false;
-    if (camF  && cam  !== camF) return false;
-    if (atoF  && ato  !== atoF) return false;
-
-    return matcher(textNorm, tokensNorm);
-  });
-
-  currentPage = 1;
-  updateResultCount();
-  renderPage(ast);
-  showResultsUI();
-}
-
-/* ---------- Destaque (acento-indiferente; sem coringa em aspas) ---------- */
-function highlightText(baseText, terms) {
-  if (!terms || !terms.length) return baseText;
-
-  const normalize = (str) => (str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-
-  let html = baseText;
-  // Ordena por tamanho desc p/ evitar quebra de frases longas
-  const ordered = [...terms].sort((a,b)=>b.length - a.length);
-
-  ordered.forEach(term => {
-    if (!term) return;
-    // Se veio com aspas na origem, já é exato; aqui recebemos só o valor cru
-    const norm = normalize(term);
-    const parts = norm.split('*'); // '*' só fora das aspas; aqui serve para prefixar highlight
-    const body = parts.map(p => p.replace(/\s+/g,'\\s+').split('').map(ch=>escapeRegex(ch)).join('')).join('[\\s\\S]*?');
-
-    // substitui vogais por classes simples para aceitar acentos no texto original
-    const withClasses = body
-      .replace(/a/gi,'[aàáâãä]')
-      .replace(/e/gi,'[eèéêë]')
-      .replace(/i/gi,'[iìíîï]')
-      .replace(/o/gi,'[oòóôõö]')
-      .replace(/u/gi,'[uùúûü]')
-      .replace(/c/gi,'[cç]');
-
-    const pattern = new RegExp(withClasses, 'gi');
-    html = html.replace(pattern, m => `<mark>${m}</mark>`);
-  });
-
-  return html;
-}
-
-/* ---------- Renderização e paginação ---------- */
-function renderPage(ast) {
-  document.querySelectorAll('#allBlocks .block').forEach((b) => (b.style.display = 'none'));
-
-  const totalPages = Math.max(1, Math.ceil(currentResults.length / PAGE_SIZE));
-  const startIdx = (currentPage - 1) * PAGE_SIZE;
-
-  // termos p/ destaque a partir do AST (apenas positivos)
-  const termsForHL = collectTermsForHighlight(ast);
-
-  currentResults.slice(startIdx, startIdx + PAGE_SIZE).forEach((b) => {
-    const ementaEl = b.querySelector('p:nth-of-type(2)');
-    const metaEl   = b.querySelector('.meta');
-
-    if (ementaEl && ementaEl.dataset.original){
-      ementaEl.innerHTML = highlightText(ementaEl.dataset.original, termsForHL);
-    }
-    if (metaEl && metaEl.dataset.original){
-      metaEl.innerHTML   = highlightText(metaEl.dataset.original, termsForHL);
-    }
-
-    b.style.display = 'block';
-  });
-
-  renderPagination(totalPages);
-}
-
-function renderPagination(total) {
-  const pag = document.getElementById('pagination');
-  pag.innerHTML = '';
-
-  if (total <= 1) { pag.style.display = 'none'; return; }
-  pag.style.display = 'flex';
-
-  const addBtn = (label, page, disabled=false, isActive=false) => {
-    const btn = document.createElement('button');
-    btn.textContent = label;
-    if (isActive) btn.classList.add('active');
-    if (disabled) btn.setAttribute('disabled','disabled');
-    btn.onclick = () => {
-      if (!disabled && page !== currentPage) {
-        currentPage = page;
-        renderPage(parseToAST(document.getElementById('terms').value.trim()));
-      }
-    };
-    pag.appendChild(btn);
-  };
-
-  addBtn('« Primeira', 1, currentPage === 1);
-  addBtn('‹ Anterior', Math.max(1, currentPage - 1), currentPage === 1);
-
-  const half = Math.floor(MAX_PAGE_BUTTONS / 2);
-  let start = Math.max(1, currentPage - half);
-  let end = Math.min(total, start + MAX_PAGE_BUTTONS - 1);
-  if (end - start + 1 < MAX_PAGE_BUTTONS) {
-    start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
-  }
-
-  for (let i = start; i <= end; i++) addBtn(String(i), i, false, i === currentPage);
-
-  addBtn('Próxima ›', Math.min(total, currentPage + 1), currentPage === total);
-  addBtn('Última »', total, currentPage === total);
-}
 
 window.onload = loadTSV;
 </script>
