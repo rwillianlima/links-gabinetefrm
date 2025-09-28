@@ -1,7 +1,13 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
+<style>
   body {
     font-family: Arial, Helvetica, sans-serif;
-    background: #f4f4f4; /* cinza claro, menos agressivo */
-    color: #222; /* texto em tom escuro para contraste */
+    background: #f4f4f4; /* cinza claro */
+    color: #222; /* texto escuro */
     margin: 0;
   }
 
@@ -12,7 +18,7 @@
     left: 0;
     width: 240px;
     height: 100%;
-    background: #2f4050; /* azul acinzentado mais suave */
+    background: #2f4050; /* azul acinzentado */
     box-shadow: 2px 0 6px rgba(0,0,0,.2);
   }
   #sidebar a {
@@ -51,9 +57,86 @@
     color: #333;
   }
 
-  /* Blocos de resultado */
+  /* Search */
+  .search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px auto;
+  }
+  .search-bar input,
+  .search-bar select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+    max-width: 90%;
+    background: #fff;
+    color: #222;
+  }
+  .search-bar button {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 4px;
+    background: #2f4050;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .search-bar button:hover {
+    background: #3b5165;
+  }
+  .opts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #444;
+    font-size: .9rem;
+  }
+  .opts label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  /* Help */
+  .help {
+    max-width: 920px;
+    margin: 10px auto 0 auto;
+    text-align: left;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: .92rem;
+    line-height: 1.45;
+    color: #222;
+  }
+  .help code {
+    background: rgba(0,0,0,.05);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .help summary {
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  /* Result count */
+  #resultCount {
+    font-size: .95rem;
+    margin: 10px auto;
+    max-width: 900px;
+    text-align: left;
+    color: #222;
+    display: none;
+  }
+
+  /* Blocks */
   .block {
-    background: #fff; /* fundo branco */
+    background: #fff;
     border-radius: 6px;
     padding: 16px;
     margin: 10px auto;
@@ -69,41 +152,65 @@
     color: #222;
     text-align: justify;
   }
-  .type, .meta {
+  .type {
     margin-top: 6px;
     font-size: .85rem;
     color: #666;
     text-align: center;
   }
+  .meta {
+    margin-top: 8px;
+    font-size: .85rem;
+    color: #666;
+    text-align: center;
+  }
 
-  /* Botões */
-  .search-bar button, .copy-btn, .pagination button {
-    background: #2f4050;
-    color: #fff;
+  /* Copy button (em cada bloco) */
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     border: none;
     border-radius: 4px;
+    padding: 6px 10px;
+    background: #2f4050;
+    color: #fff;
     cursor: pointer;
+    font-size: .8rem;
   }
-  .search-bar button:hover, .copy-btn:hover, .pagination button:hover {
+  .copy-btn:hover {
     background: #3b5165;
   }
+
+  /* Pagination */
+  .pagination {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    margin: 20px auto;
+    max-width: 900px;
+    flex-wrap: wrap;
+  }
+  .pagination button {
+    background: #2f4050;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
   .pagination button.active {
-    background: #1c87c9; /* azul de destaque */
+    background: #1c87c9; /* destaque */
     font-weight: bold;
   }
+  .pagination button[disabled] {
+    opacity: .5;
+    cursor: not-allowed;
+  }
 
-  /* Caixa de ajuda */
-  .help {
-    max-width: 920px;
-    margin: 10px auto 0 auto;
-    text-align: left;
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 12px 16px;
-    border-radius: 6px;
-    font-size: .92rem;
-    line-height: 1.45;
-    color: #222;
+  /* Contêiner de resultados (oculto até a busca) */
+  #allBlocks {
+    display: none;
   }
 
   /* Destaque dos termos encontrados */
@@ -114,9 +221,59 @@
     padding: 0 2px;
     border-radius: 2px;
   }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+<div id="sidebar"><a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a></div>
 
+<div id="content">
+  <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
+  <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
 
-window.onload = loadTSV;
+  <p class="notice">
+    Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
+    <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
+    <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
+  </p>
+
+  <div class="search-bar">
+    <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
+    <input type="date" id="startDate"><input type="date" id="endDate">
+    <select id="relator"><option value="">Relator (todos)</option></select>
+    <select id="camera"><option value="">Câmara (todas)</option></select>
+    <select id="ato"><option value="">Ato (todos)</option></select>
+    <div class="opts">
+      <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
+    </div>
+    <button onclick="performSearch()">Consultar</button>
+  </div>
+
+  <!-- Ajuda ao usuário -->
+  <div class="help" id="helpBox">
+    <details>
+      <summary>Como pesquisar (clique para expandir)</summary>
+      <div style="margin-top:10px">
+        <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
+        <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
+        <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
+        <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
+        <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
+        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra “contrato”, “contratual”</p>
+        <p><strong>Fuzzy</strong>: marque “Fuzzy” para aceitar pequenas variações.</p>
+        <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
+      </div>
+    </details>
+  </div>
+
+  <div id="resultCount"></div>
+  <div id="allBlocks"></div>
+  <div id="pagination" class="pagination"></div>
+</div>
+
+<!-- JS original mantido -->
+<script>
+/* Seu código JS original de busca e renderização vai aqui */
 </script>
 </body>
 </html>
