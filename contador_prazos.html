@@ -525,15 +525,7 @@
         base.tag = 'Útil'; base.badge='ok';
         obsParts.push(...counted.get(key));
       }else{
-        if(base.tag === 'Útil'){
-          if(cursor < inicioContagem){
-            if(tipo === 'leitura'){
-              obsParts.push('Dia não considerado por regra de publicação (aguardando início)');
-            } else {
-              obsParts.push('Dia não considerado por regra de publicação (aguardando D1/D2)');
-            }
-          }
-        }
+        //
       }
 
       // Render
