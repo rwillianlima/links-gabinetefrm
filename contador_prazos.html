@@ -354,8 +354,9 @@
     const h = isHoliday(d, mode);
     if(h){
       const isRec = h.name.toLowerCase().includes('recesso');
-      obj.tag='Não útil'; obj.badge = isRec ? 'recesso' : 'warn';
-      obj.obs.push(isRec ? 'Recesso forense' : h.name);
+  obj.tag = isRec ? 'Recesso' : 'Não útil';
+  obj.badge = isRec ? 'recesso' : 'warn';
+  obj.obs.push(isRec ? 'Recesso forense' : h.name);
       if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; obj.badge='info'; }
       return obj;
     }
