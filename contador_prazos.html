@@ -108,8 +108,8 @@
   <h1>Contador de Prazos Cíveis — TJGO</h1>
   <p class="legal">
     <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
-    <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação.<br>
-    <strong>QF</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+    <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+    <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
     <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
   </p>
 </header>
@@ -444,8 +444,8 @@
         }
 
         // D1 / D2 (publicação)
-        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil - disponibilização)');
-        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil - publicação)');
+        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil após expedição)');
+        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil após expedição)');
 
         // Dias úteis contados
         if(counted.has(key)){
