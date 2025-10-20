@@ -31,6 +31,16 @@
       border-left:3px solid transparent; transition:background .2s ease;
     }
     #sidebar-back a:hover{background:rgba(255,255,255,.12)}
+    #clock{
+  margin-top:auto;
+  padding:12px 18px;
+  text-align:center;
+  font-weight:600;
+  font-size:.95rem;
+  border-top:1px solid rgba(255,255,255,.15);
+  color:white;
+  opacity:.85;
+}   
 
     /* deslocar conteúdo */
     header, main, footer{margin-left:200px}
@@ -103,6 +113,8 @@
 
 <div id="sidebar-back">
   <a href="index.html">⬅ Voltar ao Início</a>
+
+  <div id="clock"></div>
 </div>
 
 <header>
@@ -514,6 +526,18 @@
       };
     });
   </script>
+<script>
+  function updateClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+</script>
+  
 </body>
 </html>
 ```
