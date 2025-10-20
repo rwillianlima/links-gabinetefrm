@@ -426,14 +426,14 @@
       // Sábado/Domingo sempre rejeitados para publicação (mesmo se dentro do recesso)
       if(wknd){
         // Observação jurídica padronizada
-        pushNote(pubLog, d, 'Designação afastada: ato de publicação não se realiza em finais de semana.');
+        pushNote(pubLog, d, 'ato de publicação não se realiza em finais de semana.');
         d = addDays(d, 1);
         continue;
       }
 
       // Feriado não-recesso rejeitado
       if(h && !rec && !isAshWednesday(d)){
-        pushNote(pubLog, d, `Designação afastada: ato de publicação não se realiza em feriados — ${h.name}.`);
+        pushNote(pubLog, d, `ato de publicação não se realiza em feriados — ${h.name}.`);
         d = addDays(d, 1);
         continue;
       }
