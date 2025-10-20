@@ -4,137 +4,117 @@
 <meta charset="utf-8">
 <title>Links Úteis – Gabinete Des. F. R. Montefusco</title>
 <style>
-  body{font-family:Arial,Helvetica,sans-serif;background:#174b73;color:#fff;margin:0;}
-  /* ───── Sidebar ───── */
-  #sidebar{position:fixed;top:0;left:0;width:240px;height:100%;background:#0b2f4d;box-shadow:2px 0 6px rgba(0,0,0,.3);display:flex;flex-direction:column;}
-  #sidebar a{display:block;padding:12px 20px;font-size:1rem;color:#fff;text-decoration:none;}
-  #sidebar a:hover{background:#105b8e;}
-  /* Agenda fixa no rodapé da lateral */
-  #agenda{margin-top:auto;background:#07375b;}
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f8f6f2;
+    color:#2b2b2b;
+    margin:0;
+  }
 
-  /* ───── Conteúdo ───── */
-  #content{margin-left:260px;padding:40px 25px;max-width:900px;}
+  #content{
+    margin-left:260px;
+    padding:40px 25px;
+    max-width:900px;
+  }
   header{text-align:center;margin-bottom:25px;}
-  header h1{margin:0;font-size:1.8rem;line-height:1.2;}
-  header h2{margin:8px 0 0 0;font-size:1.05rem;font-weight:normal;}
-  hr{border:none;border-top:2px solid #0b2f4d;margin:25px 0;}
+  header h1{margin:0;font-size:1.8rem;line-height:1.2;color:#2b2b2b;}
+  header h2{margin:8px 0 0 0;font-size:1.05rem;font-weight:normal;color:#2b2b2b;}
+  hr{border:none;border-top:2px solid #d8d3cb;margin:25px 0;}
   section{margin-bottom:35px;}
-  section h3{font-size:1.2rem;margin-bottom:15px;text-align:left;color:#ffd54f;}
-  .btn{display:block;width:100%;margin:10px auto;padding:12px 0;background:#0b2f4d;border-radius:6px;color:#fff;text-decoration:none;font-size:1rem;max-width:600px;}
-  .btn:hover{background:#105b8e;}
+  section h3{font-size:1.2rem;margin-bottom:15px;text-align:left;color:#7a6f61;}
+
+  .btn{
+    display:block;
+    width:100%;
+    max-width:600px;
+    margin:10px auto;
+    padding:12px 0;
+    background:transparent;
+    border:1px solid #46423c;
+    border-radius:6px;
+    color:#2b2b2b;
+    text-decoration:none;
+    font-size:1rem;
+    transition:background .2s ease;
+  }
+  .btn:hover{
+    background:#eee9e1;
+  }
 </style>
 </head>
 <body>
 
 <!-- ───────── Sidebar ───────── -->
+<style>
+#sidebar {
+  position:fixed;
+  top:0;
+  left:0;
+  width:240px;
+  height:100%;
+  background:#3a3a3a;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  box-shadow:2px 0 6px rgba(0,0,0,.2);
+  padding-top:10px;
+}
+
+.sidebar-header {
+  padding:0 20px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.15);
+  margin-bottom:10px;
+}
+
+.sidebar-header h3 {
+  margin:0;
+  font-size:1.1em;
+  font-weight:600;
+  color:white;
+}
+
+.sidebar-menu {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:0 10px;
+}
+
+.menu-item {
+  display:flex;
+  align-items:center;
+  padding:10px 12px;
+  color:white;
+  text-decoration:none;
+  border-radius:6px;
+  transition:background .2s ease, transform .2s;
+}
+
+.menu-item:hover {
+  background:rgba(255,255,255,0.10);
+}
+
+.icon {font-size:1.1em;margin-right:10px;width:20px;text-align:center;}
+.text {flex:1;font-weight:500;}
+.external-icon {font-size:.85em;opacity:.7;}
+.menu-item.active {background:rgba(255,255,255,0.18);border-left:3px solid white;}
+#agenda {margin-top:auto;border-top:1px solid rgba(255,255,255,0.15);}
+</style>
+
 <div id="sidebar">
   <div class="sidebar-header">
     <h3>🔍 Ferramentas</h3>
   </div>
-  
   <nav class="sidebar-menu">
-    <a href="stats.html" class="menu-item" rel="noopener noreferrer">
-      <span class="icon">📊</span>
-      <span class="text">Jurimetria</span>
-    </a>
-    
-    <a href="jurisprudencia.html" class="menu-item" rel="noopener noreferrer">
-      <span class="icon">📖</span>
-      <span class="text">Jurisprudência</span>
-    </a>
-    
-    <a href="notas-tecnicas.html" class="menu-item" rel="noopener noreferrer">
-      <span class="icon">📄</span>
-      <span class="text">Notas Técnicas do TJGO</span>
-    </a>
-    
-    <a href="contador_prazos.html" class="menu-item" rel="noopener noreferrer">
-      <span class="icon">⏰</span>
-      <span class="text">Contador de Prazos</span>
-    </a>
-    
-    <a id="agenda" href="https://www.tjgo.jus.br/pubtjud/ctrl/agendaCtrl.php?opc=agendaLst&lotacaoId=7007" 
-       target="_blank" class="menu-item external" rel="noopener noreferrer">
-      <span class="icon">📞</span>
-      <span class="text">Agenda Eletrônica</span>
-      <span class="external-icon">↗</span>
+    <a href="stats.html" class="menu-item"><span class="icon">📊</span><span class="text">Jurimetria</span></a>
+    <a href="jurisprudencia.html" class="menu-item"><span class="icon">📖</span><span class="text">Jurisprudência</span></a>
+    <a href="notas-tecnicas.html" class="menu-item"><span class="icon">📄</span><span class="text">Notas Técnicas do TJGO</span></a>
+    <a href="contador_prazos.html" class="menu-item"><span class="icon">⏰</span><span class="text">Contador de Prazos</span></a>
+    <a id="agenda" href="https://www.tjgo.jus.br/pubtjud/ctrl/agendaCtrl.php?opc=agendaLst&lotacaoId=7007" target="_blank" class="menu-item">
+      <span class="icon">📞</span><span class="text">Agenda Eletrônica</span><span class="external-icon">↗</span>
     </a>
   </nav>
 </div>
-
-<style>
-#sidebar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  width: 280px;
-  min-height: 100vh;
-  padding: 20px 0;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-}
-
-.sidebar-header {
-  padding: 0 20px 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
-  margin-bottom: 15px;
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 1.2em;
-  font-weight: 600;
-}
-
-.sidebar-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 0 15px;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 15px;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.menu-item:hover {
-  background: rgba(255,255,255,0.15);
-  transform: translateX(5px);
-}
-
-.menu-item.external:hover .external-icon {
-  transform: translateX(2px);
-}
-
-.icon {
-  font-size: 1.1em;
-  margin-right: 12px;
-  width: 20px;
-  text-align: center;
-}
-
-.text {
-  flex: 1;
-  font-weight: 500;
-}
-
-.external-icon {
-  font-size: 0.9em;
-  opacity: 0.7;
-  transition: transform 0.2s ease;
-}
-
-/* Efeito de destaque para o item ativo */
-.menu-item.active {
-  background: rgba(255,255,255,0.2);
-  border-left: 3px solid white;
-}
-</style>
 
 <!-- ───────── Conteúdo principal ───────── -->
 <div id="content">
