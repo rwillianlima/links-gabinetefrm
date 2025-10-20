@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contador de Prazos Cíveis — TJGO (2023–2025)</title>
+  <style>
+    :root{
+      --brand:#0b57d0; --brand-2:#0847ad;
+      --ok:#198754; --warn:#b58900; --susp:#c56410; --bad:#c0392b;
+      --bg:#f5f7fb; --card:#ffffff; --muted:#6b7280; --ink:#111827;
+      --row:#f9fbff; --row2:#f3f6fc; --chip:#eef2ff;
+      --hl:#fff4cc;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:#111827;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      line-height:1.4;
+    }
+    header{
+      position:relative;
+      z-index:10;
+
+      background:linear-gradient(135deg,var(--brand),var(--brand-2));
+      color:#fff; padding:28px 20px 22px;
+    }
+    header h1{margin:0 0 6px; font-weight:800; letter-spacing:.2px}
+    header p{margin:0; opacity:.9}
+    main{max-width:1100px; margin:-32px auto 48px; padding:0 16px}
+    .card{
+      background:var(--card); border-radius:18px; box-shadow:0 10px 25px rgba(2,12,27,.06);
+      padding:18px 18px 12px;
+    }
+    .grid{display:grid; grid-template-columns:1.1fr 1fr .9fr; gap:12px}
+    .field{display:flex; flex-direction:column; gap:6px}
+    label{font-size:.92rem; color:#2c2c2c; font-weight:600}
+    input[type="date"], select, input[type="number"]{
+      width:100%; padding:12px 14px; border:1px solid #e5e7eb; border-radius:12px; font-size:1rem;
+      background:#fff; outline:none; transition:.2s border;
+    }
+    input[type="date"]:focus, select:focus, input[type="number"]:focus{border-color:var(--brand)}
+    .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+    .btn{
+      border:0; padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      background:var(--brand); color:#fff; transition:.2s transform, .2s opacity; letter-spacing:.25px
+    }
+    .btn.secondary{background:#e9eefc; color:#1e3a8a}
+    .btn.ghost{background:transparent; border:1px solid #e5e7eb; color:#111827}
+    .btn:hover{transform:translateY(-1px)}
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      padding:8px 10px; background:var(--chip); color:#1e3a8a; border-radius:999px; font-weight:700; cursor:pointer; border:1px solid #e3e8ff;
+      font-size:.95rem;
+    }
+    .muted{color:var(--muted); font-size:.92rem}
+    .result{margin-top:18px}
+    .final-date{
+      margin:16px 0 6px; padding:14px 16px; background:var(--hl); border:1px dashed #f1da82;
+      border-radius:12px; font-weight:800; font-size:1.05rem;
+    }
+    table{width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; font-size:.95rem}
+    thead th{
+      position:sticky; top:0; background:#fff; z-index:2;
+      text-align:left; padding:10px 12px; border-bottom:1px solid #e5e7eb;
+    }
+    tbody td{padding:10px 12px; border-bottom:1px dashed #eef2f7}
+    tbody tr:nth-child(odd){background:var(--row)}
+    tbody tr:nth-child(even){background:var(--row2)}
+    .tag{padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block}
+    .tag.ok{background:#e7f6ee; color:#0b7a3b; border:1px solid #bae6cd}
+    .tag.bad{background:#fde2e2; color:#9b1c1c; border:1px solid #f5bcbc}
+    .tag.warn{background:#fff4d6; color:#8a5a00; border:1px solid #f7e0a2}
+    .tag.info{background:#e8efff; color:#214e9b; border:1px solid #c7dbff}
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    footer{max-width:1100px; margin:24px auto 60px; padding:0 16px}
+    .small{font-size:.9rem}
+    .code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; background:#f6f8fb; padding:2px 6px; border-radius:6px; border:1px solid #e5e7eb}
+    .danger{color:var(--bad); font-weight:700}
+    .success{color:var(--ok); font-weight:700}
+  </style>
+</head>
+<body>
+  <!--
+    ALTERAÇÕES (2025-10-19):
+    - Campo renomeado: "Data Inicial"
+    - Auditoria contínua marco→final; justificativa de não contagem com prioridade: Recesso > Feriado > QF(start/end) > Fim de semana
+    - QF: conta em curso; não inicia/não finaliza
+    - Recesso: 20/12–20/01 (inclusive); R2 aplicado
+    - Fusão: sem linha "Início da contagem"; nota incorporada ao #1
+    - Marco em Recesso: "Recesso forense — Dia da leitura/expedição"
+  -->
+  <header>
+    <h1>Contador de Prazos Cíveis — TJGO</h1>
+    <p>Regras: <strong>Leitura</strong> → 1º dia útil seguinte (não inicia em Quarta‑feira de Cinzas). <strong>Expedição</strong> → D1/D2 (QF pode); contagem inicia no <em>dia útil subsequente</em> (não iniciar em QF). Recesso: <strong>20/12 a 20/01</strong> (inclusive).</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="grid">
+        <div class="field">
+          <label for="tipo">Tipo de marco inicial</label>
+          <select id="tipo">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao">Expedição (ato expedido)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="dataBase">Data Inicial</label>
+          <input type="date" id="dataBase" />
+        </div>
+
+        <div class="field">
+          <label for="dias">Dias de prazo (dias úteis)</label>
+          <input type="number" id="dias" min="1" step="1" value="15"/>
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:12px">
+        <button class="btn" id="btnCalcular">Calcular prazo</button>
+        <div class="chips">
+          <button class="chip" data-d="5">5 dias</button>
+          <button class="chip" data-d="15">15 dias</button>
+        </div>
+        <span class="muted">Feriados TJGO (2023–2025), recesso (20/12–20/01), fins de semana e Quarta‑feira de Cinzas com regra especial já aplicados.</span>
+      </div>
+
+      <div class="result" id="resultado" style="display:none">
+        <div class="final-date" id="finalDate"></div>
+        <div class="toolbar">
+          <button class="btn secondary" id="btnCopiar">Copiar resumo</button>
+          <button class="btn ghost" id="btnCSV">Exportar CSV</button>
+        </div>
+        <div style="max-height:430px; overflow:auto; margin-top:6px; border:1px solid #eceff5; border-radius:12px; background:#fff">
+          <table id="tabela">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Dia da semana</th>
+                <th>Classificação</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="muted small">Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="small">
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023, 2024 e 2025) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
+
+  <script>
+    // ---------- Utilidades de datas ----------
+    const fmtBR = (d)=>{
+      const pad = (n)=> String(n).padStart(2,'0');
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    };
+    const diaSemana = (d)=>["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"][d.getDay()];
+    const ymd = (d)=>{
+      const pad=(n)=> String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    };
+    const parseISO = (s)=>{
+      const [Y,M,D] = s.split('-').map(Number);
+      const dt = new Date(Date.UTC(Y, M-1, D));
+      return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+    };
+    const addDays = (d, n)=>{
+      const nd = new Date(d);
+      nd.setDate(nd.getDate()+n);
+      return nd;
+    };
+
+    // ---------- Base de feriados TJGO (2023-2025) ----------
+    const HOLIDAYS = new Map(); // key: 'YYYY-MM-DD' → {name, yearTag}
+    const ASH = new Set(); // Quarta-Feira de Cinzas (datas específicas)
+
+    function add(name, dates, {ash=false}={}){
+      dates.forEach(s=> {
+        HOLIDAYS.set(s, {name, yearTag: s.slice(0,4)});
+        if(ash) ASH.add(s);
+      });
+    }
+    function addRange(name, fromYMD, toYMD){
+      let d = parseISO(fromYMD);
+      const end = parseISO(toYMD);
+      while(d <= end){
+        HOLIDAYS.set(ymd(d), {name, yearTag: d.getFullYear().toString()});
+        d = addDays(d, 1);
+      }
+    }
+
+    // 2023
+    add("Confraternização Universal (Feriado Nacional)", ["2023-01-01"]);
+    add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2023-02-20","2023-02-21"]);
+    add("Quarta-feira de Cinzas (regra especial)", ["2023-02-22"], {ash:true});
+    add("Semana Santa — Feriado no Tribunal", ["2023-04-05","2023-04-06"]);
+    add("Paixão de Cristo (Feriado Nacional)", ["2023-04-07"]);
+    add("Tiradentes (Feriado Nacional)", ["2023-04-21"]);
+    add("Dia do Trabalho (Feriado Nacional)", ["2023-05-01"]);
+    add("Nossa Senhora Auxiliadora (Feriado Municipal: Goiânia, Iporá, Leopoldo de Bulhões, Senador Canedo)", ["2023-05-24"]);
+    add("Corpus Christi (Feriado Nacional)", ["2023-06-08"]);
+    add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2023-07-26"]);
+    add("Independência do Brasil (Feriado Nacional)", ["2023-09-07"]);
+    add("Nossa Senhora Aparecida (Feriado Nacional)", ["2023-10-12"]);
+    add("Comemorativo pedra fundamental/Aniversário de Goiânia (Feriado no Tribunal)", ["2023-10-24"]);
+    add("Dia do Servidor Público (Feriado Estadual)", ["2023-10-28"]);
+    add("Finados (Feriado Nacional)", ["2023-11-02"]);
+    add("Proclamação da República (Feriado Nacional)", ["2023-11-15"]);
+    add("Dia da Justiça (Feriado no Tribunal)", ["2023-12-08"]);
+    add("Natal (Feriado Nacional)", ["2023-12-25"]);
+    // Recesso 2023/2024 — 20/12 a 20/01 (inclusive)
+    addRange("Recesso Forense", "2023-12-20", "2024-01-20");
+
+    // 2024
+    add("Ano Novo (Feriado Nacional)", ["2024-01-01"]);
+    add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2024-02-12","2024-02-13"]);
+    add("Quarta-feira de Cinzas (regra especial)", ["2024-02-14"], {ash:true});
+    add("Semana Santa — Feriado no Tribunal", ["2024-03-27","2024-03-28","2024-03-29"]);
+    add("Dia do Trabalho (Feriado Nacional)", ["2024-05-01"]);
+    add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2024-05-24"]);
+    add("Corpus Christi (Feriado Nacional)", ["2024-05-30"]);
+    add("Ponto Facultativo — PJ estadual", ["2024-05-31"]);
+    add("Fundação da Cidade de Goiás (feriado de 26/07 alterado para 22/07)", ["2024-07-22"]);
+    add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2024-10-24"]);
+    add("Dia do Servidor Público (feriado do dia 28/10 alterado para 01/11)", ["2024-11-01"]);
+    add("Proclamação da República (Feriado Nacional)", ["2024-11-15"]);
+    add("Dia da Consciência Negra (Feriado Nacional)", ["2024-11-20"]);
+    add("Natal (Feriado Nacional)", ["2024-12-25"]);
+    // Recesso 2024/2025 — 20/12 a 20/01 (inclusive)
+    addRange("Recesso Forense", "2024-12-20", "2025-01-20");
+
+    // 2025
+    add("Ano Novo (Feriado Nacional)", ["2025-01-01"]);
+    add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2025-03-03","2025-03-04"]);
+    add("Quarta-feira de Cinzas (regra especial)", ["2025-03-05"], {ash:true});
+    add("Semana Santa — Feriado no Tribunal", ["2025-04-16","2025-04-17","2025-04-18"]);
+    add("Tiradentes (Feriado Nacional)", ["2025-04-21"]);
+    add("Dia do Trabalho (Feriado Nacional)", ["2025-05-01"]);
+    add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2025-05-24"]);
+    add("Corpus Christi (Feriado Nacional)", ["2025-06-19"]);
+    add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2025-07-26"]);
+    add("Independência do Brasil (Feriado Nacional)", ["2025-09-07"]);
+    add("Nossa Senhora Aparecida (Feriado Nacional)", ["2025-10-12"]);
+    add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2025-10-24"]);
+    add("Dia do Servidor Público (Feriado Estadual)", ["2025-10-28"]);
+    add("Finados (Feriado Nacional)", ["2025-11-02"]);
+    add("Proclamação da República (Feriado Nacional)", ["2025-11-15"]);
+    add("Dia da Consciência Negra (Feriado Nacional)", ["2025-11-20"]);
+    add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2025-12-08"]);
+    add("Natal (Feriado Nacional)", ["2025-12-25"]);
+    // Recesso 2025/2026 — 20/12 a 20/01 (inclusive)
+    addRange("Recesso Forense", "2025-12-20", "2026-01-20");
+
+    // ---------- Helpers ----------
+    function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
+    function isAshWednesday(d){ return ASH.has(ymd(d)); }
+    function holidayInfo(d){ const k=ymd(d); return HOLIDAYS.get(k) || null; }
+
+    // mode: 'counting' (contagem em curso, QF conta) | 'start_end' (início/fim, QF bloqueia)
+    function isHoliday(d, mode='counting'){
+      const info = holidayInfo(d);
+      if(info){
+        if(isAshWednesday(d)){
+          return mode === 'start_end' ? info : null;
+        }
+        return info;
+      }
+      return null;
+    }
+    function isBusinessDay(d, mode='counting'){
+      if(isWeekend(d)) return false;
+      const h = isHoliday(d, mode);
+      if(h) return false;
+      return true;
+    }
+    function nextBusinessDay(d, mode='counting'){
+      let cur = new Date(d);
+      while(!isBusinessDay(cur, mode)) cur = addDays(cur,1);
+      return cur;
+    }
+
+    function reasonNonUseful(d, mode='counting'){
+      // Priority: Recesso > Feriado > QF(start_end) > Fim de semana
+      const h = holidayInfo(d);
+      if(h){
+        if(h.name.toLowerCase().includes('recesso')) return 'Recesso forense';
+        if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+        // regular holiday
+        return `Feriado — ${h.name}`;
+      }
+      if(isWeekend(d)) return 'Fim de semana';
+      if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+      return '';
+    }
+
+    function classifyDay(d, mode='counting'){
+      const obj = {date: new Date(d), dow: diaSemana(d), tag: '', badge:'', obs:[], final:false};
+      if(isWeekend(d)){ obj.tag='Não útil'; obj.badge='bad'; obj.obs.push('Fim de semana'); return obj; }
+      const h = isHoliday(d, mode);
+      if(h){
+        obj.tag='Não útil'; obj.badge='warn'; obj.obs.push(h.name.toLowerCase().includes('recesso') ? 'Recesso forense' : h.name);
+        if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; }
+        return obj;
+      }
+      if(isAshWednesday(d) && mode==='counting'){
+        obj.tag='Útil'; obj.badge='ok'; obj.obs.push('QF — contado (contagem em curso)');
+        return obj;
+      }
+      obj.tag='Útil'; obj.badge='ok';
+      return obj;
+    }
+
+    // Conta N dias úteis; aplica prorrogação se final cair em QF (não pode finalizar)
+    function addBusinessDays(start, n, firstDayNote=null){
+      let cur = new Date(start);
+      let count = 0;
+      const counted = new Map(); // ymd -> obs array
+      while(count < n){
+        cur = addDays(cur, 1);
+        if(isBusinessDay(cur, 'counting')){
+          count++;
+          const obs = [`Dia útil de contagem #${count}`];
+          if(count === 1 && firstDayNote){ obs[0] += ` (${firstDayNote})`; }
+          if(count === n){ obs.push('Data teórica final do prazo'); }
+          counted.set(ymd(cur), obs);
+        }
+      }
+      if(isAshWednesday(cur)){
+        const key = ymd(cur);
+        if(counted.has(key)) counted.get(key).push('QF — não finaliza; prorrogado');
+        let bump = nextBusinessDay(addDays(cur,1), 'start_end');
+        counted.set(ymd(bump), ['Prorrogação da final por QF → Data final']);
+        cur = bump;
+      } else {
+        const key = ymd(cur);
+        if(counted.has(key)) counted.get(key).push('Data final do prazo');
+        else counted.set(key, ['Data final do prazo']);
+      }
+      return {end: cur, counted};
+    }
+
+    // ---------- Principal ----------
+    document.querySelectorAll('.chip').forEach(ch => {
+      ch.addEventListener('click', ()=>{
+        document.getElementById('dias').value = ch.dataset.d;
+      });
+    });
+
+    document.getElementById('btnCalcular').addEventListener('click', ()=>{
+      const tipo = document.getElementById('tipo').value;
+      const sData = document.getElementById('dataBase').value;
+      const nDias = parseInt(document.getElementById('dias').value, 10);
+      if(!sData || isNaN(nDias) || nDias<=0){
+        alert('Informe a Data Inicial e um número válido de dias.');
+        return;
+      }
+
+      const marco = parseISO(sData);
+      let D1=null, D2=null, inicioContagem=null, firstNote=null;
+
+      if(tipo === 'leitura'){
+        inicioContagem = nextBusinessDay(addDays(marco,1), 'start_end');
+        firstNote = '1º dia útil após leitura';
+      } else {
+        D1 = nextBusinessDay(addDays(marco,1), 'counting');
+        D2 = nextBusinessDay(addDays(D1,1), 'counting');
+        inicioContagem = nextBusinessDay(addDays(D2,1), 'start_end');
+        firstNote = 'dia útil subsequente à publicação D2';
+      }
+
+      const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+
+      // --- Montar auditoria contínua ---
+      const tbody = document.querySelector('#tabela tbody');
+      tbody.innerHTML = '';
+      let idx = 0;
+
+      let cursor = new Date(marco);
+      const endInclusive = new Date(dataFinal);
+
+      while(cursor <= endInclusive){
+        idx++;
+        const key = ymd(cursor);
+        const isMarco = (key === ymd(marco));
+        let mode = (cursor < inicioContagem) ? 'start_end' : 'counting';
+
+        const base = classifyDay(cursor, mode);
+        const obsParts = [];
+
+        // Decidir observação base para não útil com prioridade
+        if(base.tag === 'Não útil'){
+          let reason = reasonNonUseful(cursor, mode);
+          // Caso especial: dia do marco
+          if(isMarco){
+            const marcoTxt = (tipo==='leitura')?'Dia da leitura':'Dia da expedição';
+            // Se é recesso, preferir "Recesso forense — Dia da ..."
+            const isRecesso = (reason.toLowerCase().includes('recesso'));
+            if(isRecesso){
+              reason = 'Recesso forense — ' + marcoTxt;
+              obsParts.push(reason);
+            } else {
+              // Seguir exemplo do usuário: mostrar apenas o marco (não repetir o motivo, ex.: domingo de leitura)
+              obsParts.push(marcoTxt);
+            }
+          } else {
+            obsParts.push(reason);
+          }
+        }
+
+        // D1 / D2 (publicação)
+        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil após expedição)');
+        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil após expedição)');
+
+        // Dias úteis contados
+        if(counted.has(key)){
+          // Dia contado sempre "Útil"
+          base.tag = 'Útil'; base.badge='ok';
+          obsParts.push(...counted.get(key));
+        }else{
+          // Útil e não contado — justificar quando antes do início (aguardando D1/início)
+          if(base.tag === 'Útil'){
+            if(cursor < inicioContagem){
+              if(tipo === 'leitura'){
+                obsParts.push('Dia não considerado por regra de publicação (aguardando início)');
+              } else {
+                obsParts.push('Dia não considerado por regra de publicação (aguardando D1)');
+              }
+            }
+          }
+        }
+
+        // Render
+        const tr = document.createElement('tr');
+        const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
+        const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
+        const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
+        const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
+        const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
+        tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
+        if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
+        tbody.appendChild(tr);
+
+        cursor = addDays(cursor,1);
+      }
+
+      document.getElementById('finalDate').innerHTML =
+        `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${fmtBR(dataFinal)}</span>`;
+      document.getElementById('resultado').style.display = 'block';
+
+      // Copiar resumo / CSV
+      document.getElementById('btnCopiar').onclick = ()=>{
+        const resumo = [
+          `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
+          `Data Inicial: ${fmtBR(marco)}`,
+          `Dias de prazo: ${nDias}`,
+          `Data final: ${fmtBR(dataFinal)}`
+        ].join('\n');
+        navigator.clipboard.writeText(resumo).then(()=> alert('Resumo copiado.'));
+      };
+
+      document.getElementById('btnCSV').onclick = ()=>{
+        const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
+        const trs = document.querySelectorAll('#tabela tbody tr');
+        trs.forEach(tr=>{
+          const tds = tr.querySelectorAll('td');
+          const cols = [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].innerText, tds[4].textContent];
+          linhas.push(cols);
+        });
+        const csv = linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'auditoria_prazo.csv';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      };
+    });
+  </script>
+</body>
+</html>
