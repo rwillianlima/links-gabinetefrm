@@ -440,8 +440,8 @@
         }
 
         // D1 / D2 (publicação)
-        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil após expedição)');
-        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil após expedição)');
+        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil - disponibilização)');
+        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil - publicação)');
 
         // Dias úteis contados
         if(counted.has(key)){
