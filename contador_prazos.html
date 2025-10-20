@@ -6,26 +6,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Contador de Prazos Cíveis — TJGO (2023–2025)</title>
   <style>
-    /* ===== Paleta neutra: papel / grafite / sépia ===== */
+    /* ===== Paleta neutra + cores funcionais discretas (jurídicas) ===== */
     :root{
+      /* Base “papel” */
       --paper:#f8f6f2;
       --paper-2:#f3efe8;
       --paper-3:#eee9e1;
       --card:#ffffff;
       --ink:#2b2b2b;
-      --sepia:#7a6f61;
-      --graphite:#3a3a3a;
-      --muted:#6b6b6b;
+      --sepia:#7a6f61;      /* feriado / não útil institucional */
+      --graphite:#3a3a3a;   /* header / botões principais */
+      --muted:#68625a;
       --line:#e3ded6;
       --line-2:#d8d1c4;
 
-      /* Compat: preservar variáveis referenciadas no JS */
+      /* Cores funcionais discretas (paleta Y) */
+      --useful:#4d6b4d;     /* Útil (oliva/verde murcho) */
+      --holiday:#7a6f61;    /* Feriado (sépia/marrom)   */
+      --recess:#6a1f1f;     /* Recesso (vinho)          */
+      --ash:#8a6d3b;        /* Quarta-feira de Cinzas (dourado murcho) */
+
+      /* Compat c/ JS existente */
       --bg:var(--paper);
       --row:#fbf9f5;
       --row2:#f5f1ea;
       --chip:#f2eee7;
       --hl:#f1ede5;
-      --bad:#3a3a3a; /* usado em outline da linha final */
+      --bad:var(--recess);  /* usado no outline da linha final */
     }
 
     *{box-sizing:border-box}
@@ -33,19 +40,29 @@
     body{
       margin:0; background:var(--paper); color:var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      line-height:1.4;
+      line-height:1.45;
     }
 
     /* ===== Header escuro (coerente com sidebar da outra página) ===== */
     header{
-      position:relative;
-      z-index:10;
-      background:var(--graphite);
-      color:#fff;
-      padding:28px 20px 22px;
+      position:relative; z-index:10;
+      background:var(--graphite); color:#fff; padding:28px 20px 22px;
     }
-    header h1{margin:0 0 6px; font-weight:800; letter-spacing:.2px}
-    header p{margin:0; opacity:.92}
+    header h1{margin:0 0 8px; font-weight:800; letter-spacing:.2px}
+    header p{margin:0; opacity:.96}
+    header .legal{
+      margin-top:10px; font-size:.98rem; line-height:1.35; opacity:.95;
+    }
+
+    /* ===== Botão flutuante de retorno ===== */
+    .btn-float{
+      position:fixed; top:12px; left:12px; z-index:20;
+      background:#fff; color:var(--ink); border:1px solid #cfc8bc; border-radius:999px;
+      padding:10px 14px; text-decoration:none; font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,.08);
+      display:inline-flex; align-items:center; gap:8px; transition:background .2s ease, transform .2s ease;
+    }
+    .btn-float:hover{background:var(--paper-3); transform:translateY(-1px)}
+    .btn-float .arr{font-weight:800}
 
     /* ===== Layout principal ===== */
     main{max-width:1100px; margin:-32px auto 48px; padding:0 16px}
@@ -65,30 +82,37 @@
       border-color:#cdc6ba; box-shadow:0 0 0 3px rgba(100,93,82,.12);
     }
 
-    .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--muted)}
+    .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 
-    /* ===== Botões neutros (borda + hover suave) ===== */
+    /* ===== Botões da calculadora (com cor discreta) ===== */
     .btn{
-      border:1px solid #46423c; padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700;
-      background:transparent; color:var(--ink); transition:background .2s ease, transform .2s ease;
-      letter-spacing:.25px
+      padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700; letter-spacing:.25px;
+      transition:background .2s ease, transform .2s ease, color .2s ease, border-color .2s ease;
+      border:1px solid transparent;
     }
-    .btn:hover{background:var(--paper-3); transform:translateY(-1px)}
-    .btn.secondary{border-color:#a59c90}
-    .btn.ghost{border-color:#e5e1db; color:var(--ink)}
+    .btn.primary{background:var(--graphite); color:#fff;}
+    .btn.primary:hover{transform:translateY(-1px);}
 
-    /* ===== Chips neutras ===== */
+    .btn.secondary{background:var(--sepia); color:#fff; border-color:rgba(0,0,0,.05)}
+    .btn.secondary:hover{filter:brightness(0.95); transform:translateY(-1px)}
+
+    .btn.ghost{background:transparent; border-color:#e5e1db; color:var(--ink)}
+    .btn.ghost:hover{background:var(--paper-3)}
+
+    /* ===== Chips com leve cor funcional ===== */
     .chips{display:flex; gap:8px; flex-wrap:wrap}
     .chip{
       padding:8px 10px; background:transparent; color:var(--ink); border-radius:999px; font-weight:700; cursor:pointer;
-      border:1px solid #e0dcd4; font-size:.95rem; transition:background .2s ease;
+      border:1px solid #e0dcd4; font-size:.95rem; transition:background .2s ease, border-color .2s ease, color .2s ease;
     }
     .chip:hover{background:var(--paper-3)}
+    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
 
     .muted{color:var(--muted); font-size:.92rem}
     .result{margin-top:18px}
 
-    /* ===== Destaque final neutro ===== */
+    /* ===== Destaque final ===== */
     .final-date{
       margin:16px 0 6px; padding:14px 16px; background:var(--hl); border:1px dashed var(--line-2);
       border-radius:12px; font-weight:800; font-size:1.05rem; color:var(--ink);
@@ -105,30 +129,23 @@
     tbody tr:nth-child(odd){background:var(--row)}
     tbody tr:nth-child(even){background:var(--row2)}
 
-    /* ===== Tag neutra (sem semântica de cor) ===== */
+    /* ===== Tag com cores discretas por categoria ===== */
     .tag{
       padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block;
-      background:transparent; color:var(--ink); border:1px solid #cfc8bc;
+      border:1px solid transparent;
     }
-    .tag.ok, .tag.bad, .tag.warn, .tag.info{ /* todas neutras */ }
+    .tag.ok{        background:rgba(77,107,77,.10);   color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{      background:rgba(122,111,97,.10);  color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{   background:rgba(106,31,31,.10);   color:var(--recess);  border-color:rgba(106,31,31,.25)}
+    .tag.info{      background:rgba(138,109,59,.10);  color:var(--ash);     border-color:rgba(138,109,59,.25)}
 
     .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
 
     footer{max-width:1100px; margin:24px auto 60px; padding:0 16px; color:var(--muted)}
     .small{font-size:.9rem}
     .code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; background:#f6f2ea; padding:2px 6px; border-radius:6px; border:1px solid var(--line); color:#423e38}
-    .danger{color:var(--ink); font-weight:800}   /* neutro */
-    .success{color:var(--ink); font-weight:800}  /* neutro */
-
-    /* ===== Botão flutuante (retorno p/ index) ===== */
-    .btn-float{
-      position:fixed; top:12px; left:12px; z-index:20;
-      background:#fff; color:var(--ink); border:1px solid #cfc8bc; border-radius:999px;
-      padding:10px 14px; text-decoration:none; font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,.08);
-      display:inline-flex; align-items:center; gap:8px; transition:background .2s ease, transform .2s ease;
-    }
-    .btn-float:hover{background:var(--paper-3); transform:translateY(-1px)}
-    .btn-float .arr{font-weight:800}
+    .danger{color:var(--recess); font-weight:800}
+    .success{color:var(--useful); font-weight:800}
   </style>
 </head>
 <body>
@@ -137,18 +154,14 @@
     <span class="arr">⬅</span> Início
   </a>
 
-  <!--
-    ALTERAÇÕES (2025-10-19):
-    - Campo renomeado: "Data Inicial"
-    - Auditoria contínua marco→final; justificativa de não contagem com prioridade: Recesso > Feriado > QF(start/end) > Fim de semana
-    - QF: conta em curso; não inicia/não finaliza
-    - Recesso: 20/12–20/01 (inclusive); R2 aplicado
-    - Fusão: sem linha "Início da contagem"; nota incorporada ao #1
-    - Marco em Recesso: "Recesso forense — Dia da leitura/expedição"
-  -->
   <header>
     <h1>Contador de Prazos Cíveis — TJGO</h1>
-    <p>Regras: <strong>Leitura</strong> → 1º dia útil seguinte (não inicia em Quarta-feira de Cinzas). <strong>Expedição</strong> → D1/D2 (QF pode); contagem inicia no <em>dia útil subsequente</em> (não iniciar em QF). Recesso: <strong>20/12 a 20/01</strong> (inclusive).</p>
+    <p class="legal">
+      <strong>Leitura</strong>: a contagem inicia no <em>primeiro dia útil subsequente</em> à leitura da intimação.<br>
+      <strong>Expedição</strong>: considera-se publicação em <em>D1/D2</em>; a contagem inicia no <em>primeiro dia útil subsequente</em> à publicação.<br>
+      <strong>Regra de Quarta-feira de Cinzas</strong>: não se inicia nem se encerra prazo nesta data; durante a contagem, o dia é útil.<br>
+      <strong>Recesso forense</strong>: de <em>20/12 a 20/01</em> (inclusive). A contagem observa apenas <em>dias úteis</em>, com prorrogação quando o termo final recair em dia não útil.
+    </p>
   </header>
 
   <main>
@@ -174,7 +187,7 @@
       </div>
 
       <div class="actions" style="margin-top:12px">
-        <button class="btn" id="btnCalcular">Calcular prazo</button>
+        <button class="btn primary" id="btnCalcular">Calcular prazo</button>
         <div class="chips">
           <button class="chip" data-d="5">5 dias</button>
           <button class="chip" data-d="15">15 dias</button>
@@ -207,9 +220,9 @@
     </section>
   </main>
 
-    <footer class="small">
-      <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023, 2024 e 2025) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
-    </footer>
+  <footer class="small">
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023, 2024 e 2025) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
 
   <script>
     // ---------- Utilidades de datas ----------
@@ -330,6 +343,7 @@
       }
       return null;
     }
+
     function isBusinessDay(d, mode='counting'){
       if(isWeekend(d)) return false;
       const h = isHoliday(d, mode);
@@ -343,7 +357,7 @@
     }
 
     function reasonNonUseful(d, mode='counting'){
-      // Priority: Recesso > Feriado > QF(start_end) > Fim de semana
+      // Prioridade: Recesso > Feriado > QF(start_end) > Fim de semana
       const h = holidayInfo(d);
       if(h){
         if(h.name.toLowerCase().includes('recesso')) return 'Recesso forense';
@@ -357,17 +371,30 @@
 
     function classifyDay(d, mode='counting'){
       const obj = {date: new Date(d), dow: diaSemana(d), tag: '', badge:'', obs:[], final:false};
-      if(isWeekend(d)){ obj.tag='Não útil'; obj.badge='bad'; obj.obs.push('Fim de semana'); return obj; }
+
+      // Fim de semana
+      if(isWeekend(d)){
+        obj.tag='Não útil'; obj.badge='warn'; // usaremos o mesmo estilo de feriado
+        obj.obs.push('Fim de semana');
+        return obj;
+      }
+
+      // Feriados e recesso
       const h = isHoliday(d, mode);
       if(h){
-        obj.tag='Não útil'; obj.badge='warn'; obj.obs.push(h.name.toLowerCase().includes('recesso') ? 'Recesso forense' : h.name);
-        if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; }
+        const isRec = h.name.toLowerCase().includes('recesso');
+        obj.tag='Não útil'; obj.badge = isRec ? 'recesso' : 'warn';
+        obj.obs.push(isRec ? 'Recesso forense' : h.name);
+        if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; obj.badge='info'; }
         return obj;
       }
+
+      // Quarta-feira de Cinzas — durante contagem é útil
       if(isAshWednesday(d) && mode==='counting'){
-        obj.tag='Útil'; obj.badge='ok'; obj.obs.push('QF — contado (contagem em curso)');
+        obj.tag='Útil'; obj.badge='info'; obj.obs.push('QF — contado (contagem em curso)');
         return obj;
       }
+
       obj.tag='Útil'; obj.badge='ok';
       return obj;
     }
@@ -449,10 +476,9 @@
         const base = classifyDay(cursor, mode);
         const obsParts = [];
 
-        // Decidir observação base para não útil com prioridade
+        // Observação base para não útil (prioridade)
         if(base.tag === 'Não útil'){
           let reason = reasonNonUseful(cursor, mode);
-          // Caso especial: dia do marco
           if(isMarco){
             const marcoTxt = (tipo==='leitura')?'Dia da leitura':'Dia da expedição';
             const isRecesso = (reason.toLowerCase().includes('recesso'));
@@ -468,8 +494,8 @@
         }
 
         // D1 / D2 (publicação)
-        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil - disponibilização)');
-        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil - publicação)');
+        if(D1 && key === ymd(D1)) obsParts.push('Publicação D1 (1º dia útil após expedição)');
+        if(D2 && key === ymd(D2)) obsParts.push('Publicação D2 (2º dia útil após expedição)');
 
         // Dias úteis contados
         if(counted.has(key)){
@@ -492,9 +518,12 @@
         const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
         const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
         const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
+
+        // badge: ok | warn | recesso | info
         const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
         const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
         tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
+
         if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
         tbody.appendChild(tr);
 
