@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,163 +5,110 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Contador de Prazos Cíveis — TJGO (2023–2025)</title>
   <style>
-    /* ===== Paleta neutra + cores funcionais discretas (jurídicas) ===== */
     :root{
-      /* Base “papel” */
-      --paper:#f8f6f2;
-      --paper-2:#f3efe8;
-      --paper-3:#eee9e1;
-      --card:#ffffff;
-      --ink:#2b2b2b;
-      --sepia:#7a6f61;      /* feriado / não útil institucional */
-      --graphite:#3a3a3a;   /* header / botões principais */
-      --muted:#68625a;
-      --line:#e3ded6;
-      --line-2:#d8d1c4;
-
-      /* Cores funcionais discretas (paleta Y) */
-      --useful:#4d6b4d;     /* Útil (oliva/verde murcho) */
-      --holiday:#7a6f61;    /* Feriado (sépia/marrom)   */
-      --recess:#6a1f1f;     /* Recesso (vinho)          */
-      --ash:#8a6d3b;        /* Quarta-feira de Cinzas (dourado murcho) */
-
-      /* Compat c/ JS existente */
-      --bg:var(--paper);
-      --row:#fbf9f5;
-      --row2:#f5f1ea;
-      --chip:#f2eee7;
-      --hl:#f1ede5;
-      --bad:var(--recess);  /* usado no outline da linha final */
+      --paper:#f8f6f2; --paper-3:#eee9e1; --card:#ffffff;
+      --ink:#2b2b2b; --sepia:#7a6f61; --graphite:#3a3a3a;
+      --line:#e3ded6; --line-2:#d8d1c4;
+      --useful:#4d6b4d; --holiday:#7a6f61; --recess:#6a1f1f; --ash:#8a6d3b;
+      --row:#fbf9f5; --row2:#f5f1ea; --hl:#f1ede5; --bad:var(--recess);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; background:var(--paper); color:var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      line-height:1.45;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    /* ===== Header escuro (coerente com sidebar da outra página) ===== */
+    /* Sidebar fixa de retorno */
+    #sidebar-back{
+      position:fixed; top:0; left:0; width:200px; height:100%;
+      background:var(--graphite); color:white; display:flex; flex-direction:column;
+      padding-top:10px; box-shadow:2px 0 6px rgba(0,0,0,.25); z-index:30;
+    }
+    #sidebar-back a{
+      display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:600;
+      border-left:3px solid transparent; transition:background .2s ease;
+    }
+    #sidebar-back a:hover{background:rgba(255,255,255,.12)}
+
+    /* deslocar conteúdo */
+    header, main, footer{margin-left:200px}
+
     header{
-      position:relative; z-index:10;
-      background:var(--graphite); color:#fff; padding:28px 20px 22px;
+      background:var(--graphite); color:#fff;
+      padding:28px 20px 22px;
     }
-    header h1{margin:0 0 8px; font-weight:800; letter-spacing:.2px}
-    header p{margin:0; opacity:.96}
-    header .legal{
-      margin-top:10px; font-size:.98rem; line-height:1.35; opacity:.95;
-    }
+    header h1{margin:0 0 8px; font-weight:800}
+    header .legal{margin-top:10px; font-size:.95rem; line-height:1.35; opacity:.94}
 
-    /* ===== Botão flutuante de retorno ===== */
-    .btn-float{
-      position:fixed; top:12px; left:12px; z-index:20;
-      background:#fff; color:var(--ink); border:1px solid #cfc8bc; border-radius:999px;
-      padding:10px 14px; text-decoration:none; font-weight:700; box-shadow:0 4px 12px rgba(0,0,0,.08);
-      display:inline-flex; align-items:center; gap:8px; transition:background .2s ease, transform .2s ease;
-    }
-    .btn-float:hover{background:var(--paper-3); transform:translateY(-1px)}
-    .btn-float .arr{font-weight:800}
-
-    /* ===== Layout principal ===== */
     main{max-width:1100px; margin:-32px auto 48px; padding:0 16px}
     .card{
-      background:var(--card); border-radius:18px; box-shadow:0 10px 25px rgba(2,12,27,.06);
-      padding:18px 18px 12px; border:1px solid var(--line);
+      background:var(--card); border-radius:18px; border:1px solid var(--line);
+      box-shadow:0 10px 25px rgba(2,12,27,.06); padding:18px 18px 12px;
     }
     .grid{display:grid; grid-template-columns:1.1fr 1fr .9fr; gap:12px}
     .field{display:flex; flex-direction:column; gap:6px}
     label{font-size:.92rem; color:#4a4743; font-weight:600}
-
     input[type="date"], select, input[type="number"]{
       width:100%; padding:12px 14px; border:1px solid #e5e1db; border-radius:12px; font-size:1rem;
-      background:#fff; outline:none; transition:border-color .2s ease, box-shadow .2s ease;
-    }
-    input[type="date"]:focus, select:focus, input[type="number"]:focus{
-      border-color:#cdc6ba; box-shadow:0 0 0 3px rgba(100,93,82,.12);
+      background:#fff; outline:none;
     }
 
     .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 
-    /* ===== Botões da calculadora (com cor discreta) ===== */
     .btn{
-      padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700; letter-spacing:.25px;
-      transition:background .2s ease, transform .2s ease, color .2s ease, border-color .2s ease;
-      border:1px solid transparent;
+      padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      border:1px solid transparent; letter-spacing:.25px;
     }
     .btn.primary{background:var(--graphite); color:#fff;}
-    .btn.primary:hover{transform:translateY(-1px);}
+    .btn.secondary{background:var(--sepia); color:#fff;}
+    .btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
+    .btn:hover{transform:translateY(-1px)}
 
-    .btn.secondary{background:var(--sepia); color:#fff; border-color:rgba(0,0,0,.05)}
-    .btn.secondary:hover{filter:brightness(0.95); transform:translateY(-1px)}
-
-    .btn.ghost{background:transparent; border-color:#e5e1db; color:var(--ink)}
-    .btn.ghost:hover{background:var(--paper-3)}
-
-    /* ===== Chips com leve cor funcional ===== */
     .chips{display:flex; gap:8px; flex-wrap:wrap}
     .chip{
-      padding:8px 10px; background:transparent; color:var(--ink); border-radius:999px; font-weight:700; cursor:pointer;
-      border:1px solid #e0dcd4; font-size:.95rem; transition:background .2s ease, border-color .2s ease, color .2s ease;
+      padding:8px 10px; background:transparent; border:1px solid #d6d0c7;
+      border-radius:999px; font-weight:700; cursor:pointer; font-size:.93rem;
     }
     .chip:hover{background:var(--paper-3)}
     .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
     .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
 
-    .muted{color:var(--muted); font-size:.92rem}
-    .result{margin-top:18px}
-
-    /* ===== Destaque final ===== */
-    .final-date{
-      margin:16px 0 6px; padding:14px 16px; background:var(--hl); border:1px dashed var(--line-2);
-      border-radius:12px; font-weight:800; font-size:1.05rem; color:var(--ink);
-    }
-
-    /* ===== Tabela ===== */
+    .final-date{margin:16px 0 6px; padding:14px 16px; background:var(--hl);
+      border:1px dashed var(--line-2); border-radius:12px; font-weight:800;}
     table{width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; font-size:.95rem}
-    thead th{
-      position:sticky; top:0; background:#fff; z-index:2;
-      text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);
-      color:#4a4743; font-weight:700;
-    }
-    tbody td{padding:10px 12px; border-bottom:1px dashed #e7e2da; color:var(--ink)}
+    thead th{position:sticky; top:0; background:#fff; z-index:2; padding:10px 12px; border-bottom:1px solid var(--line);}
+    tbody td{padding:10px 12px; border-bottom:1px dashed #e7e2da}
     tbody tr:nth-child(odd){background:var(--row)}
     tbody tr:nth-child(even){background:var(--row2)}
 
-    /* ===== Tag com cores discretas por categoria ===== */
-    .tag{
-      padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block;
-      border:1px solid transparent;
-    }
-    .tag.ok{        background:rgba(77,107,77,.10);   color:var(--useful); border-color:rgba(77,107,77,.25)}
-    .tag.warn{      background:rgba(122,111,97,.10);  color:var(--holiday); border-color:rgba(122,111,97,.25)}
-    .tag.recesso{   background:rgba(106,31,31,.10);   color:var(--recess);  border-color:rgba(106,31,31,.25)}
-    .tag.info{      background:rgba(138,109,59,.10);  color:var(--ash);     border-color:rgba(138,109,59,.25)}
+    .tag{padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block; border:1px solid transparent;}
+    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
+    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
 
-    .toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-
-    footer{max-width:1100px; margin:24px auto 60px; padding:0 16px; color:var(--muted)}
-    .small{font-size:.9rem}
-    .code{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; background:#f6f2ea; padding:2px 6px; border-radius:6px; border:1px solid var(--line); color:#423e38}
+    footer{max-width:1100px; margin:24px auto 60px; padding:0 16px; color:#6b655d; font-size:.9rem}
+    .code{padding:2px 6px; border-radius:6px; border:1px solid var(--line); background:#f4f1eb}
     .danger{color:var(--recess); font-weight:800}
-    .success{color:var(--useful); font-weight:800}
   </style>
 </head>
 <body>
-  <!-- Botão flutuante de retorno -->
-  <a href="index.html" class="btn-float" aria-label="Voltar para a página inicial">
-    <span class="arr">⬅</span> Início
-  </a>
 
-  <header>
-    <h1>Contador de Prazos Cíveis — TJGO</h1>
-    <p class="legal">
-      <strong>Leitura</strong>: a contagem inicia no <em>primeiro dia útil subsequente</em> à leitura da intimação.<br>
-      <strong>Expedição</strong>: considera-se publicação em <em>D1/D2</em>; a contagem inicia no <em>primeiro dia útil subsequente</em> à publicação.<br>
-      <strong>Regra de Quarta-feira de Cinzas</strong>: não se inicia nem se encerra prazo nesta data; durante a contagem, o dia é útil.<br>
-      <strong>Recesso forense</strong>: de <em>20/12 a 20/01</em> (inclusive). A contagem observa apenas <em>dias úteis</em>, com prorrogação quando o termo final recair em dia não útil.
-    </p>
-  </header>
+<div id="sidebar-back">
+  <a href="index.html">⬅ Voltar ao Início</a>
+</div>
+
+<header>
+  <h1>Contador de Prazos Cíveis — TJGO</h1>
+  <p class="legal">
+    <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+    <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação.<br>
+    <strong>QF</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+    <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+  </p>
+</header>
 
   <main>
     <section class="card">
