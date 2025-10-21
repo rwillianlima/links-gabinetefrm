@@ -147,7 +147,7 @@
             max-width: 100%;
             background: var(--white);
             color: var(--text-color);
-            font-size: 16px; /* Previne zoom no iOS */
+            font-size: 16px;
         }
 
         .search-bar button {
@@ -224,48 +224,46 @@
         .block {
             background: var(--white);
             border-radius: 6px;
-            padding: 16px;
-            margin: 10px auto;
+            padding: 20px;
+            margin: 15px auto;
             max-width: 900px;
             display: none;
             position: relative;
             border: 1px solid #ddd;
+            text-align: left;
         }
 
-        .block p {
-            margin: 4px 0 0 0;
-            font-size: .9rem;
-            line-height: 1.45;
-            color: var(--text-color);
-            text-align: justify;
+        .ementa-content {
+            margin-right: 40px;
+            line-height: 1.6;
         }
 
-        .type {
-            margin-top: 6px;
-            font-size: .85rem;
+        .referencia {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-style: italic;
             color: #666;
-            text-align: center;
+            font-size: 0.9rem;
         }
 
-        .meta {
-            margin-top: 8px;
-            font-size: .85rem;
-            color: #666;
-            text-align: center;
-        }
-
-        /* Copy button (em cada bloco) */
+        /* Copy button como ícone */
         .copy-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
             border: none;
             border-radius: 4px;
-            padding: 6px 10px;
+            padding: 8px;
             background: var(--primary-color);
             color: var(--white);
             cursor: pointer;
-            font-size: .8rem;
+            font-size: 1rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .copy-btn:hover {
@@ -290,7 +288,7 @@
             color: var(--white);
             padding: 8px 12px;
             cursor: pointer;
-            min-width: 44px; /* Tamanho mínimo para touch */
+            min-width: 44px;
         }
 
         .pagination button.active {
@@ -303,14 +301,14 @@
             cursor: not-allowed;
         }
 
-        /* Contêiner de resultados (oculto até a busca) */
+        /* Contêiner de resultados */
         #allBlocks {
             display: none;
             padding: 0 15px;
         }
 
         /* Destaque dos termos encontrados */
-        mark {
+        .highlight {
             background: #ffeb3b;
             color: #000;
             font-weight: bold;
@@ -366,14 +364,12 @@
 
             .block {
                 margin: 10px 15px;
-                padding: 60px 16px 16px 16px;
+                padding: 60px 20px 20px 20px;
             }
 
             .copy-btn {
                 top: 15px;
                 right: 15px;
-                padding: 8px 12px;
-                font-size: 0.9rem;
             }
 
             #content h1 {
@@ -388,6 +384,10 @@
 
             .dataset-info {
                 padding: 0 15px;
+            }
+
+            .ementa-content {
+                margin-right: 0;
             }
         }
 
@@ -422,7 +422,7 @@
     <div id="mobile-menu">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
         <span style="color: white; font-weight: bold;">6ª Câmara Cível</span>
-        <div style="width: 40px;"></div> <!-- Espaçador -->
+        <div style="width: 40px;"></div>
     </div>
 
     <!-- Sidebar -->
@@ -485,6 +485,7 @@
         let dataset = [];
         let filteredData = [];
         let lastUpdate = '';
+        let currentSearchTerms = '';
 
         // Alternar sidebar no mobile
         function toggleSidebar() {
@@ -522,19 +523,38 @@
 
         // Carregar dados da planilha
         function loadDataset() {
-         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&output=csv';
+            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&output=csv';
+            
+            document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados...';
             
             Papa.parse(csvUrl, {
                 download: true,
                 header: true,
                 complete: function(results) {
-                    dataset = results.data.filter(item => Object.keys(item).length > 0);
+                    if (results.errors && results.errors.length > 0) {
+                        console.error('Erros no parse:', results.errors);
+                        document.getElementById('datasetInfo').textContent = 'Erro na formatação dos dados';
+                        return;
+                    }
+                    
+                    dataset = results.data.filter(item => 
+                        item && Object.keys(item).length > 0 && item.Processo
+                    );
+                    
+                    if (dataset.length === 0) {
+                        document.getElementById('datasetInfo').textContent = 'Nenhum dado encontrado na planilha';
+                        return;
+                    }
+                    
                     updateDatasetInfo();
                     populateFilters();
                 },
                 error: function(error) {
-                    document.getElementById('datasetInfo').textContent = 'Erro ao carregar dados';
-                    console.error('Erro:', error);
+                    console.error('Erro ao carregar:', error);
+                    document.getElementById('datasetInfo').innerHTML = 
+                        'Erro ao carregar dados. Verifique: <br>' +
+                        '1. Se a planilha está publicada corretamente<br>' +
+                        '2. Se o link de publicação é válido';
                 }
             });
         }
@@ -544,9 +564,15 @@
             
             // Encontrar a última data na planilha (coluna Publicação)
             let latestDate = '';
+            let latestDateObj = null;
+            
             dataset.forEach(item => {
-                if (item.Publicação && item.Publicação > latestDate) {
-                    latestDate = item.Publicação;
+                if (item.Publicação) {
+                    const dateObj = parseDate(item.Publicação);
+                    if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
+                        latestDateObj = dateObj;
+                        latestDate = item.Publicação;
+                    }
                 }
             });
             
@@ -565,7 +591,6 @@
                     return `${parts[0]}/${parts[1]}/${parts[2]}`;
                 }
                 
-                // Tentar outros formatos de data
                 const date = new Date(dateString);
                 if (!isNaN(date.getTime())) {
                     return date.toLocaleDateString('pt-BR');
@@ -577,8 +602,31 @@
             }
         }
 
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            
+            try {
+                // Formato DD/MM/YYYY
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    
+                    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2000) {
+                        return new Date(year, month, day);
+                    }
+                }
+                
+                // Tentar outros formatos
+                const date = new Date(dateString);
+                return !isNaN(date.getTime()) ? date : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
         function populateFilters() {
-            // Preencher filtro de relatores com valores únicos
             const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
             populateSelect('relator', relators);
         }
@@ -586,7 +634,6 @@
         function populateSelect(selectId, options) {
             const select = document.getElementById(selectId);
             
-            // Limpar opções existentes (exceto a primeira)
             while (select.children.length > 1) {
                 select.removeChild(select.lastChild);
             }
@@ -599,8 +646,22 @@
             });
         }
 
+        // Função para destacar termos no texto
+        function highlightText(text, searchTerms) {
+            if (!searchTerms || !text) return text;
+            
+            const terms = searchTerms.toLowerCase()
+                .split(/\s+/)
+                .filter(term => term.length > 2)
+                .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            
+            if (terms.length === 0) return text;
+            
+            const regex = new RegExp(`(${terms.join('|')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
         function performSearch() {
-            // Fechar sidebar no mobile após busca
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('active');
             }
@@ -611,12 +672,14 @@
             const relator = document.getElementById('relator').value;
             const useFuzzy = document.getElementById('fuzzy').checked;
             
+            currentSearchTerms = searchTerms;
+            
             // Filtrar dados
             filteredData = dataset.filter(item => {
                 // Filtro por relator
                 if (relator && item.Relator !== relator) return false;
                 
-                // Filtro por data (se aplicável)
+                // Filtro por data
                 if (startDate || endDate) {
                     const itemDate = parseDate(item.Publicação);
                     if (!itemDate) return false;
@@ -630,7 +693,6 @@
                     const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
                     const normalizedTerms = searchTerms.toLowerCase();
                     
-                    // Busca simples (substituir por lógica mais complexa depois)
                     if (!searchText.includes(normalizedTerms)) return false;
                 }
                 
@@ -640,30 +702,11 @@
             displayResults(filteredData);
         }
 
-        function parseDate(dateString) {
-            if (!dateString) return null;
-            
-            try {
-                // Tentar formato DD/MM/YYYY
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                    return new Date(parts[2], parts[1] - 1, parts[0]);
-                }
-                
-                // Tentar outros formatos
-                const date = new Date(dateString);
-                return !isNaN(date.getTime()) ? date : null;
-            } catch (e) {
-                return null;
-            }
-        }
-
         function displayResults(results) {
             const allBlocks = document.getElementById('allBlocks');
             const resultCount = document.getElementById('resultCount');
             const pagination = document.getElementById('pagination');
             
-            // Limpar resultados anteriores
             allBlocks.innerHTML = '';
             
             if (results.length === 0) {
@@ -684,32 +727,47 @@
                 block.className = 'block';
                 block.style.display = 'block';
                 
+                // Formatar referência
+                const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
+                
+                // Aplicar destaque na ementa
+                const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
+                
                 block.innerHTML = `
-                    <button class="copy-btn" onclick="copyToClipboard(${index})">Copiar</button>
-                    <p><strong>${item.Ementa || 'Sem ementa'}</strong></p>
-                    <div class="meta">
-                        ${item.Publicação ? `Publicação: ${item.Publicação}` : ''} 
-                        ${item.Relator ? ` | Relator: ${item.Relator}` : ''}
-                        ${item.Processo ? ` | Processo: ${item.Processo}` : ''}
-                        ${item.Ato ? ` | Ato: ${item.Ato}` : ''}
+                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
+                    <div class="ementa-content">
+                        ${ementaComDestaque}
+                        <div class="referencia">
+                            ${referencia}
+                        </div>
                     </div>
                 `;
                 
                 allBlocks.appendChild(block);
             });
             
-            // Configurar paginação (simplificado)
             pagination.style.display = 'flex';
         }
 
         function copyToClipboard(index) {
             const item = filteredData[index];
-            const textToCopy = `Ementa: ${item.Ementa || ''}\nProcesso: ${item.Processo || ''}\nRelator: ${item.Relator || ''}\nPublicação: ${item.Publicação || ''}\nAto: ${item.Ato || ''}`;
+            const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
+            const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
             
             navigator.clipboard.writeText(textToCopy).then(() => {
-                alert('Conteúdo copiado para a área de transferência!');
+                // Feedback visual
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                }, 2000);
             }).catch(err => {
                 console.error('Erro ao copiar: ', err);
+                alert('Erro ao copiar para a área de transferência');
             });
         }
 
