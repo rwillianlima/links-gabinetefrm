@@ -13,6 +13,7 @@
 
   #content{
     margin-left:260px;
+    margin-right:260px;
     padding:40px 25px;
     max-width:900px;
   }
@@ -44,7 +45,7 @@
 </head>
 <body>
 
-<!-- ───────── Sidebar ───────── -->
+<!-- ───────── Sidebar Esquerda ───────── -->
 <style>
 #sidebar {
   position:fixed;
@@ -99,6 +100,26 @@
 .external-icon {font-size:.85em;opacity:.7;}
 .menu-item.active {background:rgba(255,255,255,0.18);border-left:3px solid white;}
 #agenda {margin-top:auto;border-top:1px solid rgba(255,255,255,0.15);}
+
+/* Relógio na barra lateral esquerda */
+#clock-container {
+  padding: 15px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  text-align: center;
+}
+
+#date-display {
+  font-size: 0.9em;
+  margin-bottom: 5px;
+  color: #ddd;
+}
+
+#time-display {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: white;
+}
 </style>
 
 <div id="sidebar">
@@ -114,6 +135,154 @@
       <span class="icon">📞</span><span class="text">Agenda Eletrônica</span><span class="external-icon">↗</span>
     </a>
   </nav>
+  
+  <!-- Relógio na parte inferior -->
+  <div id="clock-container">
+    <div id="date-display"></div>
+    <div id="time-display"></div>
+  </div>
+</div>
+
+<!-- ───────── Sidebar Direita ───────── -->
+<style>
+#right-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 240px;
+  height: 100%;
+  background: #3a3a3a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 6px rgba(0,0,0,.2);
+  padding: 10px 15px;
+}
+
+.pomodoro-header {
+  padding: 0 5px 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  margin-bottom: 15px;
+}
+
+.pomodoro-header h3 {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+}
+
+.pomodoro-display {
+  font-size: 2.5em;
+  font-weight: bold;
+  text-align: center;
+  margin: 15px 0;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+}
+
+.pomodoro-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.pomodoro-btn {
+  background: #5a5a5a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background .2s ease;
+  flex: 1;
+  margin: 0 2px;
+}
+
+.pomodoro-btn:hover {
+  background: #6a6a6a;
+}
+
+.pomodoro-btn:active {
+  background: #4a4a4a;
+}
+
+.pomodoro-settings {
+  margin-top: 15px;
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.setting-label {
+  font-size: 0.9em;
+  color: #ddd;
+}
+
+.setting-input {
+  width: 60px;
+  background: #5a5a5a;
+  color: white;
+  border: 1px solid #777;
+  border-radius: 4px;
+  padding: 4px 8px;
+  text-align: center;
+}
+
+.pomodoro-status {
+  text-align: center;
+  font-size: 0.9em;
+  margin-top: 10px;
+  color: #ddd;
+  min-height: 20px;
+}
+
+#reset-btn {
+  background: #8a4a4a;
+}
+
+#reset-btn:hover {
+  background: #9a5a5a;
+}
+
+#start-btn.active {
+  background: #4a8a4a;
+}
+
+#start-btn.active:hover {
+  background: #5a9a5a;
+}
+</style>
+
+<div id="right-sidebar">
+  <div class="pomodoro-header">
+    <h3>🍅 Pomodoro Timer</h3>
+  </div>
+  
+  <div class="pomodoro-display" id="timer-display">25:00</div>
+  
+  <div class="pomodoro-controls">
+    <button class="pomodoro-btn" id="start-btn">Iniciar</button>
+    <button class="pomodoro-btn" id="reset-btn">Resetar</button>
+  </div>
+  
+  <div class="pomodoro-status" id="status-message"></div>
+  
+  <div class="pomodoro-settings">
+    <div class="setting-row">
+      <span class="setting-label">Trabalho (min):</span>
+      <input type="number" class="setting-input" id="work-time" min="1" max="60" value="25">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Pausa (min):</span>
+      <input type="number" class="setting-input" id="break-time" min="1" max="30" value="5">
+    </div>
+  </div>
 </div>
 
 <!-- ───────── Conteúdo principal ───────── -->
@@ -163,6 +332,141 @@
     <a class="btn" href="https://www.tjgo.jus.br/index.php/nugepnac-irdr"                                        target="_blank" rel="noopener noreferrer">⚙️ NUGEPnac – IRDR</a>
   </section>
 </div>
+
+<!-- Áudio para alarme -->
+<audio id="alarm-sound" preload="auto">
+  <source src="https://assets.mixkit.co/active_storage/sfx/257/257-preview.mp3" type="audio/mp3">
+</audio>
+
+<script>
+// ========== RELÓGIO ==========
+function updateClock() {
+  const now = new Date();
+  
+  // Formatar data
+  const optionsDate = { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  };
+  const dateString = now.toLocaleDateString('pt-BR', optionsDate);
+  
+  // Formatar dia da semana
+  const optionsWeekday = { weekday: 'long' };
+  const weekdayString = now.toLocaleDateString('pt-BR', optionsWeekday);
+  const capitalizedWeekday = weekdayString.charAt(0).toUpperCase() + weekdayString.slice(1);
+  
+  // Formatar hora
+  const timeString = now.toLocaleTimeString('pt-BR');
+  
+  // Atualizar elementos
+  document.getElementById('date-display').textContent = `${capitalizedWeekday}, ${dateString}`;
+  document.getElementById('time-display').textContent = timeString;
+}
+
+// Atualizar relógio a cada segundo
+setInterval(updateClock, 1000);
+updateClock(); // Inicializar imediatamente
+
+// ========== POMODORO TIMER ==========
+let timerInterval;
+let timeLeft = 25 * 60; // 25 minutos em segundos
+let isRunning = false;
+let isWorkTime = true;
+
+const timerDisplay = document.getElementById('timer-display');
+const startBtn = document.getElementById('start-btn');
+const resetBtn = document.getElementById('reset-btn');
+const workTimeInput = document.getElementById('work-time');
+const breakTimeInput = document.getElementById('break-time');
+const statusMessage = document.getElementById('status-message');
+const alarmSound = document.getElementById('alarm-sound');
+
+// Formatar tempo para exibição (MM:SS)
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Atualizar display do timer
+function updateTimerDisplay() {
+  timerDisplay.textContent = formatTime(timeLeft);
+}
+
+// Iniciar/pausar timer
+function toggleTimer() {
+  if (isRunning) {
+    // Pausar
+    clearInterval(timerInterval);
+    startBtn.textContent = 'Iniciar';
+    startBtn.classList.remove('active');
+    statusMessage.textContent = 'Pausado';
+  } else {
+    // Iniciar
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alarmSound.play();
+        
+        if (isWorkTime) {
+          // Terminou tempo de trabalho, iniciar pausa
+          isWorkTime = false;
+          timeLeft = parseInt(breakTimeInput.value) * 60;
+          statusMessage.textContent = 'Pausa! Hora de descansar.';
+        } else {
+          // Terminou pausa, reiniciar ciclo
+          isWorkTime = true;
+          timeLeft = parseInt(workTimeInput.value) * 60;
+          statusMessage.textContent = 'Volte ao trabalho!';
+        }
+        
+        updateTimerDisplay();
+        isRunning = false;
+        startBtn.textContent = 'Iniciar';
+        startBtn.classList.remove('active');
+      }
+    }, 1000);
+    
+    startBtn.textContent = 'Pausar';
+    startBtn.classList.add('active');
+    statusMessage.textContent = isWorkTime ? 'Tempo de trabalho' : 'Tempo de pausa';
+  }
+  
+  isRunning = !isRunning;
+}
+
+// Resetar timer
+function resetTimer() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  isWorkTime = true;
+  timeLeft = parseInt(workTimeInput.value) * 60;
+  updateTimerDisplay();
+  startBtn.textContent = 'Iniciar';
+  startBtn.classList.remove('active');
+  statusMessage.textContent = 'Pronto para começar';
+}
+
+// Atualizar timer quando configurações mudarem
+function updateTimerFromSettings() {
+  if (!isRunning) {
+    resetTimer();
+  }
+}
+
+// Event listeners
+startBtn.addEventListener('click', toggleTimer);
+resetBtn.addEventListener('click', resetTimer);
+workTimeInput.addEventListener('change', updateTimerFromSettings);
+breakTimeInput.addEventListener('change', updateTimerFromSettings);
+
+// Inicializar timer
+updateTimerDisplay();
+</script>
 
 </body>
 </html>
