@@ -792,77 +792,113 @@
             });
         }
 
+        // Busca com operadores lógicos em português
         // FUNÇÃO CORRIGIDA: Busca com operadores lógicos em português
-        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-            if (!query.trim()) return true;
-            
-            // Normalizar o texto
-            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
-            // Extrair termos entre aspas primeiro
-            const quotedTerms = [];
-            let processedQuery = normalizedQuery.replace(/"([^"]*)"/g, (match, p1) => {
-                quotedTerms.push(p1.toLowerCase());
-                return `QUOTED_${quotedTerms.length - 1}_TERM`;
-            });
-            
-            // Dividir a query em partes usando operadores
-            const parts = processedQuery.split(/\s+/);
-            let mustHave = [];
-            let mustNotHave = [];
-            let currentOperator = 'AND'; // padrão
-            
-            for (let i = 0; i < parts.length; i++) {
-                let part = parts[i].trim();
-                
-                // Restaurar termos entre aspas
-                if (part.startsWith('QUOTED_') && part.endsWith('_TERM')) {
-                    const index = parseInt(part.replace('QUOTED_', '').replace('_TERM', ''));
-                    part = quotedTerms[index];
-                }
-                
-                if (part === 'e' || part === ';') {
-                    currentOperator = 'AND';
-                    continue;
-                } else if (part === 'ou') {
-                    currentOperator = 'OR';
-                    continue;
-                } else if (part === 'não' || part === '-') {
-                    currentOperator = 'NOT';
-                    continue;
-                }
-                
-                if (part.length > 0) {
-                    if (currentOperator === 'NOT') {
-                        mustNotHave.push(part);
-                    } else {
-                        mustHave.push(part);
-                    }
-                }
+function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+    if (!query.trim()) return true;
+    
+    // Normalizar o texto
+    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    // Extrair termos entre aspas primeiro - CORREÇÃO: manter espaços nos termos entre aspas
+    const quotedTerms = [];
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        quotedTerms.push(p1.toLowerCase().trim());
+        return ` QUOTED_${quotedTerms.length - 1}_TERM `;
+    });
+    
+    // Processar operadores lógicos - CORREÇÃO: lógica simplificada
+    const tokens = processedQuery.split(/\s+/).filter(token => token.length > 0);
+    
+    let conditions = [];
+    let currentCondition = { type: 'AND', terms: [] };
+    
+    for (let i = 0; i < tokens.length; i++) {
+        let token = tokens[i];
+        
+        // Restaurar termos entre aspas
+        if (token.startsWith('QUOTED_') && token.endsWith('_TERM')) {
+            const index = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+            token = quotedTerms[index];
+            currentCondition.terms.push(token);
+            continue;
+        }
+        
+        // Verificar operadores
+        if (token === 'e' || token === ';') {
+            if (currentCondition.terms.length > 0) {
+                conditions.push({...currentCondition});
+                currentCondition = { type: 'AND', terms: [] };
             }
-            
-            // Verificar termos que NÃO devem estar (NOT)
-            for (const excludeTerm of mustNotHave) {
+        } else if (token === 'ou') {
+            if (currentCondition.terms.length > 0) {
+                conditions.push({...currentCondition});
+                currentCondition = { type: 'OR', terms: [] };
+            }
+        } else if (token === 'não' || token === '-') {
+            if (i + 1 < tokens.length) {
+                let nextToken = tokens[++i];
+                // Restaurar termos entre aspas após NÃO
+                if (nextToken.startsWith('QUOTED_') && nextToken.endsWith('_TERM')) {
+                    const index = parseInt(nextToken.replace('QUOTED_', '').replace('_TERM', ''));
+                    nextToken = quotedTerms[index];
+                }
+                conditions.push({ type: 'NOT', terms: [nextToken] });
+            }
+        } else {
+            // Termo normal
+            currentCondition.terms.push(token);
+        }
+    }
+    
+    // Adicionar a última condição
+    if (currentCondition.terms.length > 0) {
+        conditions.push(currentCondition);
+    }
+    
+    // Se não há condições, retorna true
+    if (conditions.length === 0) return true;
+    
+    // Avaliar condições
+    for (const condition of conditions) {
+        if (condition.type === 'NOT') {
+            for (const term of condition.terms) {
                 if (useFuzzy) {
-                    if (fuzzyMatch(normalizedText, excludeTerm)) return false;
+                    if (fuzzyMatch(normalizedText, term)) return false;
                 } else {
-                    if (normalizedText.includes(excludeTerm)) return false;
+                    if (normalizedText.includes(term)) return false;
                 }
             }
-            
-            // Se há termos obrigatórios, verificar se estão presentes
-            if (mustHave.length > 0) {
-                for (const includeTerm of mustHave) {
-                    if (useFuzzy) {
-                        if (!fuzzyMatch(normalizedText, includeTerm)) return false;
-                    } else {
-                        if (!normalizedText.includes(includeTerm)) return false;
+        } else if (condition.type === 'AND') {
+            for (const term of condition.terms) {
+                if (useFuzzy) {
+                    if (!fuzzyMatch(normalizedText, term)) return false;
+                } else {
+                    if (!normalizedText.includes(term)) return false;
+                }
+            }
+        } else if (condition.type === 'OR') {
+            let found = false;
+            for (const term of condition.terms) {
+                if (useFuzzy) {
+                    if (fuzzyMatch(normalizedText, term)) {
+                        found = true;
+                        break;
+                    }
+                } else {
+                    if (normalizedText.includes(term)) {
+                        found = true;
+                        break;
                     }
                 }
-                return true;
             }
-            
+            if (!found) return false;
+        }
+    }
+    
+    return true;
+}
             // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
             return mustNotHave.length > 0;
         }
@@ -883,6 +919,8 @@
             }
             return false;
         }
+
+        
 
         // Calcular similaridade entre strings
         function calculateSimilarity(str1, str2) {
@@ -938,28 +976,42 @@
             
             return highlightedText;
         }
-
+// Função para debug (opcional - remover em produção)
+function debugSearch(text, query, useFuzzy = false) {
+    console.log('=== DEBUG SEARCH ===');
+    console.log('Texto:', text.substring(0, 100) + '...');
+    console.log('Query:', query);
+    console.log('Fuzzy:', useFuzzy);
+    console.log('Resultado:', portugueseAdvancedSearch(text, query, useFuzzy));
+    console.log('===================');
+}
+        
         // Extrair termos de busca para highlight
-        function extractSearchTerms(query) {
-            const terms = [];
-            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
-            // Remover operadores lógicos
-            const cleanQuery = normalizedQuery
-                .replace(/\b(e|ou|não|and|or|not)\b/gi, ' ')
-                .replace(/[;()\-]/g, ' ')
-                .replace(/"([^"]*)"/g, (match, p1) => {
-                    terms.push(p1);
-                    return ' ';
-                });
-            
-            // Adicionar termos individuais
-            cleanQuery.split(/\s+/)
-                .filter(term => term.length > 2 && !terms.includes(term))
-                .forEach(term => terms.push(term));
-            
-            return terms;
-        }
+        // Extrair termos de busca para highlight - CORREÇÃO: manter termos entre aspas
+function extractSearchTerms(query) {
+    const terms = [];
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    // Extrair termos entre aspas primeiro
+    const quotedTerms = [];
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        quotedTerms.push(p1.toLowerCase().trim());
+        return ' ';
+    });
+    
+    // Adicionar termos entre aspas
+    terms.push(...quotedTerms);
+    
+    // Adicionar termos individuais (remover operadores)
+    processedQuery
+        .replace(/\b(e|ou|não|and|or|not)\b/gi, ' ')
+        .replace(/[;()\-]/g, ' ')
+        .split(/\s+/)
+        .filter(term => term.length > 2 && !terms.includes(term))
+        .forEach(term => terms.push(term));
+    
+    return terms;
+}
 
         function performSearch() {
             if (window.innerWidth <= 768) {
