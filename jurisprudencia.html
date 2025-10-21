@@ -801,43 +801,50 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
         }
 
         function performSearch() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('active');
+    }
 
-            const searchTerms = document.getElementById('terms').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const relator = document.getElementById('relator').value;
-            const useFuzzy = document.getElementById('fuzzy').checked;
+    const searchTerms = document.getElementById('terms').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const relator = document.getElementById('relator').value;
+    const useFuzzy = document.getElementById('fuzzy').checked;
+    
+    currentSearchTerms = searchTerms;
+    
+    // Filtrar dados
+    filteredData = dataset.filter(item => {
+        // Filtro por relator
+        if (relator && item.Relator !== relator) return false;
+        
+        // Filtro por data
+        if (startDate || endDate) {
+            const itemDate = parseDate(item.Publicação);
+            if (!itemDate) return false;
             
-            currentSearchTerms = searchTerms;
-            
-            // Filtrar dados
-            filteredData = dataset.filter(item => {
-                // Filtro por relator
-                if (relator && item.Relator !== relator) return false;
-                
-                // Filtro por data
-                if (startDate || endDate) {
-                    const itemDate = parseDate(item.Publicação);
-                    if (!itemDate) return false;
-                    
-                    if (startDate && itemDate < new Date(startDate)) return false;
-                    if (endDate && itemDate > new Date(endDate)) return false;
-                }
-                
-                // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
-                if (searchTerms) {
-                    const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                }
-                
-                return true;
-            });
-            
-            displayResults(filteredData);
+            if (startDate && itemDate < new Date(startDate)) return false;
+            if (endDate && itemDate > new Date(endDate)) return false;
         }
+        
+        // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
+        if (searchTerms) {
+            const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+        }
+        
+        return true;
+    });
+    
+    // ORDENAR DO MAIS RECENTE PARA O MAIS ANTIGO
+    filteredData.sort((a, b) => {
+        const dateA = parseDate(a.Publicação) || new Date(0);
+        const dateB = parseDate(b.Publicação) || new Date(0);
+        return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+    });
+    
+    displayResults(filteredData);
+}
 
         function displayResults(results) {
             const allBlocks = document.getElementById('allBlocks');
@@ -888,7 +895,7 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
 
         function copyToClipboard(index) {
             const item = filteredData[index];
-            const referencia = `(TJGO, ${item.Processo || ''}, Relator(a) ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+            const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
             const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
             
             navigator.clipboard.writeText(textToCopy).then(() => {
