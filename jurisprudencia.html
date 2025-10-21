@@ -1186,7 +1186,7 @@ function extractSearchTerms(query) {
             pagination.appendChild(nextButton);
         }
 
-        function copyToClipboard(index) {
+      function copyToClipboard(index) {
     // Calcular índice correto considerando a paginação
     const actualIndex = (currentPage - 1) * resultsPerPage + index;
     const item = filteredData[actualIndex];
@@ -1197,7 +1197,10 @@ function extractSearchTerms(query) {
     }
     
     const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-    const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
+    
+    // REMOVER as quebras de linha extras - usar apenas um espaço entre ementa e referência
+    const ementaText = item.Ementa || '';
+    const textToCopy = `${ementaText} ${referencia}`;
     
     // Criar área de texto temporária
     const textArea = document.createElement('textarea');
