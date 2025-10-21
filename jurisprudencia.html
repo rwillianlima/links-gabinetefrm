@@ -239,16 +239,16 @@
 
         /* Blocos de resultados */
         .block {
-            position: relative;
-            background: var(--white);
-            margin: 15px auto;
-            padding: 70px 25px 25px 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: left;
-            max-width: 900px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+    position: relative;
+    background: var(--white);
+    margin: 15px auto;
+    padding: 60px 20px 15px 15px; /* ← Use o padding reduzido AQUI */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: left;
+    max-width: 900px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
 
         .block:hover {
             transform: translateY(-2px);
@@ -284,10 +284,6 @@
     white-space: pre-line;
     margin: 0;
     padding: 0;
-}
-
-.block {
-    padding: 60px 20px 15px 15px; /* Reduz padding inferior */
 }
 
 .referencia {
@@ -992,7 +988,6 @@ function debugSearch(text, query, useFuzzy = false) {
 }
         
         // Extrair termos de busca para highlight
-        // Extrair termos de busca para highlight - CORREÇÃO: manter termos entre aspas
 function extractSearchTerms(query) {
     const terms = [];
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
