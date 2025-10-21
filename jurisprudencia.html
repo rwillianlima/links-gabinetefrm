@@ -1,478 +1,724 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
-<style>
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f4f4;
-    color: #222;
-    margin: 0;
-  }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
+    <style>
+        :root {
+            --primary-color: #2f4050;
+            --secondary-color: #3b5165;
+            --background-color: #f4f4f4;
+            --text-color: #222;
+            --white: #fff;
+        }
 
-  /* Sidebar */
-  #sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 240px;
-    height: 100%;
-    background: #2f4050;
-    box-shadow: 2px 0 6px rgba(0,0,0,.2);
-    display: flex;
-    flex-direction: column;
-  }
-  #sidebar a {
-    display: block;
-    padding: 12px 20px;
-    color: #fff;
-    text-decoration: none;
-    font-size: 1rem;
-  }
-  #sidebar a:hover {
-    background: #3b5165;
-  }
-  
-  /* Relógio na sidebar */
-  #clock {
-    margin-top: auto;
-    padding: 15px 20px;
-    color: #fff;
-    font-size: 0.9rem;
-    border-top: 1px solid #3b5165;
-    background: #263340;
-  }
-  #clock-time {
-    font-size: 1.2rem;
-    font-weight: bold;
-    margin-bottom: 5px;
-  }
-  #clock-date {
-    font-size: 0.85rem;
-    opacity: 0.8;
-  }
+        * {
+            box-sizing: border-box;
+        }
 
-  /* Content */
-  #content {
-    margin-left: 260px;
-    padding: 40px 25px;
-    min-height: 100vh;
-    text-align: center;
-    color: #222;
-  }
-  #content h1 {
-    font-size: 2rem;
-    margin-bottom: 8px;
-    color: #2f4050;
-  }
-  .subtitle {
-    font-size: 1.1rem;
-    color: #444;
-    margin-bottom: 5px;
-  }
-  .dataset-info {
-    font-size: .92rem;
-    color: #666;
-    margin: 2px auto 18px auto;
-    max-width: 920px;
-  }
-  .notice {
-    font-size: .85rem;
-    margin-bottom: 6px;
-    color: #333;
-  }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
 
-  /* Search */
-  .search-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin: 10px auto;
-  }
-  .search-bar input,
-  .search-bar select {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 200px;
-    max-width: 90%;
-    background: #fff;
-    color: #222;
-  }
-  .search-bar button {
-    padding: 8px 18px;
-    border: none;
-    border-radius: 4px;
-    background: #2f4050;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-    min-width: 80px;
-  }
-  .search-bar button:hover {
-    background: #3b5165;
-  }
-  .opts {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #444;
-    font-size: .9rem;
-  }
-  .opts label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-  }
+        /* Mobile Menu */
+        #mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--primary-color);
+            padding: 15px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
 
-  /* Help */
-  .help {
-    max-width: 920px;
-    margin: 10px auto 0 auto;
-    text-align: left;
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 12px 16px;
-    border-radius: 6px;
-    font-size: .92rem;
-    line-height: 1.45;
-    color: #222;
-  }
-  .help code {
-    background: rgba(0,0,0,.05);
-    padding: 0 4px;
-    border-radius: 3px;
-  }
-  .help summary {
-    cursor: pointer;
-    font-weight: 700;
-  }
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
 
-  /* Result count */
-  #resultCount {
-    font-size: .95rem;
-    margin: 10px auto;
-    max-width: 900px;
-    text-align: left;
-    color: #222;
-    display: none;
-  }
+        /* Sidebar para desktop */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 100%;
+            background: var(--primary-color);
+            box-shadow: 2px 0 6px rgba(0,0,0,.2);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+        }
 
-  /* Blocks */
-  .block {
-    background: #fff;
-    border-radius: 6px;
-    padding: 16px;
-    margin: 10px auto;
-    max-width: 900px;
-    display: none;
-    position: relative;
-    border: 1px solid #ddd;
-  }
-  .block p {
-    margin: 4px 0 0 0;
-    font-size: .9rem;
-    line-height: 1.45;
-    color: #222;
-    text-align: justify;
-  }
-  .type {
-    margin-top: 6px;
-    font-size: .85rem;
-    color: #666;
-    text-align: center;
-  }
-  .meta {
-    margin-top: 8px;
-    font-size: .85rem;
-    color: #666;
-    text-align: center;
-  }
+        #sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1rem;
+        }
 
-  /* Copy button (em cada bloco) */
-  .copy-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    border: none;
-    border-radius: 4px;
-    padding: 6px 10px;
-    background: #2f4050;
-    color: #fff;
-    cursor: pointer;
-    font-size: .8rem;
-  }
-  .copy-btn:hover {
-    background: #3b5165;
-  }
+        #sidebar a:hover {
+            background: var(--secondary-color);
+        }
+        
+        /* Relógio na sidebar */
+        #clock {
+            margin-top: auto;
+            padding: 15px 20px;
+            color: var(--white);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--secondary-color);
+            background: #263340;
+        }
 
-  /* Pagination */
-  .pagination {
-    display: none;
-    justify-content: center;
-    gap: 6px;
-    margin: 20px auto;
-    max-width: 900px;
-    flex-wrap: wrap;
-  }
-  .pagination button {
-    background: #2f4050;
-    border: none;
-    border-radius: 4px;
-    color: #fff;
-    padding: 6px 12px;
-    cursor: pointer;
-  }
-  .pagination button.active {
-    background: #1c87c9;
-    font-weight: bold;
-  }
-  .pagination button[disabled] {
-    opacity: .5;
-    cursor: not-allowed;
-  }
+        #clock-time {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
 
-  /* Contêiner de resultados (oculto até a busca) */
-  #allBlocks {
-    display: none;
-  }
+        #clock-date {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
 
-  /* Destaque dos termos encontrados */
-  mark {
-    background: #ffeb3b;
-    color: #000;
-    font-weight: bold;
-    padding: 0 2px;
-    border-radius: 2px;
-  }
-</style>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+        /* Content */
+        #content {
+            margin-left: 260px;
+            padding: 40px 25px;
+            min-height: 100vh;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        #content h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .dataset-info {
+            font-size: .92rem;
+            color: #666;
+            margin: 2px auto 18px auto;
+            max-width: 920px;
+        }
+
+        .notice {
+            font-size: .85rem;
+            margin-bottom: 6px;
+            color: #333;
+            padding: 0 10px;
+        }
+
+        /* Search */
+        .search-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 10px auto;
+            padding: 0 10px;
+        }
+
+        .search-bar input,
+        .search-bar select {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+            max-width: 100%;
+            background: var(--white);
+            color: var(--text-color);
+            font-size: 16px; /* Previne zoom no iOS */
+        }
+
+        .search-bar button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 4px;
+            background: var(--primary-color);
+            color: var(--white);
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 80px;
+            font-size: 16px;
+        }
+
+        .search-bar button:hover {
+            background: var(--secondary-color);
+        }
+
+        .opts {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #444;
+            font-size: .9rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .opts label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        /* Help */
+        .help {
+            max-width: 920px;
+            margin: 10px auto 0 auto;
+            text-align: left;
+            background: var(--white);
+            border: 1px solid #ddd;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: .92rem;
+            line-height: 1.45;
+            color: var(--text-color);
+        }
+
+        .help code {
+            background: rgba(0,0,0,.05);
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .help summary {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        /* Result count */
+        #resultCount {
+            font-size: .95rem;
+            margin: 10px auto;
+            max-width: 900px;
+            text-align: left;
+            color: var(--text-color);
+            display: none;
+            padding: 0 15px;
+        }
+
+        /* Blocks */
+        .block {
+            background: var(--white);
+            border-radius: 6px;
+            padding: 16px;
+            margin: 10px auto;
+            max-width: 900px;
+            display: none;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+
+        .block p {
+            margin: 4px 0 0 0;
+            font-size: .9rem;
+            line-height: 1.45;
+            color: var(--text-color);
+            text-align: justify;
+        }
+
+        .type {
+            margin-top: 6px;
+            font-size: .85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .meta {
+            margin-top: 8px;
+            font-size: .85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        /* Copy button (em cada bloco) */
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            background: var(--primary-color);
+            color: var(--white);
+            cursor: pointer;
+            font-size: .8rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: none;
+            justify-content: center;
+            gap: 6px;
+            margin: 20px auto;
+            max-width: 900px;
+            flex-wrap: wrap;
+            padding: 0 15px;
+        }
+
+        .pagination button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            color: var(--white);
+            padding: 8px 12px;
+            cursor: pointer;
+            min-width: 44px; /* Tamanho mínimo para touch */
+        }
+
+        .pagination button.active {
+            background: #1c87c9;
+            font-weight: bold;
+        }
+
+        .pagination button[disabled] {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        /* Contêiner de resultados (oculto até a busca) */
+        #allBlocks {
+            display: none;
+            padding: 0 15px;
+        }
+
+        /* Destaque dos termos encontrados */
+        mark {
+            background: #ffeb3b;
+            color: #000;
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        /* Media Queries para Mobile */
+        @media (max-width: 768px) {
+            #mobile-menu {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            #sidebar {
+                display: none;
+                width: 100%;
+                height: auto;
+                position: fixed;
+                top: 60px;
+                left: 0;
+            }
+
+            #sidebar.active {
+                display: flex;
+            }
+
+            #content {
+                margin-left: 0;
+                padding: 80px 0 20px 0;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-bar input,
+            .search-bar select {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .search-bar button {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .opts {
+                justify-content: center;
+            }
+
+            .block {
+                margin: 10px 15px;
+                padding: 60px 16px 16px 16px;
+            }
+
+            .copy-btn {
+                top: 15px;
+                right: 15px;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+
+            #content h1 {
+                font-size: 1.5rem;
+                padding: 0 15px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+
+            .dataset-info {
+                padding: 0 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #content {
+                padding: 70px 0 15px 0;
+            }
+
+            .search-bar input,
+            .search-bar select {
+                max-width: 100%;
+            }
+
+            .search-bar button {
+                max-width: 100%;
+            }
+
+            .opts {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .help {
+                margin: 10px 15px 0 15px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-<div id="sidebar">
-  <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
-  <div id="clock">
-    <div id="clock-time">--:--:--</div>
-    <div id="clock-date">--/--/----</div>
-  </div>
-</div>
-
-<div id="content">
-  <h1>🔎 Pesquisa de Jurisprudência</h1>
-  <div class="subtitle">6ª Câmara Cível - A partir de 2024</div>
-  <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
-
-  <p class="notice">
-    Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
-    <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
-    <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
-  </p>
-
-  <div class="search-bar">
-    <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
-    <input type="date" id="startDate">
-    <input type="date" id="endDate">
-    <select id="relator">
-      <option value="">Relator (todos)</option>
-    </select>
-    <div class="opts">
-      <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
+    <!-- Menu Mobile -->
+    <div id="mobile-menu">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <span style="color: white; font-weight: bold;">6ª Câmara Cível</span>
+        <div style="width: 40px;"></div> <!-- Espaçador -->
     </div>
-    <button onclick="performSearch()">Consultar</button>
-  </div>
 
-  <!-- Ajuda ao usuário -->
-  <div class="help" id="helpBox">
-    <details>
-      <summary>Como pesquisar (clique para expandir)</summary>
-      <div style="margin-top:10px">
-        <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
-        <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
-        <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
-        <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
-        <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
-        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
-        <p><strong>Fuzzy</strong>: marque "Fuzzy" para aceitar pequenas variações.</p>
-        <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
-      </div>
-    </details>
-  </div>
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
+        <div id="clock">
+            <div id="clock-time">--:--:--</div>
+            <div id="clock-date">--/--/----</div>
+        </div>
+    </div>
 
-  <div id="resultCount"></div>
-  <div id="allBlocks"></div>
-  <div id="pagination" class="pagination"></div>
-</div>
+    <!-- Conteúdo Principal -->
+    <div id="content">
+        <h1>Pesquisa de Jurisprudência</h1>
+        <div class="subtitle">6ª Câmara Cível - A partir de 2024</div>
+        <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
 
-<script>
-let dataset = [];
-let filteredData = [];
-let lastUpdate = '';
+        <p class="notice">
+            Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
+            <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
+            <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
+        </p>
 
-// Atualizar relógio
-function updateClock() {
-  const now = new Date();
-  const timeString = now.toLocaleTimeString('pt-BR');
-  const dateString = now.toLocaleDateString('pt-BR', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  document.getElementById('clock-time').textContent = timeString;
-  document.getElementById('clock-date').textContent = dateString;
-}
+        <div class="search-bar">
+            <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
+            <input type="date" id="startDate">
+            <input type="date" id="endDate">
+            <select id="relator">
+                <option value="">Relator (todos)</option>
+            </select>
+            <div class="opts">
+                <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
+            </div>
+            <button onclick="performSearch()">Consultar</button>
+        </div>
 
-// Carregar dados da planilha
-function loadDataset() {
-  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?output=csv';
-  
-  Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      dataset = results.data.filter(item => Object.keys(item).length > 0);
-      updateDatasetInfo();
-      populateFilters();
-    },
-    error: function(error) {
-      document.getElementById('datasetInfo').textContent = 'Erro ao carregar dados';
-      console.error('Erro:', error);
-    }
-  });
-}
+        <!-- Ajuda ao usuário -->
+        <div class="help" id="helpBox">
+            <details>
+                <summary>Como pesquisar (clique para expandir)</summary>
+                <div style="margin-top:10px">
+                    <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
+                    <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
+                    <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
+                    <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
+                    <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
+                    <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
+                    <p><strong>Fuzzy</strong>: marque "Fuzzy" para aceitar pequenas variações.</p>
+                    <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
+                </div>
+            </details>
+        </div>
 
-function updateDatasetInfo() {
-  const info = document.getElementById('datasetInfo');
-  
-  // Encontrar a última data na planilha
-  let latestDate = '';
-  dataset.forEach(item => {
-    if (item.data && item.data > latestDate) {
-      latestDate = item.data;
-    }
-  });
-  
-  lastUpdate = latestDate;
-  
-  const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
-  info.textContent = `Banco de dados: ${dataset.length} registros da 6ª Câmara Cível. ${updateText}`;
-}
+        <div id="resultCount"></div>
+        <div id="allBlocks"></div>
+        <div id="pagination" class="pagination"></div>
+    </div>
 
-function formatDate(dateString) {
-  if (!dateString) return '';
-  
-  try {
-    const parts = dateString.split('/');
-    if (parts.length === 3) {
-      return `${parts[0]}/${parts[1]}/${parts[2]}`;
-    }
-    
-    // Tentar outros formatos de data
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('pt-BR');
-    }
-    
-    return dateString;
-  } catch (e) {
-    return dateString;
-  }
-}
+    <script>
+        let dataset = [];
+        let filteredData = [];
+        let lastUpdate = '';
 
-function populateFilters() {
-  // Preencher filtro de relatores com valores únicos
-  const relators = [...new Set(dataset.map(item => item.relator))].filter(Boolean);
-  populateSelect('relator', relators);
-}
+        // Alternar sidebar no mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
 
-function populateSelect(selectId, options) {
-  const select = document.getElementById(selectId);
-  
-  // Limpar opções existentes (exceto a primeira)
-  while (select.children.length > 1) {
-    select.removeChild(select.lastChild);
-  }
-  
-  options.sort().forEach(option => {
-    const opt = document.createElement('option');
-    opt.value = option;
-    opt.textContent = option;
-    select.appendChild(opt);
-  });
-}
+        // Fechar sidebar ao clicar fora (mobile)
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !mobileMenu.contains(event.target) &&
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
 
-function performSearch() {
-  const searchTerms = document.getElementById('terms').value;
-  const startDate = document.getElementById('startDate').value;
-  const endDate = document.getElementById('endDate').value;
-  const relator = document.getElementById('relator').value;
-  const useFuzzy = document.getElementById('fuzzy').checked;
-  
-  // Implementar lógica de busca aqui
-  console.log('Busca realizada:', { searchTerms, startDate, endDate, relator, useFuzzy });
-  
-  // Exemplo de resultado (substituir pela lógica real)
-  displayResults(dataset.slice(0, 5));
-}
+        // Atualizar relógio
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            const dateString = now.toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('clock-time').textContent = timeString;
+            document.getElementById('clock-date').textContent = dateString;
+        }
 
-function displayResults(results) {
-  const allBlocks = document.getElementById('allBlocks');
-  const resultCount = document.getElementById('resultCount');
-  const pagination = document.getElementById('pagination');
-  
-  // Limpar resultados anteriores
-  allBlocks.innerHTML = '';
-  
-  if (results.length === 0) {
-    resultCount.textContent = 'Nenhum resultado encontrado.';
-    resultCount.style.display = 'block';
-    allBlocks.style.display = 'none';
-    pagination.style.display = 'none';
-    return;
-  }
-  
-  resultCount.textContent = `${results.length} resultado(s) encontrado(s).`;
-  resultCount.style.display = 'block';
-  allBlocks.style.display = 'block';
-  
-  // Exibir resultados (exemplo)
-  results.forEach((item, index) => {
-    const block = document.createElement('div');
-    block.className = 'block';
-    block.style.display = 'block';
-    
-    block.innerHTML = `
-      <button class="copy-btn" onclick="copyToClipboard(${index})">Copiar</button>
-      <p><strong>${item.ementa || 'Sem ementa'}</strong></p>
-      <div class="meta">
-        ${item.data ? `Data: ${item.data}` : ''} 
-        ${item.relator ? ` | Relator: ${item.relator}` : ''}
-        ${item.processo ? ` | Processo: ${item.processo}` : ''}
-      </div>
-    `;
-    
-    allBlocks.appendChild(block);
-  });
-  
-  // Configurar paginação (simplificado)
-  pagination.style.display = 'flex';
-}
+        // Carregar dados da planilha
+        function loadDataset() {
+            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06tEqZgbx7UJRvY1Hu/pub?output=csv';
+            
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    dataset = results.data.filter(item => Object.keys(item).length > 0);
+                    updateDatasetInfo();
+                    populateFilters();
+                },
+                error: function(error) {
+                    document.getElementById('datasetInfo').textContent = 'Erro ao carregar dados';
+                    console.error('Erro:', error);
+                }
+            });
+        }
 
-function copyToClipboard(index) {
-  // Implementar função de copiar
-  alert(`Conteúdo ${index + 1} copiado para a área de transferência!`);
-}
+        function updateDatasetInfo() {
+            const info = document.getElementById('datasetInfo');
+            
+            // Encontrar a última data na planilha (coluna Publicação)
+            let latestDate = '';
+            dataset.forEach(item => {
+                if (item.Publicação && item.Publicação > latestDate) {
+                    latestDate = item.Publicação;
+                }
+            });
+            
+            lastUpdate = latestDate;
+            
+            const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
+            info.textContent = `Banco de dados: ${dataset.length} registros da 6ª Câmara Cível. ${updateText}`;
+        }
 
-// Inicializar
-document.addEventListener('DOMContentLoaded', function() {
-  loadDataset();
-  updateClock();
-  setInterval(updateClock, 1000);
-});
-</script>
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    return `${parts[0]}/${parts[1]}/${parts[2]}`;
+                }
+                
+                // Tentar outros formatos de data
+                const date = new Date(dateString);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString('pt-BR');
+                }
+                
+                return dateString;
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function populateFilters() {
+            // Preencher filtro de relatores com valores únicos
+            const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
+            populateSelect('relator', relators);
+        }
+
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            
+            // Limpar opções existentes (exceto a primeira)
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            options.sort().forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+            });
+        }
+
+        function performSearch() {
+            // Fechar sidebar no mobile após busca
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+
+            const searchTerms = document.getElementById('terms').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const relator = document.getElementById('relator').value;
+            const useFuzzy = document.getElementById('fuzzy').checked;
+            
+            // Filtrar dados
+            filteredData = dataset.filter(item => {
+                // Filtro por relator
+                if (relator && item.Relator !== relator) return false;
+                
+                // Filtro por data (se aplicável)
+                if (startDate || endDate) {
+                    const itemDate = parseDate(item.Publicação);
+                    if (!itemDate) return false;
+                    
+                    if (startDate && itemDate < new Date(startDate)) return false;
+                    if (endDate && itemDate > new Date(endDate)) return false;
+                }
+                
+                // Filtro por termos de busca
+                if (searchTerms) {
+                    const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+                    const normalizedTerms = searchTerms.toLowerCase();
+                    
+                    // Busca simples (substituir por lógica mais complexa depois)
+                    if (!searchText.includes(normalizedTerms)) return false;
+                }
+                
+                return true;
+            });
+            
+            displayResults(filteredData);
+        }
+
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            
+            try {
+                // Tentar formato DD/MM/YYYY
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+                
+                // Tentar outros formatos
+                const date = new Date(dateString);
+                return !isNaN(date.getTime()) ? date : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function displayResults(results) {
+            const allBlocks = document.getElementById('allBlocks');
+            const resultCount = document.getElementById('resultCount');
+            const pagination = document.getElementById('pagination');
+            
+            // Limpar resultados anteriores
+            allBlocks.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultCount.textContent = 'Nenhum resultado encontrado.';
+                resultCount.style.display = 'block';
+                allBlocks.style.display = 'none';
+                pagination.style.display = 'none';
+                return;
+            }
+            
+            resultCount.textContent = `${results.length} resultado(s) encontrado(s).`;
+            resultCount.style.display = 'block';
+            allBlocks.style.display = 'block';
+            
+            // Exibir resultados
+            results.forEach((item, index) => {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.style.display = 'block';
+                
+                block.innerHTML = `
+                    <button class="copy-btn" onclick="copyToClipboard(${index})">Copiar</button>
+                    <p><strong>${item.Ementa || 'Sem ementa'}</strong></p>
+                    <div class="meta">
+                        ${item.Publicação ? `Publicação: ${item.Publicação}` : ''} 
+                        ${item.Relator ? ` | Relator: ${item.Relator}` : ''}
+                        ${item.Processo ? ` | Processo: ${item.Processo}` : ''}
+                        ${item.Ato ? ` | Ato: ${item.Ato}` : ''}
+                    </div>
+                `;
+                
+                allBlocks.appendChild(block);
+            });
+            
+            // Configurar paginação (simplificado)
+            pagination.style.display = 'flex';
+        }
+
+        function copyToClipboard(index) {
+            const item = filteredData[index];
+            const textToCopy = `Ementa: ${item.Ementa || ''}\nProcesso: ${item.Processo || ''}\nRelator: ${item.Relator || ''}\nPublicação: ${item.Publicação || ''}\nAto: ${item.Ato || ''}`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert('Conteúdo copiado para a área de transferência!');
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDataset();
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+    </script>
 </body>
 </html>
