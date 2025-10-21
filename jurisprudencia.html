@@ -906,7 +906,7 @@
                 block.style.display = 'block';
                 
                 // Formatar referência
-                const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
+                const referencia = `(TJGO, ${item.Processo || ''}, Relator(a) ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
                 
                 // Aplicar destaque na ementa
                 const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
