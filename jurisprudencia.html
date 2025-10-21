@@ -653,95 +653,59 @@
 function portugueseAdvancedSearch(text, query, useFuzzy = false) {
     if (!query.trim()) return true;
     
-    // Normalizar o texto (remover acentos)
+    // Normalizar o texto
     const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     
-    // Converter operadores em português para inglês para processamento
-    let processedQuery = query
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/\bE\b/gi, ' AND ')
-        .replace(/\bOU\b/gi, ' OR ')
-        .replace(/\bNÃO\b/gi, ' NOT ')
-        .replace(/;/g, ' AND ');
-
-    // Processar termos com - (NOT)
-    processedQuery = processedQuery.replace(/(\s|^)-(\w+)/g, '$1NOT $2');
-
-    console.log('Query original:', query);
-    console.log('Query processada:', processedQuery);
+    // Dividir a query em partes usando operadores
+    const parts = normalizedQuery.split(/\s+/);
+    let mustHave = [];
+    let mustNotHave = [];
+    let currentOperator = 'AND'; // padrão
     
-    return evaluateBooleanQuery(normalizedText, processedQuery, useFuzzy);
-}
-
-// NOVA FUNÇÃO: Avaliação de query booleana corrigida
-function evaluateBooleanQuery(text, query, useFuzzy) {
-    query = query.trim();
-    
-    // Processar parênteses primeiro
-    while (query.includes('(') && query.includes(')')) {
-        const start = query.lastIndexOf('(');
-        const end = query.indexOf(')', start);
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i].trim();
         
-        if (end === -1) break;
+        if (part === 'e' || part === ';') {
+            currentOperator = 'AND';
+            continue;
+        } else if (part === 'ou') {
+            currentOperator = 'OR';
+            continue;
+        } else if (part === 'não' || part === '-') {
+            currentOperator = 'NOT';
+            continue;
+        }
         
-        const subQuery = query.substring(start + 1, end);
-        const subResult = evaluateBooleanQuery(text, subQuery, useFuzzy);
-        
-        query = query.substring(0, start) + (subResult ? 'TRUE' : 'FALSE') + query.substring(end + 1);
+        if (part.length > 0) {
+            if (currentOperator === 'NOT') {
+                mustNotHave.push(part);
+            } else {
+                mustHave.push(part);
+            }
+        }
     }
-
-    // Processar NOT
-    const notRegex = /NOT\s+([^()\s]+(?:\s+[^()\s]+)*)/gi;
-    let match;
-    while ((match = notRegex.exec(query)) !== null) {
-        const notTerm = match[1];
-        const notResult = !evaluateSimpleTerm(text, notTerm, useFuzzy);
-        query = query.replace(match[0], notResult.toString().toUpperCase());
+    
+    // Verificar termos que NÃO devem estar (NOT)
+    for (const excludeTerm of mustNotHave) {
+        if (normalizedText.includes(excludeTerm)) {
+            return false;
+        }
     }
-
-    // Processar AND
-    const andParts = query.split(/\s+AND\s+/);
-    if (andParts.length > 1) {
-        return andParts.every(part => evaluateBooleanQuery(text, part, useFuzzy));
+    
+    // Se há termos obrigatórios, verificar se estão presentes
+    if (mustHave.length > 0) {
+        for (const includeTerm of mustHave) {
+            if (!normalizedText.includes(includeTerm)) {
+                return false;
+            }
+        }
+        return true;
     }
-
-    // Processar OR
-    const orParts = query.split(/\s+OR\s+/);
-    if (orParts.length > 1) {
-        return orParts.some(part => evaluateBooleanQuery(text, part, useFuzzy));
-    }
-
-    // Termo simples
-    return evaluateSimpleTerm(text, query, useFuzzy);
+    
+    // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
+    return mustNotHave.length > 0;
 }
-
-// FUNÇÃO CORRIGIDA: Avaliar termo simples
-function evaluateSimpleTerm(text, term, useFuzzy) {
-    term = term.trim();
-    
-    // Ignorar TRUE/FALSE que foram inseridos pelo processamento
-    if (term === 'TRUE') return true;
-    if (term === 'FALSE') return false;
-    
-    // Termo entre aspas (busca exata)
-    if (term.startsWith('"') && term.endsWith('"')) {
-        const exactTerm = term.slice(1, -1).toLowerCase();
-        return text.includes(exactTerm);
-    }
-    
-    // Termo com curinga
-    if (term.includes('*')) {
-        const regex = new RegExp(term.replace(/\*/g, '.*'), 'i');
-        return regex.test(text);
-    }
-    
-    // Termo simples
-    if (useFuzzy) {
-        return fuzzyMatch(text, term);
-    }
-    return text.includes(term.toLowerCase());
-}
-
         // Busca aproximada (fuzzy)
         function fuzzyMatch(text, term) {
             if (term.length <= 3) {
@@ -924,7 +888,7 @@ function evaluateSimpleTerm(text, term, useFuzzy) {
 
         function copyToClipboard(index) {
             const item = filteredData[index];
-            const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
+            const referencia = `(TJGO, ${item.Processo || ''}, Relator(a) ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
             const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
             
             navigator.clipboard.writeText(textToCopy).then(() => {
