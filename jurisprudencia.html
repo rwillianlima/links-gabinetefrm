@@ -907,6 +907,25 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
                 alert('Erro ao copiar para a área de transferência');
             });
         }
+        // Executar busca ao pressionar Enter no campo de pesquisa
+document.getElementById('terms').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        performSearch();
+    }
+});
+
+// Opcional: também nos campos de data
+document.getElementById('startDate').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        performSearch();
+    }
+});
+
+document.getElementById('endDate').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        performSearch();
+    }
+});
 
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
