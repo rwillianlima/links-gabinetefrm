@@ -649,103 +649,98 @@
         }
 
         // FUNÇÃO PRINCIPAL: Busca com operadores lógicos em português
-        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-            if (!query.trim()) return true;
-            
-            // Normalizar o texto (remover acentos)
-            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
-            // Processar a query
-            const processedQuery = query
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/\bE\b/g, ' AND ')
-                .replace(/\bOU\b/g, ' OR ')
-                .replace(/\bNÃO\b/g, ' NOT ')
-                .replace(/;/g, ' AND ');
-            
-            return evaluateQuery(normalizedText, processedQuery, useFuzzy);
-        }
+      // FUNÇÃO CORRIGIDA: Busca com operadores lógicos em português
+function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+    if (!query.trim()) return true;
+    
+    // Normalizar o texto (remover acentos)
+    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    // Converter operadores em português para inglês para processamento
+    let processedQuery = query
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\bE\b/gi, ' AND ')
+        .replace(/\bOU\b/gi, ' OR ')
+        .replace(/\bNÃO\b/gi, ' NOT ')
+        .replace(/;/g, ' AND ');
 
-        // Avaliar a query com operadores lógicos
-        function evaluateQuery(text, query, useFuzzy) {
-            // Remover parênteses externos se existirem
-            query = query.trim();
-            if (query.startsWith('(') && query.endsWith(')')) {
-                query = query.slice(1, -1).trim();
-            }
-            
-            // Procurar por OR primeiro (menor precedência)
-            const orIndex = findOperatorIndex(query, ' OR ');
-            if (orIndex !== -1) {
-                const left = query.slice(0, orIndex).trim();
-                const right = query.slice(orIndex + 4).trim();
-                return evaluateQuery(text, left, useFuzzy) || evaluateQuery(text, right, useFuzzy);
-            }
-            
-            // Procurar por AND
-            const andIndex = findOperatorIndex(query, ' AND ');
-            if (andIndex !== -1) {
-                const left = query.slice(0, andIndex).trim();
-                const right = query.slice(andIndex + 5).trim();
-                return evaluateQuery(text, left, useFuzzy) && evaluateQuery(text, right, useFuzzy);
-            }
-            
-            // Procurar por NOT
-            if (query.startsWith('NOT ')) {
-                const term = query.slice(4).trim();
-                return !evaluateQuery(text, term, useFuzzy);
-            }
-            
-            // Termo simples (com ou sem aspas)
-            return evaluateTerm(text, query, useFuzzy);
-        }
+    // Processar termos com - (NOT)
+    processedQuery = processedQuery.replace(/(\s|^)-(\w+)/g, '$1NOT $2');
 
-        // Encontrar índice do operador, ignorando dentro de aspas
-        function findOperatorIndex(query, operator) {
-            let inQuotes = false;
-            for (let i = 0; i < query.length - operator.length + 1; i++) {
-                if (query[i] === '"') inQuotes = !inQuotes;
-                if (!inQuotes && query.startsWith(operator, i)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
+    console.log('Query original:', query);
+    console.log('Query processada:', processedQuery);
+    
+    return evaluateBooleanQuery(normalizedText, processedQuery, useFuzzy);
+}
 
-        // Avaliar um termo individual
-        function evaluateTerm(text, term, useFuzzy) {
-            term = term.trim();
-            
-            // Termo entre aspas (busca exata)
-            if (term.startsWith('"') && term.endsWith('"')) {
-                const exactTerm = term.slice(1, -1).toLowerCase();
-                if (useFuzzy) {
-                    return fuzzyMatch(text, exactTerm);
-                }
-                return text.includes(exactTerm);
-            }
-            
-            // Termo com NOT
-            if (term.startsWith('-')) {
-                const searchTerm = term.slice(1).toLowerCase();
-                if (useFuzzy) {
-                    return !fuzzyMatch(text, searchTerm);
-                }
-                return !text.includes(searchTerm);
-            }
-            
-            // Termo com curinga
-            if (term.includes('*')) {
-                const regex = new RegExp(term.replace(/\*/g, '.*'), 'i');
-                return regex.test(text);
-            }
-            
-            // Termo simples
-            if (useFuzzy) {
-                return fuzzyMatch(text, term);
-            }
-            return text.includes(term.toLowerCase());
-        }
+// NOVA FUNÇÃO: Avaliação de query booleana corrigida
+function evaluateBooleanQuery(text, query, useFuzzy) {
+    query = query.trim();
+    
+    // Processar parênteses primeiro
+    while (query.includes('(') && query.includes(')')) {
+        const start = query.lastIndexOf('(');
+        const end = query.indexOf(')', start);
+        
+        if (end === -1) break;
+        
+        const subQuery = query.substring(start + 1, end);
+        const subResult = evaluateBooleanQuery(text, subQuery, useFuzzy);
+        
+        query = query.substring(0, start) + (subResult ? 'TRUE' : 'FALSE') + query.substring(end + 1);
+    }
+
+    // Processar NOT
+    const notRegex = /NOT\s+([^()\s]+(?:\s+[^()\s]+)*)/gi;
+    let match;
+    while ((match = notRegex.exec(query)) !== null) {
+        const notTerm = match[1];
+        const notResult = !evaluateSimpleTerm(text, notTerm, useFuzzy);
+        query = query.replace(match[0], notResult.toString().toUpperCase());
+    }
+
+    // Processar AND
+    const andParts = query.split(/\s+AND\s+/);
+    if (andParts.length > 1) {
+        return andParts.every(part => evaluateBooleanQuery(text, part, useFuzzy));
+    }
+
+    // Processar OR
+    const orParts = query.split(/\s+OR\s+/);
+    if (orParts.length > 1) {
+        return orParts.some(part => evaluateBooleanQuery(text, part, useFuzzy));
+    }
+
+    // Termo simples
+    return evaluateSimpleTerm(text, query, useFuzzy);
+}
+
+// FUNÇÃO CORRIGIDA: Avaliar termo simples
+function evaluateSimpleTerm(text, term, useFuzzy) {
+    term = term.trim();
+    
+    // Ignorar TRUE/FALSE que foram inseridos pelo processamento
+    if (term === 'TRUE') return true;
+    if (term === 'FALSE') return false;
+    
+    // Termo entre aspas (busca exata)
+    if (term.startsWith('"') && term.endsWith('"')) {
+        const exactTerm = term.slice(1, -1).toLowerCase();
+        return text.includes(exactTerm);
+    }
+    
+    // Termo com curinga
+    if (term.includes('*')) {
+        const regex = new RegExp(term.replace(/\*/g, '.*'), 'i');
+        return regex.test(text);
+    }
+    
+    // Termo simples
+    if (useFuzzy) {
+        return fuzzyMatch(text, term);
+    }
+    return text.includes(term.toLowerCase());
+}
 
         // Busca aproximada (fuzzy)
         function fuzzyMatch(text, term) {
