@@ -11,6 +11,9 @@
             --background-color: #f4f4f4;
             --text-color: #222;
             --white: #fff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --warning-color: #ffc107;
         }
 
         * {
@@ -18,11 +21,12 @@
         }
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
             background: var(--background-color);
             color: var(--text-color);
             margin: 0;
             padding: 0;
+            line-height: 1.6;
         }
 
         /* Mobile Menu */
@@ -36,6 +40,8 @@
             padding: 15px;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            align-items: center;
+            justify-content: space-between;
         }
 
         .menu-toggle {
@@ -44,6 +50,7 @@
             color: var(--white);
             font-size: 1.5rem;
             cursor: pointer;
+            padding: 5px;
         }
 
         /* Sidebar para desktop */
@@ -58,6 +65,7 @@
             display: flex;
             flex-direction: column;
             z-index: 999;
+            overflow-y: auto;
         }
 
         #sidebar a {
@@ -66,6 +74,7 @@
             color: var(--white);
             text-decoration: none;
             font-size: 1rem;
+            transition: background 0.3s;
         }
 
         #sidebar a:hover {
@@ -102,12 +111,12 @@
             color: var(--text-color);
         }
 
-     #content h1 {
-    font-size: 3.5rem;
-    margin-bottom: 8px;
-    color: var(--primary-color);
-    font-weight: bold;
-}
+        #content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
 
         .subtitle {
             font-size: 1.1rem;
@@ -127,229 +136,379 @@
             margin-bottom: 6px;
             color: #333;
             padding: 0 10px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-/* Search */
-.search-bar {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    margin: 10px auto;
-    padding: 0 10px;
-}
+        /* Search */
+        .search-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 10px auto;
+            padding: 0 10px;
+        }
 
-.form-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 0;
-}
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 0;
+        }
 
-.search-bar input,
-.search-bar select {
-    padding: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 200px;
-    max-width: 100%;
-    background: var(--white);
-    color: var(--text-color);
-    font-size: 16px;
-}
+        .search-bar input,
+        .search-bar select {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+            max-width: 100%;
+            background: var(--white);
+            color: var(--text-color);
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
 
-.button-container {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-}
+        .search-bar input:focus,
+        .search-bar select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(47, 64, 80, 0.2);
+        }
 
-/* Efeito melhorado no botão */
-.search-bar button {
-    padding: 14px 30px;
-    border: none;
-    border-radius: 6px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: var(--white);
-    font-weight: bold;
-    cursor: pointer;
-    min-width: 120px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
+        .button-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
 
-.search-bar button:hover {
-    background: linear-gradient(135deg, var(--secondary-color), #4a6572);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
+        /* Efeito melhorado no botão */
+        .search-bar button {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 120px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
 
-.search-bar button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+        .search-bar button:hover {
+            background: linear-gradient(135deg, var(--secondary-color), #4a6572);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
 
-.opts {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #444;
-    font-size: .9rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
+        .search-bar button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 
-/* Pagination */
-.pagination {
-    display: none;
-    justify-content: center;
-    gap: 6px;
-    margin: 20px auto;
-    max-width: 900px;
-    flex-wrap: wrap;
-    padding: 0 15px;
-}
+        .search-bar button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
-.pagination button {
-    background: var(--primary-color);
-    border: none;
-    border-radius: 4px;
-    color: var(--white);
-    padding: 8px 12px;
-    cursor: pointer;
-    min-width: 44px;
-}
+        .opts {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #444;
+            font-size: .9rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
 
-.pagination button.active {
-    background: #1c87c9;
-    font-weight: bold;
-}
+        /* Resultados */
+        #resultCount {
+            margin: 20px auto;
+            font-weight: bold;
+            color: var(--primary-color);
+            max-width: 900px;
+            padding: 0 15px;
+        }
 
-.pagination button[disabled] {
-    opacity: .5;
-    cursor: not-allowed;
-}
+        /* Blocos de resultados */
+        .block {
+            position: relative;
+            background: var(--white);
+            margin: 15px auto;
+            padding: 70px 25px 25px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: left;
+            max-width: 900px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
 
-/* Contêiner de resultados */
-#allBlocks {
-    display: none;
-    padding: 0 15px;
-}
+        .block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
 
-/* Destaque dos termos encontrados */
-.highlight {
-    background: #ffeb3b;
-    color: #000;
-    font-weight: bold;
-    padding: 0 2px;
-    border-radius: 2px;
-}
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
 
-/* Media Queries para Mobile */
-@media (max-width: 768px) {
-    #mobile-menu {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+        .copy-btn:hover {
+            background: var(--secondary-color);
+        }
 
-    #sidebar {
-        display: none;
-        width: 100%;
-        height: auto;
-        position: fixed;
-        top: 60px;
-        left: 0;
-    }
+        .copy-btn.copied {
+            background: var(--success-color);
+        }
 
-    #sidebar.active {
-        display: flex;
-    }
+        .ementa-content {
+            line-height: 1.6;
+            text-align: justify;
+            font-size: 1rem;
+        }
 
-    #content {
-        margin-left: 0;
-        padding: 80px 0 20px 0;
-    }
+        .referencia {
+            margin-top: 15px;
+            font-style: italic;
+            color: #666;
+            font-size: 0.9rem;
+            text-align: right;
+        }
 
-    .search-bar {
-        flex-direction: column;
-        align-items: center;
-    }
+        /* Destaque dos termos encontrados */
+        .highlight {
+            background: #ffeb3b;
+            color: #000;
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
 
-    .form-row {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .form-row input,
-    .form-row select {
-        width: 100%;
-        max-width: 300px;
-    }
+        /* Pagination */
+        .pagination {
+            display: none;
+            justify-content: center;
+            gap: 6px;
+            margin: 20px auto;
+            max-width: 900px;
+            flex-wrap: wrap;
+            padding: 0 15px;
+        }
 
-    .search-bar button {
-        width: 100%;
-        max-width: 300px;
-    }
+        .pagination button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            color: var(--white);
+            padding: 8px 12px;
+            cursor: pointer;
+            min-width: 44px;
+            transition: background 0.3s;
+        }
 
-    .opts {
-        justify-content: center;
-    }
+        .pagination button:hover:not([disabled]):not(.active) {
+            background: var(--secondary-color);
+        }
 
-    .block {
-        margin: 10px 15px;
-        padding: 60px 20px 20px 20px;
-    }
+        .pagination button.active {
+            background: #1c87c9;
+            font-weight: bold;
+        }
 
-    .copy-btn {
-        top: 15px;
-        right: 15px;
-    }
+        .pagination button[disabled] {
+            opacity: .5;
+            cursor: not-allowed;
+        }
 
-    #content h1 {
-        font-size: 2rem;
-        padding: 0 15px;
-    }
+        /* Contêiner de resultados */
+        #allBlocks {
+            display: none;
+            padding: 0 15px;
+        }
 
-    .subtitle {
-        font-size: 1rem;
-        padding: 0 15px;
-    }
+        /* Ajuda */
+        .help {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
 
-    .dataset-info {
-        padding: 0 15px;
-    }
+        .help details {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
 
-    .ementa-content {
-        margin-right: 0;
-    }
-}
+        .help summary {
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-@media (max-width: 480px) {
-    #content {
-        padding: 70px 0 15px 0;
-    }
+        .help code {
+            background: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
 
-    .search-bar input,
-    .search-bar select {
-        max-width: 100%;
-    }
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
 
-    .search-bar button {
-        max-width: 100%;
-    }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
 
-    .opts {
-        flex-direction: column;
-        gap: 8px;
-    }
+        /* Alertas */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin: 15px auto;
+            max-width: 800px;
+        }
 
-    .help {
-        margin: 10px 15px 0 15px;
-    }
-}
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Media Queries para Mobile */
+        @media (max-width: 768px) {
+            #mobile-menu {
+                display: flex;
+            }
+
+            #sidebar {
+                display: none;
+                width: 100%;
+                height: auto;
+                position: fixed;
+                top: 60px;
+                left: 0;
+            }
+
+            #sidebar.active {
+                display: flex;
+            }
+
+            #content {
+                margin-left: 0;
+                padding: 80px 0 20px 0;
+            }
+
+            #content h1 {
+                font-size: 2rem;
+                padding: 0 15px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+
+            .dataset-info {
+                padding: 0 15px;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .form-row input,
+            .form-row select {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .search-bar button {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .opts {
+                justify-content: center;
+            }
+
+            .block {
+                margin: 10px 15px;
+                padding: 60px 20px 20px 20px;
+            }
+
+            .copy-btn {
+                top: 15px;
+                right: 15px;
+            }
+
+            /* Ementas - Mobile */
+            .ementa-content {
+                margin-right: 0;
+                line-height: 1.4;
+                text-align: justify;
+                font-size: 0.9rem;
+                text-justify: inter-word;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #content {
+                padding: 70px 0 15px 0;
+            }
+
+            .search-bar input,
+            .search-bar select {
+                max-width: 100%;
+            }
+
+            .search-bar button {
+                max-width: 100%;
+            }
+
+            .opts {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .help {
+                margin: 10px 15px 0 15px;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
@@ -382,22 +541,22 @@
             <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
         </p>
 
-     <div class="search-bar">
-    <div class="form-row">
-        <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
-        <input type="date" id="startDate">
-        <input type="date" id="endDate">
-        <select id="relator">
-            <option value="">Relator (todos)</option>
-        </select>
-        <div class="opts">
-            <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
+        <div class="search-bar">
+            <div class="form-row">
+                <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
+                <input type="date" id="startDate">
+                <input type="date" id="endDate">
+                <select id="relator">
+                    <option value="">Relator (todos)</option>
+                </select>
+                <div class="opts">
+                    <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
+                </div>
+            </div>
+            <div class="button-container">
+                <button id="searchButton" onclick="performSearch()">Consultar</button>
+            </div>
         </div>
-    </div>
-    <div class="button-container">
-        <button onclick="performSearch()">Consultar</button>
-    </div>
-</div>
 
         <!-- Ajuda ao usuário -->
         <div class="help" id="helpBox">
@@ -422,12 +581,13 @@
     </div>
 
     <script>
-            let dataset = [];
-            let filteredData = [];
-            let lastUpdate = '';
-            let currentSearchTerms = '';
-            let currentPage = 1;
-            let resultsPerPage = 50;
+        let dataset = [];
+        let filteredData = [];
+        let lastUpdate = '';
+        let currentSearchTerms = '';
+        let currentPage = 1;
+        let resultsPerPage = 50;
+        let searchTimeout = null;
 
         // Alternar sidebar no mobile
         function toggleSidebar() {
@@ -463,11 +623,47 @@
             document.getElementById('clock-date').textContent = dateString;
         }
 
+        // Mostrar alerta
+        function showAlert(message, type = 'error') {
+            // Remover alertas anteriores
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
+            
+            // Auto-remover após 5 segundos para sucesso, 10 para erro
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, type === 'success' ? 5000 : 10000);
+        }
+
+        // Atualizar estado do botão de busca
+        function setSearchButtonState(loading = false, text = null) {
+            const button = document.getElementById('searchButton');
+            
+            if (loading) {
+                button.innerHTML = '<span class="spinner"></span> Consultando...';
+                button.disabled = true;
+            } else {
+                button.innerHTML = text || 'Consultar';
+                button.disabled = false;
+            }
+        }
+
         // Carregar dados da planilha
         function loadDataset() {
             const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&output=csv';
             
             document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados...';
+            setSearchButtonState(true, 'Carregando dados...');
             
             Papa.parse(csvUrl, {
                 download: true,
@@ -476,6 +672,8 @@
                     if (results.errors && results.errors.length > 0) {
                         console.error('Erros no parse:', results.errors);
                         document.getElementById('datasetInfo').textContent = 'Erro na formatação dos dados';
+                        showAlert('Erro ao processar os dados da planilha. Verifique o formato.', 'error');
+                        setSearchButtonState(false);
                         return;
                     }
                     
@@ -485,11 +683,15 @@
                     
                     if (dataset.length === 0) {
                         document.getElementById('datasetInfo').textContent = 'Nenhum dado encontrado na planilha';
+                        showAlert('Nenhum registro encontrado na planilha.', 'error');
+                        setSearchButtonState(false);
                         return;
                     }
                     
                     updateDatasetInfo();
                     populateFilters();
+                    setSearchButtonState(false);
+                    showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
                 },
                 error: function(error) {
                     console.error('Erro ao carregar:', error);
@@ -497,6 +699,8 @@
                         'Erro ao carregar dados. Verifique: <br>' +
                         '1. Se a planilha está publicada corretamente<br>' +
                         '2. Se o link de publicação é válido';
+                    showAlert('Erro ao carregar dados da planilha. Verifique a conexão.', 'error');
+                    setSearchButtonState(false);
                 }
             });
         }
@@ -588,149 +792,152 @@
             });
         }
 
-        // FUNÇÃO PRINCIPAL: Busca com operadores lógicos em português
-      // FUNÇÃO CORRIGIDA: Busca com operadores lógicos em português
-function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-    if (!query.trim()) return true;
-    
-    // Normalizar o texto
-    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    
-    // Extrair termos entre aspas primeiro
-    const quotedTerms = [];
-    let processedQuery = normalizedQuery.replace(/"([^"]*)"/g, (match, p1) => {
-        quotedTerms.push(p1.toLowerCase());
-        return `QUOTED_${quotedTerms.length - 1}_TERM`;
-    });
-    
-    // Dividir a query em partes usando operadores
-    const parts = processedQuery.split(/\s+/);
-    let mustHave = [];
-    let mustNotHave = [];
-    let currentOperator = 'AND'; // padrão
-    
-    for (let i = 0; i < parts.length; i++) {
-        let part = parts[i].trim();
-        
-        // Restaurar termos entre aspas
-        if (part.startsWith('QUOTED_') && part.endsWith('_TERM')) {
-            const index = parseInt(part.replace('QUOTED_', '').replace('_TERM', ''));
-            part = quotedTerms[index];
-        }
-        
-        if (part === 'e' || part === ';') {
-            currentOperator = 'AND';
-            continue;
-        } else if (part === 'ou') {
-            currentOperator = 'OR';
-            continue;
-        } else if (part === 'não' || part === '-') {
-            currentOperator = 'NOT';
-            continue;
-        }
-        
-        if (part.length > 0) {
-            if (currentOperator === 'NOT') {
-                mustNotHave.push(part);
-            } else {
-                mustHave.push(part);
-            }
-        }
-    }
-    
-    // Verificar termos que NÃO devem estar (NOT)
-    for (const excludeTerm of mustNotHave) {
-        if (normalizedText.includes(excludeTerm)) {
-            return false;
-        }
-    }
-    
-    // Se há termos obrigatórios, verificar se estão presentes
-    if (mustHave.length > 0) {
-        for (const includeTerm of mustHave) {
-            if (!normalizedText.includes(includeTerm)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
-    return mustNotHave.length > 0;
-}
-
-// Busca aproximada (fuzzy)
-function fuzzyMatch(text, term) {
-    if (term.length <= 3) {
-        return text.includes(term);
-    }
-    
-    // Para termos maiores, permite 1 caractere de diferença
-    const termLen = term.length;
-    for (let i = 0; i <= text.length - termLen; i++) {
-        const substring = text.substr(i, termLen);
-        if (calculateSimilarity(substring, term) >= 0.8) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Calcular similaridade entre strings
-function calculateSimilarity(str1, str2) {
-    const longer = str1.length > str2.length ? str1 : str2;
-    const shorter = str1.length > str2.length ? str2 : str1;
-    
-    if (longer.length === 0) return 1.0;
-    
-    return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
-}
-
-// Distância de edição (para fuzzy match)
-function editDistance(str1, str2) {
-    str1 = str1.toLowerCase();
-    str2 = str2.toLowerCase();
-    
-    const costs = [];
-    for (let i = 0; i <= str1.length; i++) {
-        let lastValue = i;
-        for (let j = 0; j <= str2.length; j++) {
-            if (i === 0) {
-                costs[j] = j;
-            } else {
-                if (j > 0) {
-                    let newValue = costs[j - 1];
-                    if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
-                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+        // FUNÇÃO CORRIGIDA: Busca com operadores lógicos em português
+        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+            if (!query.trim()) return true;
+            
+            // Normalizar o texto
+            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            
+            // Extrair termos entre aspas primeiro
+            const quotedTerms = [];
+            let processedQuery = normalizedQuery.replace(/"([^"]*)"/g, (match, p1) => {
+                quotedTerms.push(p1.toLowerCase());
+                return `QUOTED_${quotedTerms.length - 1}_TERM`;
+            });
+            
+            // Dividir a query em partes usando operadores
+            const parts = processedQuery.split(/\s+/);
+            let mustHave = [];
+            let mustNotHave = [];
+            let currentOperator = 'AND'; // padrão
+            
+            for (let i = 0; i < parts.length; i++) {
+                let part = parts[i].trim();
+                
+                // Restaurar termos entre aspas
+                if (part.startsWith('QUOTED_') && part.endsWith('_TERM')) {
+                    const index = parseInt(part.replace('QUOTED_', '').replace('_TERM', ''));
+                    part = quotedTerms[index];
+                }
+                
+                if (part === 'e' || part === ';') {
+                    currentOperator = 'AND';
+                    continue;
+                } else if (part === 'ou') {
+                    currentOperator = 'OR';
+                    continue;
+                } else if (part === 'não' || part === '-') {
+                    currentOperator = 'NOT';
+                    continue;
+                }
+                
+                if (part.length > 0) {
+                    if (currentOperator === 'NOT') {
+                        mustNotHave.push(part);
+                    } else {
+                        mustHave.push(part);
                     }
-                    costs[j - 1] = lastValue;
-                    lastValue = newValue;
                 }
             }
+            
+            // Verificar termos que NÃO devem estar (NOT)
+            for (const excludeTerm of mustNotHave) {
+                if (useFuzzy) {
+                    if (fuzzyMatch(normalizedText, excludeTerm)) return false;
+                } else {
+                    if (normalizedText.includes(excludeTerm)) return false;
+                }
+            }
+            
+            // Se há termos obrigatórios, verificar se estão presentes
+            if (mustHave.length > 0) {
+                for (const includeTerm of mustHave) {
+                    if (useFuzzy) {
+                        if (!fuzzyMatch(normalizedText, includeTerm)) return false;
+                    } else {
+                        if (!normalizedText.includes(includeTerm)) return false;
+                    }
+                }
+                return true;
+            }
+            
+            // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
+            return mustNotHave.length > 0;
         }
-        if (i > 0) costs[str2.length] = lastValue;
-    }
-    return costs[str2.length];
-}
 
-// Função para destacar termos no texto
-function highlightText(text, searchTerms) {
-    if (!searchTerms || !text) return text;
-    
-    const terms = extractSearchTerms(searchTerms);
-    if (terms.length === 0) return text;
-    
-    let highlightedText = text;
-    terms.forEach(term => {
-        if (term.length > 2) {
-            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+        // Busca aproximada (fuzzy)
+        function fuzzyMatch(text, term) {
+            if (term.length <= 3) {
+                return text.includes(term);
+            }
+            
+            // Para termos maiores, permite 1 caractere de diferença
+            const termLen = term.length;
+            for (let i = 0; i <= text.length - termLen; i++) {
+                const substring = text.substr(i, termLen);
+                if (calculateSimilarity(substring, term) >= 0.8) {
+                    return true;
+                }
+            }
+            return false;
         }
-    });
-    
-    return highlightedText;
-}
+
+        // Calcular similaridade entre strings
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+        }
+
+        // Distância de edição (para fuzzy match)
+        function editDistance(str1, str2) {
+            str1 = str1.toLowerCase();
+            str2 = str2.toLowerCase();
+            
+            const costs = [];
+            for (let i = 0; i <= str1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= str2.length; j++) {
+                    if (i === 0) {
+                        costs[j] = j;
+                    } else {
+                        if (j > 0) {
+                            let newValue = costs[j - 1];
+                            if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                            }
+                            costs[j - 1] = lastValue;
+                            lastValue = newValue;
+                        }
+                    }
+                }
+                if (i > 0) costs[str2.length] = lastValue;
+            }
+            return costs[str2.length];
+        }
+
+        // Função para destacar termos no texto
+        function highlightText(text, searchTerms) {
+            if (!searchTerms || !text) return text;
+            
+            const terms = extractSearchTerms(searchTerms);
+            if (terms.length === 0) return text;
+            
+            let highlightedText = text;
+            terms.forEach(term => {
+                if (term.length > 2) {
+                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+                }
+            });
+            
+            return highlightedText;
+        }
 
         // Extrair termos de busca para highlight
         function extractSearchTerms(query) {
@@ -755,204 +962,236 @@ function highlightText(text, searchTerms) {
         }
 
         function performSearch() {
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.remove('active');
-    }
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
 
-    const searchTerms = document.getElementById('terms').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    const relator = document.getElementById('relator').value;
-    const useFuzzy = document.getElementById('fuzzy').checked;
-    
-    currentSearchTerms = searchTerms;
-    
-    // Filtrar dados
-    filteredData = dataset.filter(item => {
-        // Filtro por relator
-        if (relator && item.Relator !== relator) return false;
-        
-        // Filtro por data
-        if (startDate || endDate) {
-            const itemDate = parseDate(item.Publicação);
-            if (!itemDate) return false;
+            const searchTerms = document.getElementById('terms').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const relator = document.getElementById('relator').value;
+            const useFuzzy = document.getElementById('fuzzy').checked;
             
-            if (startDate && itemDate < new Date(startDate)) return false;
-            if (endDate && itemDate > new Date(endDate)) return false;
+            // Validação de datas
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+                return;
+            }
+            
+            currentSearchTerms = searchTerms;
+            setSearchButtonState(true);
+            
+            // Usar setTimeout para não travar a UI
+            setTimeout(() => {
+                // Filtrar dados
+                filteredData = dataset.filter(item => {
+                    // Filtro por relator
+                    if (relator && item.Relator !== relator) return false;
+                    
+                    // Filtro por data
+                    if (startDate || endDate) {
+                        const itemDate = parseDate(item.Publicação);
+                        if (!itemDate) return false;
+                        
+                        if (startDate && itemDate < new Date(startDate)) return false;
+                        if (endDate && itemDate > new Date(endDate)) return false;
+                    }
+                    
+                    // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
+                    if (searchTerms) {
+                        const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+                        return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                    }
+                    
+                    return true;
+                });
+                
+                // ORDENAR DO MAIS RECENTE PARA O MAIS ANTIGO
+                filteredData.sort((a, b) => {
+                    const dateA = parseDate(a.Publicação) || new Date(0);
+                    const dateB = parseDate(b.Publicação) || new Date(0);
+                    return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+                });
+                
+                displayResults(filteredData);
+                setSearchButtonState(false);
+            }, 100); // Pequeno delay para permitir atualização da UI
         }
-        
-        // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
-        if (searchTerms) {
-            const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-        }
-        
-        return true;
-    });
-    
-    // ORDENAR DO MAIS RECENTE PARA O MAIS ANTIGO
-    filteredData.sort((a, b) => {
-        const dateA = parseDate(a.Publicação) || new Date(0);
-        const dateB = parseDate(b.Publicação) || new Date(0);
-        return dateB - dateA; // Ordem decrescente (mais recente primeiro)
-    });
-    
-    displayResults(filteredData);
-}
 
-    function displayResults(results) {
-    const allBlocks = document.getElementById('allBlocks');
-    const resultCount = document.getElementById('resultCount');
-    const pagination = document.getElementById('pagination');
-    
-    allBlocks.innerHTML = '';
-    pagination.innerHTML = '';
-    
-    if (results.length === 0) {
-        resultCount.textContent = 'Nenhum resultado encontrado.';
-        resultCount.style.display = 'block';
-        allBlocks.style.display = 'none';
-        pagination.style.display = 'none';
-        return;
-    }
-    
-    // Calcular paginação
-    const totalPages = Math.ceil(results.length / resultsPerPage);
-    currentPage = Math.min(currentPage, totalPages);
-    
-    // Calcular índices dos resultados
-    const startIndex = (currentPage - 1) * resultsPerPage;
-    const endIndex = Math.min(startIndex + resultsPerPage, results.length);
-    const pageResults = results.slice(startIndex, endIndex);
-    
-    resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
-    resultCount.style.display = 'block';
-    allBlocks.style.display = 'block';
-    
-    // Exibir resultados da página atual
-    pageResults.forEach((item, index) => {
-        const block = document.createElement('div');
-        block.className = 'block';
-        block.style.display = 'block';
-        
-        // Formatar referência (CORRIGIDO - removido Relator(a))
-        const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-        
-        // Aplicar destaque na ementa
-        const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
-        
-        block.innerHTML = `
-            <button class="copy-btn" onclick="copyToClipboard(${startIndex + index})" title="Copiar ementa">📋</button>
-            <div class="ementa-content">
-                ${ementaComDestaque}
-                <div class="referencia">
-                    ${referencia}
-                </div>
-            </div>
-        `;
-        
-        allBlocks.appendChild(block);
-    });
-    
-    // Criar paginação se houver mais de uma página
-    if (totalPages > 1) {
-        createPagination(totalPages);
-        pagination.style.display = 'flex';
-    } else {
-        pagination.style.display = 'none';
-    }
-}
-
-function createPagination(totalPages) {
-    const pagination = document.getElementById('pagination');
-    pagination.innerHTML = '';
-    
-    // Botão Anterior
-    const prevButton = document.createElement('button');
-    prevButton.innerHTML = '‹';
-    prevButton.disabled = currentPage === 1;
-    prevButton.onclick = () => {
-        if (currentPage > 1) {
-            currentPage--;
-            displayResults(filteredData);
+        function displayResults(results) {
+            const allBlocks = document.getElementById('allBlocks');
+            const resultCount = document.getElementById('resultCount');
+            const pagination = document.getElementById('pagination');
+            
+            allBlocks.innerHTML = '';
+            pagination.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultCount.textContent = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
+                resultCount.style.display = 'block';
+                allBlocks.style.display = 'none';
+                pagination.style.display = 'none';
+                return;
+            }
+            
+            // Calcular paginação
+            const totalPages = Math.ceil(results.length / resultsPerPage);
+            currentPage = Math.min(currentPage, totalPages);
+            
+            // Calcular índices dos resultados
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = Math.min(startIndex + resultsPerPage, results.length);
+            const pageResults = results.slice(startIndex, endIndex);
+            
+            resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
+            resultCount.style.display = 'block';
+            allBlocks.style.display = 'block';
+            
+            // Exibir resultados da página atual
+            pageResults.forEach((item, index) => {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.style.display = 'block';
+                
+                // Formatar referência (CORRIGIDO - removido Relator(a))
+                const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+                
+                // Aplicar destaque na ementa
+                const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
+                
+                block.innerHTML = `
+                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
+                    <div class="ementa-content">
+                        ${ementaComDestaque}
+                        <div class="referencia">
+                            ${referencia}
+                        </div>
+                    </div>
+                `;
+                
+                allBlocks.appendChild(block);
+            });
+            
+            // Criar paginação se houver mais de uma página
+            if (totalPages > 1) {
+                createPagination(totalPages);
+                pagination.style.display = 'flex';
+            } else {
+                pagination.style.display = 'none';
+            }
         }
-    };
-    pagination.appendChild(prevButton);
-    
-    // Páginas numéricas
-    const startPage = Math.max(1, currentPage - 4);
-    const endPage = Math.min(totalPages, startPage + 9);
-    
-    for (let i = startPage; i <= endPage; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.textContent = i;
-        pageButton.className = i === currentPage ? 'active' : '';
-        pageButton.onclick = () => {
-            currentPage = i;
-            displayResults(filteredData);
-        };
-        pagination.appendChild(pageButton);
-    }
-    
-    // Botão Próximo
-    const nextButton = document.createElement('button');
-    nextButton.innerHTML = '›';
-    nextButton.disabled = currentPage === totalPages;
-    nextButton.onclick = () => {
-        if (currentPage < totalPages) {
-            currentPage++;
-            displayResults(filteredData);
-        }
-    };
-    pagination.appendChild(nextButton);
-}
 
-function copyToClipboard(index) {
-    const item = filteredData[index];
-    const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-    const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        // Feedback visual
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '✓';
-        btn.style.background = '#28a745';
-        
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = '';
-        }, 2000);
-    }).catch(err => {
-        console.error('Erro ao copiar: ', err);
-        alert('Erro ao copiar para a área de transferência');
-    });
-}
+        function createPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Botão Anterior
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '‹';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+            pagination.appendChild(prevButton);
+            
+            // Páginas numéricas
+            const startPage = Math.max(1, currentPage - 4);
+            const endPage = Math.min(totalPages, startPage + 9);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.className = i === currentPage ? 'active' : '';
+                pageButton.onclick = () => {
+                    currentPage = i;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                pagination.appendChild(pageButton);
+            }
+            
+            // Botão Próximo
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '›';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+            pagination.appendChild(nextButton);
+        }
+
+        function copyToClipboard(index) {
+            // Calcular índice correto considerando a paginação
+            const actualIndex = (currentPage - 1) * resultsPerPage + index;
+            const item = filteredData[actualIndex];
+            
+            if (!item) {
+                showAlert('Erro ao copiar: item não encontrado.', 'error');
+                return;
+            }
+            
+            const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+            const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // Feedback visual
+                const btn = event.target;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✓';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copied');
+                }, 2000);
+                
+                showAlert('Ementa copiada para a área de transferência!', 'success');
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+                showAlert('Erro ao copiar para a área de transferência', 'error');
+            });
+        }
+
         // Executar busca ao pressionar Enter no campo de pesquisa
-document.getElementById('terms').addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        performSearch();
-    }
-});
+        document.getElementById('terms').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        });
 
-// Opcional: também nos campos de data
-document.getElementById('startDate').addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        performSearch();
-    }
-});
-
-document.getElementById('endDate').addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        performSearch();
-    }
-});
+        // Busca com debounce para melhor performance
+        document.getElementById('terms').addEventListener('input', function() {
+            // Limpar timeout anterior
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Definir novo timeout (busca após 800ms sem digitar)
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3) {
+                    performSearch();
+                }
+            }, 800);
+        });
 
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
             loadDataset();
             updateClock();
             setInterval(updateClock, 1000);
+            
+            // Focar no campo de busca
+            setTimeout(() => {
+                document.getElementById('terms').focus();
+            }, 500);
         });
     </script>
 </body>
