@@ -18,11 +18,108 @@
     body{
       margin:0; background:var(--paper); color:var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      padding:0;
+    }
+
+    /* ===== LAYOUT DESKTOP ===== */
+    .desktop-layout {
+      display: none;
+    }
+
+    /* Sidebar fixa de retorno */
+    #sidebar-back{
+      position:fixed; top:0; left:0; width:200px; height:100%;
+      background:var(--graphite); color:white; display:flex; flex-direction:column;
+      padding-top:10px; box-shadow:2px 0 6px rgba(0,0,0,.25); z-index:30;
+    }
+    #sidebar-back a{
+      display:block; padding:12px 18px; color:white; text-decoration:none; font-weight:600;
+      border-left:3px solid transparent; transition:background .2s ease;
+    }
+    #sidebar-back a:hover{background:rgba(255,255,255,.12)}
+    #clock{
+      margin-top:auto;
+      padding:12px 18px;
+      text-align:center;
+      font-weight:600;
+      font-size:.95rem;
+      border-top:1px solid rgba(255,255,255,.15);
+      color:white;
+      opacity:.85;
+    }   
+
+    /* deslocar conteúdo */
+    .desktop-layout header, .desktop-layout main, .desktop-layout footer{margin-left:200px}
+
+    .desktop-layout header{
+      background:var(--graphite); color:#fff;
+      padding:28px 20px 22px;
+    }
+    .desktop-layout header h1{margin:0 0 8px; font-weight:800}
+    .desktop-layout header .legal{margin-top:10px; font-size:.95rem; line-height:1.35; opacity:.94}
+
+    .desktop-layout main{
+      max-width:1100px;
+      margin:24px auto 48px;  
+      padding:0 16px;
+    }
+    .card{
+      background:var(--card); border-radius:18px; border:1px solid var(--line);
+      box-shadow:0 10px 25px rgba(2,12,27,.06); padding:18px 18px 12px;
+    }
+    .grid{display:grid; grid-template-columns:1.1fr 1fr .9fr; gap:12px}
+    .field{display:flex; flex-direction:column; gap:6px}
+    label{font-size:.92rem; color:#4a4743; font-weight:600}
+    input[type="date"], select, input[type="number"]{
+      width:100%; padding:12px 14px; border:1px solid #e5e1db; border-radius:12px; font-size:1rem;
+      background:#fff; outline:none;
+    }
+
+    .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+
+    .btn{
+      padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700;
+      border:1px solid transparent; letter-spacing:.25px;
+    }
+    .btn.primary{background:var(--graphite); color:#fff;}
+    .btn.secondary{background:var(--sepia); color:#fff;}
+    .btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
+    .btn:hover{transform:translateY(-1px)}
+
+    .chips{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      padding:8px 10px; background:transparent; border:1px solid #d6d0c7;
+      border-radius:999px; font-weight:700; cursor:pointer; font-size:.93rem;
+    }
+    .chip:hover{background:var(--paper-3)}
+    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
+
+    .final-date{margin:16px 0 6px; padding:14px 16px; background:var(--hl);
+      border:1px dashed var(--line-2); border-radius:12px; font-weight:800;}
+    table{width:100%; border-collapse:separate; border-spacing:0; margin-top:12px; font-size:.95rem}
+    thead th{position:sticky; top:0; background:#fff; z-index:2; padding:10px 12px; border-bottom:1px solid var(--line);}
+    tbody td{padding:10px 12px; border-bottom:1px dashed #e7e2da}
+    tbody tr:nth-child(odd){background:var(--row)}
+    tbody tr:nth-child(even){background:var(--row2)}
+
+    .tag{padding:4px 8px; border-radius:999px; font-weight:700; font-size:.82rem; display:inline-block; border:1px solid transparent;}
+    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
+    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
+
+    .desktop-layout footer{max-width:1100px; margin:24px auto 60px; padding:0 16px; color:#6b655d; font-size:.9rem}
+    .code{padding:2px 6px; border-radius:6px; border:1px solid var(--line); background:#f4f1eb}
+    .danger{color:var(--recess); font-weight:800}
+
+    /* ===== LAYOUT MOBILE ===== */
+    .mobile-layout {
+      display: none;
     }
 
     /* Header responsivo */
-    header{
+    .mobile-layout header{
       background:var(--graphite); color:#fff;
       padding:20px 16px;
       position:sticky;
@@ -30,12 +127,12 @@
       z-index:20;
       box-shadow:0 2px 10px rgba(0,0,0,.15);
     }
-    header h1{
+    .mobile-layout header h1{
       margin:0 0 8px; 
       font-weight:800;
       font-size:1.4rem;
     }
-    header .legal{
+    .mobile-layout header .legal{
       margin-top:10px; 
       font-size:.9rem; 
       line-height:1.35; 
@@ -85,42 +182,25 @@
       margin-bottom:4px;
     }
 
-    main{
+    .mobile-layout main{
       max-width:100%;
       margin:0 auto 80px;  
       padding:16px;
     }
-    .card{
-      background:var(--card); 
-      border-radius:16px; 
-      border:1px solid var(--line);
-      box-shadow:0 5px 15px rgba(2,12,27,.06); 
-      padding:16px;
-      margin-bottom:16px;
-    }
-    .grid{
+    
+    .mobile-grid{
       display:flex;
       flex-direction:column;
       gap:12px;
     }
-    @media (min-width: 768px) {
-      .grid{
-        display:grid;
-        grid-template-columns:1.1fr 1fr .9fr;
-        gap:12px;
-      }
-    }
-    .field{
+    
+    .mobile-field{
       display:flex;
       flex-direction:column;
       gap:6px;
     }
-    label{
-      font-size:.92rem; 
-      color:#4a4743; 
-      font-weight:600;
-    }
-    input[type="date"], select, input[type="number"]{
+    
+    .mobile-layout input[type="date"], .mobile-layout select, .mobile-layout input[type="number"]{
       width:100%; 
       padding:14px 16px; 
       border:1px solid #e5e1db; 
@@ -132,21 +212,14 @@
       min-height:50px;
     }
 
-    .actions{
+    .mobile-actions{
       display:flex; 
       flex-direction:column;
       gap:12px; 
       margin-top:16px;
     }
-    @media (min-width: 480px) {
-      .actions{
-        flex-direction:row;
-        align-items:center;
-        flex-wrap:wrap;
-      }
-    }
 
-    .btn{
+    .mobile-btn{
       padding:14px 18px; 
       border-radius:12px; 
       cursor:pointer; 
@@ -160,18 +233,17 @@
       justify-content:center;
       flex:1;
     }
-    .btn.primary{background:var(--graphite); color:#fff;}
-    .btn.secondary{background:var(--sepia); color:#fff;}
-    .btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
-    .btn:hover{transform:translateY(-1px)}
+    .mobile-btn.primary{background:var(--graphite); color:#fff;}
+    .mobile-btn.secondary{background:var(--sepia); color:#fff;}
+    .mobile-btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
 
-    .chips{
+    .mobile-chips{
       display:flex; 
       gap:8px; 
       flex-wrap:wrap;
       justify-content:center;
     }
-    .chip{
+    .mobile-chip{
       padding:12px 14px; 
       background:transparent; 
       border:1px solid #d6d0c7;
@@ -182,12 +254,12 @@
       min-width:60px;
       text-align:center;
     }
-    .chip:hover{background:var(--paper-3)}
-    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
-    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
-    .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
+    .mobile-chip:hover{background:var(--paper-3)}
+    .mobile-chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .mobile-chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .mobile-chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
 
-    .final-date{
+    .mobile-final-date{
       margin:16px 0 12px; 
       padding:16px; 
       background:var(--hl);
@@ -207,14 +279,16 @@
       border-radius:12px; 
       background:#fff;
     }
-    table{
+    
+    .mobile-layout table{
       width:100%; 
       border-collapse:separate; 
       border-spacing:0; 
       font-size:.95rem;
       min-width:600px;
     }
-    thead th{
+    
+    .mobile-layout thead th{
       position:sticky; 
       top:0; 
       background:#fff; 
@@ -223,43 +297,20 @@
       border-bottom:1px solid var(--line);
       font-size:.9rem;
     }
-    tbody td{
+    
+    .mobile-layout tbody td{
       padding:12px 10px; 
       border-bottom:1px dashed #e7e2da;
       font-size:.9rem;
     }
-    tbody tr:nth-child(odd){background:var(--row)}
-    tbody tr:nth-child(even){background:var(--row2)}
 
-    .tag{
-      padding:6px 10px; 
-      border-radius:999px; 
-      font-weight:700; 
-      font-size:.82rem; 
-      display:inline-block; 
-      border:1px solid transparent;
-      white-space:nowrap;
-    }
-    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
-    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
-    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
-    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
-
-    footer{
+    .mobile-layout footer{
       max-width:100%; 
       margin:24px auto 100px; 
       padding:0 16px; 
       color:#6b655d; 
       font-size:.9rem;
     }
-    .code{
-      padding:4px 8px; 
-      border-radius:6px; 
-      border:1px solid var(--line); 
-      background:#f4f1eb;
-      font-family:monospace;
-    }
-    .danger{color:var(--recess); font-weight:800}
 
     /* Modal para informações legais */
     .modal{
@@ -297,104 +348,205 @@
       cursor:pointer;
       color:var(--sepia);
     }
+
+    /* Mostrar layout correto baseado no dispositivo */
+    @media (min-width: 768px) {
+      .desktop-layout {
+        display: block;
+      }
+      .mobile-layout {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .desktop-layout {
+        display: none !important;
+      }
+      .mobile-layout {
+        display: block;
+      }
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>Contador de Prazos Cíveis — TJGO</h1>
-  <p class="legal">
-    <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
-    <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
-    <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
-    <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
-  </p>
-  <div class="legal-toggle" id="toggleLegal">ℹ️ Mais informações</div>
-</header>
+<!-- ===== LAYOUT DESKTOP ===== -->
+<div class="desktop-layout">
+  <div id="sidebar-back">
+    <a href="index.html">⬅ Voltar ao Início</a>
+    <div id="clock"></div>
+  </div>
 
-<main>
-  <section class="card">
-    <div class="grid">
-      <div class="field">
-        <label for="tipo">Tipo de marco inicial</label>
-        <select id="tipo">
-          <option value="leitura">Leitura (intimação lida)</option>
-          <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
-        </select>
+  <header>
+    <h1>Contador de Prazos Cíveis — TJGO</h1>
+    <p class="legal">
+      <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+      <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+      <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+      <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+    </p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="grid">
+        <div class="field">
+          <label for="tipo-desktop">Tipo de marco inicial</label>
+          <select id="tipo-desktop">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="dataBase-desktop">Data Inicial</label>
+          <input type="date" id="dataBase-desktop" />
+        </div>
+
+        <div class="field">
+          <label for="dias-desktop">Dias de prazo (dias úteis)</label>
+          <input type="number" id="dias-desktop" min="1" step="1" value="15"/>
+        </div>
       </div>
 
-      <div class="field">
-        <label for="dataBase">Data Inicial</label>
-        <input type="date" id="dataBase" />
+      <div class="actions" style="margin-top:12px">
+        <button class="btn primary" id="btnCalcular-desktop">Calcular prazo</button>
+        <div class="chips">
+          <button class="chip" data-d="5">5 dias</button>
+          <button class="chip" data-d="15">15 dias</button>
+          <button class="chip" data-d="30">30 dias</button>
+        </div>
+        <span class="muted">Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.</span>
       </div>
 
-      <div class="field">
-        <label for="dias">Dias de prazo (dias úteis)</label>
-        <input type="number" id="dias" min="1" step="1" value="15"/>
+      <div class="result" id="resultado-desktop" style="display:none">
+        <div class="final-date" id="finalDate-desktop"></div>
+        <div class="toolbar">
+          <button class="btn secondary" id="btnCopiar-desktop">Copiar resumo</button>
+          <button class="btn ghost" id="btnCSV-desktop">Exportar CSV</button>
+        </div>
+        <div style="max-height:430px; overflow:auto; margin-top:6px; border:1px solid var(--line); border-radius:12px; background:#fff">
+          <table id="tabela-desktop">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Dia da semana</th>
+                <th>Classificação</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="muted small">Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.</p>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <div class="actions">
-      <button class="btn primary" id="btnCalcular">Calcular prazo</button>
-      <div class="chips">
-        <button class="chip" data-d="5">5 dias</button>
-        <button class="chip" data-d="15">15 dias</button>
-        <button class="chip" data-d="30">30 dias</button>
+  <footer class="small">
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
+</div>
+
+<!-- ===== LAYOUT MOBILE ===== -->
+<div class="mobile-layout">
+  <header>
+    <h1>Contador de Prazos Cíveis — TJGO</h1>
+    <p class="legal">
+      <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+      <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+      <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+      <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+    </p>
+    <div class="legal-toggle" id="toggleLegal">ℹ️ Mais informações</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="mobile-grid">
+        <div class="mobile-field">
+          <label for="tipo-mobile">Tipo de marco inicial</label>
+          <select id="tipo-mobile">
+            <option value="leitura">Leitura (intimação lida)</option>
+            <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
+          </select>
+        </div>
+
+        <div class="mobile-field">
+          <label for="dataBase-mobile">Data Inicial</label>
+          <input type="date" id="dataBase-mobile" />
+        </div>
+
+        <div class="mobile-field">
+          <label for="dias-mobile">Dias de prazo (dias úteis)</label>
+          <input type="number" id="dias-mobile" min="1" step="1" value="15"/>
+        </div>
       </div>
-    </div>
-    <div style="margin-top:12px; font-size:.9rem; color:#7a6f61; text-align:center;">
-      Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.
-    </div>
 
-    <div class="result" id="resultado" style="display:none">
-      <div class="final-date" id="finalDate"></div>
-      <div class="actions">
-        <button class="btn secondary" id="btnCopiar">Copiar resumo</button>
-        <button class="btn ghost" id="btnCSV">Exportar CSV</button>
+      <div class="mobile-actions">
+        <button class="mobile-btn primary" id="btnCalcular-mobile">Calcular prazo</button>
+        <div class="mobile-chips">
+          <button class="mobile-chip" data-d="5">5 dias</button>
+          <button class="mobile-chip" data-d="15">15 dias</button>
+          <button class="mobile-chip" data-d="30">30 dias</button>
+        </div>
       </div>
-      <div class="table-container">
-        <table id="tabela">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Data</th>
-              <th>Dia</th>
-              <th>Tipo</th>
-              <th>Observação</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div style="margin-top:12px; font-size:.9rem; color:#7a6f61; text-align:center;">
+        Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.
       </div>
-      <p style="margin-top:12px; font-size:.85rem; color:#7a6f61; text-align:center;">
-        Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.
-      </p>
-    </div>
-  </section>
-</main>
 
-<footer>
-  <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
-</footer>
+      <div class="result" id="resultado-mobile" style="display:none">
+        <div class="mobile-final-date" id="finalDate-mobile"></div>
+        <div class="mobile-actions">
+          <button class="mobile-btn secondary" id="btnCopiar-mobile">Copiar resumo</button>
+          <button class="mobile-btn ghost" id="btnCSV-mobile">Exportar CSV</button>
+        </div>
+        <div class="table-container">
+          <table id="tabela-mobile">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Dia</th>
+                <th>Tipo</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p style="margin-top:12px; font-size:.85rem; color:#7a6f61; text-align:center;">
+          Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.
+        </p>
+      </div>
+    </section>
+  </main>
 
-<!-- Menu móvel -->
-<div id="mobile-menu">
-  <a href="index.html">
-    <span class="icon">🏠</span>
-    <span>Início</span>
-  </a>
-  <button id="mobileCalc">
-    <span class="icon">📅</span>
-    <span>Calcular</span>
-  </button>
-  <button id="mobileCopy">
-    <span class="icon">📋</span>
-    <span>Copiar</span>
-  </button>
-  <button id="mobileExport">
-    <span class="icon">📤</span>
-    <span>Exportar</span>
-  </button>
+  <footer>
+    <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+  </footer>
+
+  <!-- Menu móvel -->
+  <div id="mobile-menu">
+    <a href="index.html">
+      <span class="icon">🏠</span>
+      <span>Início</span>
+    </a>
+    <button id="mobileCalc">
+      <span class="icon">📅</span>
+      <span>Calcular</span>
+    </button>
+    <button id="mobileCopy">
+      <span class="icon">📋</span>
+      <span>Copiar</span>
+    </button>
+    <button id="mobileExport">
+      <span class="icon">📤</span>
+      <span>Exportar</span>
+    </button>
+  </div>
 </div>
 
 <!-- Modal para informações legais -->
@@ -420,7 +572,8 @@
     const pad = (n)=> String(n).padStart(2,'0');
     return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
   };
-  const diaSemana = (d)=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
+  const diaSemana = (d)=>["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"][d.getDay()];
+  const diaSemanaMobile = (d)=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
   const ymd = (d)=>{
     const pad=(n)=> String(n).padStart(2,'0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -565,8 +718,8 @@
     return '';
   }
 
-  function classifyDay(d, mode='counting'){
-    const obj = {date: new Date(d), dow: diaSemana(d), tag: '', badge:'', obs:[], final:false};
+  function classifyDay(d, mode='counting', isMobile = false){
+    const obj = {date: new Date(d), dow: isMobile ? diaSemanaMobile(d) : diaSemana(d), tag: '', badge:'', obs:[], final:false};
 
     // Fim de semana
     if(isWeekend(d)){
@@ -670,17 +823,12 @@
     }
   }
 
-  // ---------- Principal ----------
-  document.querySelectorAll('.chip').forEach(ch => {
-    ch.addEventListener('click', ()=>{
-      document.getElementById('dias').value = ch.dataset.d;
-    });
-  });
-
-  function calcularPrazo() {
-    const tipo = document.getElementById('tipo').value;
-    const sData = document.getElementById('dataBase').value;
-    const nDias = parseInt(document.getElementById('dias').value, 10);
+  // ---------- Função principal de cálculo ----------
+  function calcularPrazo(isMobile = false) {
+    const prefix = isMobile ? '-mobile' : '-desktop';
+    const tipo = document.getElementById(`tipo${prefix}`).value;
+    const sData = document.getElementById(`dataBase${prefix}`).value;
+    const nDias = parseInt(document.getElementById(`dias${prefix}`).value, 10);
     if(!sData || isNaN(nDias) || nDias<=0){
       alert('Informe a Data Inicial e um número válido de dias.');
       return;
@@ -708,7 +856,7 @@
     const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
 
     // --- Montar auditoria contínua ---
-    const tbody = document.querySelector('#tabela tbody');
+    const tbody = document.querySelector(`#tabela${prefix} tbody`);
     tbody.innerHTML = '';
     let idx = 0;
 
@@ -721,7 +869,7 @@
       const isMarco = (key === ymd(marco));
       let mode = (cursor < inicioContagem) ? 'start_end' : 'counting';
 
-      const base = classifyDay(cursor, mode);
+      const base = classifyDay(cursor, mode, isMobile);
       const obsParts = [];
 
       // Observação base para não útil (prioridade)
@@ -771,12 +919,12 @@
       cursor = addDays(cursor,1);
     }
 
-    document.getElementById('finalDate').innerHTML =
+    document.getElementById(`finalDate${prefix}`).innerHTML =
       `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${fmtBR(dataFinal)}</span>`;
-    document.getElementById('resultado').style.display = 'block';
+    document.getElementById(`resultado${prefix}`).style.display = 'block';
 
     // Copiar resumo / CSV
-    document.getElementById('btnCopiar').onclick = ()=>{
+    document.getElementById(`btnCopiar${prefix}`).onclick = ()=>{
       const resumo = [
         `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
         `Data Inicial: ${fmtBR(marco)}`,
@@ -786,9 +934,9 @@
       navigator.clipboard.writeText(resumo).then(()=> alert('Resumo copiado.'));
     };
 
-    document.getElementById('btnCSV').onclick = ()=>{
+    document.getElementById(`btnCSV${prefix}`).onclick = ()=>{
       const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
-      const trs = document.querySelectorAll('#tabela tbody tr');
+      const trs = document.querySelectorAll(`#tabela${prefix} tbody tr`);
       trs.forEach(tr=>{
         const tds = tr.querySelectorAll('td');
         const cols = [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].innerText, tds[4].textContent];
@@ -803,15 +951,39 @@
     };
   }
 
-  document.getElementById('btnCalcular').addEventListener('click', calcularPrazo);
+  // ---------- Inicialização ----------
+  
+  // Desktop
+  document.querySelectorAll('.desktop-layout .chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias-desktop').value = ch.dataset.d;
+    });
+  });
+
+  document.getElementById('btnCalcular-desktop').addEventListener('click', ()=>{
+    calcularPrazo(false);
+  });
+
+  // Mobile
+  document.querySelectorAll('.mobile-layout .mobile-chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias-mobile').value = ch.dataset.d;
+    });
+  });
+
+  document.getElementById('btnCalcular-mobile').addEventListener('click', ()=>{
+    calcularPrazo(true);
+  });
 
   // Menu móvel - funcionalidades
-  document.getElementById('mobileCalc').addEventListener('click', calcularPrazo);
+  document.getElementById('mobileCalc').addEventListener('click', ()=>{
+    calcularPrazo(true);
+  });
   document.getElementById('mobileCopy').addEventListener('click', ()=>{
-    document.getElementById('btnCopiar').click();
+    document.getElementById('btnCopiar-mobile').click();
   });
   document.getElementById('mobileExport').addEventListener('click', ()=>{
-    document.getElementById('btnCSV').click();
+    document.getElementById('btnCSV-mobile').click();
   });
 
   // Modal para informações legais
@@ -827,14 +999,27 @@
     }
   });
 
+  // Clock (apenas desktop)
+  function updateClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    const el = document.getElementById('clock');
+    if(el) el.textContent = `${hh}:${mm}:${ss}`;
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+
   // Melhorar a experiência em dispositivos móveis
   // Definir data padrão como hoje
   const today = new Date();
   const todayFormatted = today.toISOString().split('T')[0];
-  document.getElementById('dataBase').value = todayFormatted;
+  document.getElementById('dataBase-desktop').value = todayFormatted;
+  document.getElementById('dataBase-mobile').value = todayFormatted;
   
   // Melhorar a usabilidade do input de data em mobile
-  document.getElementById('dataBase').addEventListener('focus', function() {
+  document.getElementById('dataBase-mobile').addEventListener('focus', function() {
     this.type = 'date';
   });
 </script>
