@@ -1219,21 +1219,7 @@ function extractSearchTerms(query) {
             }
         });
 
-        // Busca com debounce para melhor performance
-        document.getElementById('terms').addEventListener('input', function() {
-            // Limpar timeout anterior
-            if (searchTimeout) {
-                clearTimeout(searchTimeout);
-            }
-            
-            // Definir novo timeout (busca após 800ms sem digitar)
-            searchTimeout = setTimeout(() => {
-                if (this.value.length >= 3) {
-                    performSearch();
-                }
-            }, 800);
-        });
-
+     
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
             loadDataset();
