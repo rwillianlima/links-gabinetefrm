@@ -1,782 +1,843 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
-    <style>
-        :root {
-            --primary-color: #2f4050;
-            --secondary-color: #3b5165;
-            --background-color: #f4f4f4;
-            --text-color: #222;
-            --white: #fff;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contador de Prazos Cíveis — TJGO (2023–2026)</title>
+  <style>
+    :root{
+      --paper:#f8f6f2; --paper-3:#eee9e1; --card:#ffffff;
+      --ink:#2b2b2b; --sepia:#7a6f61; --graphite:#3a3a3a;
+      --line:#e3ded6; --line-2:#d8d1c4;
+      --useful:#4d6b4d; --holiday:#7a6f61; --recess:#6a1f1f; --ash:#8a6d3b;
+      --row:#fbf9f5; --row2:#f5f1ea; --hl:#f1ede5; --bad:var(--recess);
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--paper); color:var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      padding:0;
+    }
 
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-        }
+    /* Header responsivo */
+    header{
+      background:var(--graphite); color:#fff;
+      padding:20px 16px;
+      position:sticky;
+      top:0;
+      z-index:20;
+      box-shadow:0 2px 10px rgba(0,0,0,.15);
+    }
+    header h1{
+      margin:0 0 8px; 
+      font-weight:800;
+      font-size:1.4rem;
+    }
+    header .legal{
+      margin-top:10px; 
+      font-size:.9rem; 
+      line-height:1.35; 
+      opacity:.94;
+    }
+    .legal-toggle{
+      display:inline-block;
+      margin-top:8px;
+      padding:6px 10px;
+      background:rgba(255,255,255,.15);
+      border-radius:6px;
+      font-size:.85rem;
+      cursor:pointer;
+    }
 
-        /* Mobile Menu */
-        #mobile-menu {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: var(--primary-color);
-            padding: 15px;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+    /* Menu móvel */
+    #mobile-menu{
+      position:fixed;
+      bottom:0;
+      left:0;
+      right:0;
+      background:var(--graphite);
+      display:flex;
+      justify-content:space-around;
+      padding:10px 0;
+      z-index:30;
+      box-shadow:0 -2px 10px rgba(0,0,0,.15);
+    }
+    #mobile-menu a, #mobile-menu button{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      background:none;
+      border:none;
+      color:white;
+      font-size:.8rem;
+      padding:8px 12px;
+      text-decoration:none;
+      border-radius:8px;
+      transition:background .2s;
+    }
+    #mobile-menu a:hover, #mobile-menu button:hover{
+      background:rgba(255,255,255,.12);
+    }
+    #mobile-menu .icon{
+      font-size:1.2rem;
+      margin-bottom:4px;
+    }
 
-        .menu-toggle {
-            background: none;
-            border: none;
-            color: var(--white);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
+    main{
+      max-width:100%;
+      margin:0 auto 80px;  
+      padding:16px;
+    }
+    .card{
+      background:var(--card); 
+      border-radius:16px; 
+      border:1px solid var(--line);
+      box-shadow:0 5px 15px rgba(2,12,27,.06); 
+      padding:16px;
+      margin-bottom:16px;
+    }
+    .grid{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    @media (min-width: 768px) {
+      .grid{
+        display:grid;
+        grid-template-columns:1.1fr 1fr .9fr;
+        gap:12px;
+      }
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    label{
+      font-size:.92rem; 
+      color:#4a4743; 
+      font-weight:600;
+    }
+    input[type="date"], select, input[type="number"]{
+      width:100%; 
+      padding:14px 16px; 
+      border:1px solid #e5e1db; 
+      border-radius:12px; 
+      font-size:1rem;
+      background:#fff; 
+      outline:none;
+      -webkit-appearance:none;
+      min-height:50px;
+    }
 
-        /* Sidebar para desktop */
-        #sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 240px;
-            height: 100%;
-            background: var(--primary-color);
-            box-shadow: 2px 0 6px rgba(0,0,0,.2);
-            display: flex;
-            flex-direction: column;
-            z-index: 999;
-        }
+    .actions{
+      display:flex; 
+      flex-direction:column;
+      gap:12px; 
+      margin-top:16px;
+    }
+    @media (min-width: 480px) {
+      .actions{
+        flex-direction:row;
+        align-items:center;
+        flex-wrap:wrap;
+      }
+    }
 
-        #sidebar a {
-            display: block;
-            padding: 12px 20px;
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1rem;
-        }
+    .btn{
+      padding:14px 18px; 
+      border-radius:12px; 
+      cursor:pointer; 
+      font-weight:700;
+      border:1px solid transparent; 
+      letter-spacing:.25px;
+      font-size:1rem;
+      min-height:50px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:1;
+    }
+    .btn.primary{background:var(--graphite); color:#fff;}
+    .btn.secondary{background:var(--sepia); color:#fff;}
+    .btn.ghost{background:transparent; border:1px solid #d6d0c7; color:var(--ink)}
+    .btn:hover{transform:translateY(-1px)}
 
-        #sidebar a:hover {
-            background: var(--secondary-color);
-        }
-        
-        /* Relógio na sidebar */
-        #clock {
-            margin-top: auto;
-            padding: 15px 20px;
-            color: var(--white);
-            font-size: 0.9rem;
-            border-top: 1px solid var(--secondary-color);
-            background: #263340;
-        }
+    .chips{
+      display:flex; 
+      gap:8px; 
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .chip{
+      padding:12px 14px; 
+      background:transparent; 
+      border:1px solid #d6d0c7;
+      border-radius:999px; 
+      font-weight:700; 
+      cursor:pointer; 
+      font-size:.93rem;
+      min-width:60px;
+      text-align:center;
+    }
+    .chip:hover{background:var(--paper-3)}
+    .chip[data-d="5"]{border-color:var(--ash); color:var(--ash)}
+    .chip[data-d="15"]{border-color:var(--useful); color:var(--useful)}
+    .chip[data-d="30"]{border-color:var(--useful); color:var(--ash)}
 
-        #clock-time {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+    .final-date{
+      margin:16px 0 12px; 
+      padding:16px; 
+      background:var(--hl);
+      border:1px dashed var(--line-2); 
+      border-radius:12px; 
+      font-weight:800;
+      font-size:1.1rem;
+      text-align:center;
+    }
+    
+    /* Tabela responsiva */
+    .table-container{
+      max-height:400px; 
+      overflow:auto; 
+      margin-top:12px; 
+      border:1px solid var(--line); 
+      border-radius:12px; 
+      background:#fff;
+    }
+    table{
+      width:100%; 
+      border-collapse:separate; 
+      border-spacing:0; 
+      font-size:.95rem;
+      min-width:600px;
+    }
+    thead th{
+      position:sticky; 
+      top:0; 
+      background:#fff; 
+      z-index:2; 
+      padding:12px 10px; 
+      border-bottom:1px solid var(--line);
+      font-size:.9rem;
+    }
+    tbody td{
+      padding:12px 10px; 
+      border-bottom:1px dashed #e7e2da;
+      font-size:.9rem;
+    }
+    tbody tr:nth-child(odd){background:var(--row)}
+    tbody tr:nth-child(even){background:var(--row2)}
 
-        #clock-date {
-            font-size: 0.85rem;
-            opacity: 0.8;
-        }
+    .tag{
+      padding:6px 10px; 
+      border-radius:999px; 
+      font-weight:700; 
+      font-size:.82rem; 
+      display:inline-block; 
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+    .tag.ok{background:rgba(77,107,77,.1); color:var(--useful); border-color:rgba(77,107,77,.25)}
+    .tag.warn{background:rgba(122,111,97,.1); color:var(--holiday); border-color:rgba(122,111,97,.25)}
+    .tag.recesso{background:rgba(106,31,31,.1); color:var(--recess); border-color:rgba(106,31,31,.25)}
+    .tag.info{background:rgba(138,109,59,.1); color:var(--ash); border-color:rgba(138,109,59,.25)}
 
-        /* Content */
-        #content {
-            margin-left: 260px;
-            padding: 40px 25px;
-            min-height: 100vh;
-            text-align: center;
-            color: var(--text-color);
-        }
+    footer{
+      max-width:100%; 
+      margin:24px auto 100px; 
+      padding:0 16px; 
+      color:#6b655d; 
+      font-size:.9rem;
+    }
+    .code{
+      padding:4px 8px; 
+      border-radius:6px; 
+      border:1px solid var(--line); 
+      background:#f4f1eb;
+      font-family:monospace;
+    }
+    .danger{color:var(--recess); font-weight:800}
 
-        #content h1 {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            color: var(--primary-color);
-        }
-
-        .subtitle {
-            font-size: 1.1rem;
-            color: #444;
-            margin-bottom: 5px;
-        }
-
-        .dataset-info {
-            font-size: .92rem;
-            color: #666;
-            margin: 2px auto 18px auto;
-            max-width: 920px;
-        }
-
-        .notice {
-            font-size: .85rem;
-            margin-bottom: 6px;
-            color: #333;
-            padding: 0 10px;
-        }
-
-        /* Search */
-        .search-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin: 10px auto;
-            padding: 0 10px;
-        }
-
-        .search-bar input,
-        .search-bar select {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 200px;
-            max-width: 100%;
-            background: var(--white);
-            color: var(--text-color);
-            font-size: 16px;
-        }
-
-        .search-bar button {
-            padding: 12px 18px;
-            border: none;
-            border-radius: 4px;
-            background: var(--primary-color);
-            color: var(--white);
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 80px;
-            font-size: 16px;
-        }
-
-        .search-bar button:hover {
-            background: var(--secondary-color);
-        }
-
-        .opts {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #444;
-            font-size: .9rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .opts label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        /* Help */
-        .help {
-            max-width: 920px;
-            margin: 10px auto 0 auto;
-            text-align: left;
-            background: var(--white);
-            border: 1px solid #ddd;
-            padding: 12px 16px;
-            border-radius: 6px;
-            font-size: .92rem;
-            line-height: 1.45;
-            color: var(--text-color);
-        }
-
-        .help code {
-            background: rgba(0,0,0,.05);
-            padding: 0 4px;
-            border-radius: 3px;
-        }
-
-        .help summary {
-            cursor: pointer;
-            font-weight: 700;
-        }
-
-        /* Result count */
-        #resultCount {
-            font-size: .95rem;
-            margin: 10px auto;
-            max-width: 900px;
-            text-align: left;
-            color: var(--text-color);
-            display: none;
-            padding: 0 15px;
-        }
-
-        /* Blocks */
-        .block {
-            background: var(--white);
-            border-radius: 6px;
-            padding: 20px;
-            margin: 15px auto;
-            max-width: 900px;
-            display: none;
-            position: relative;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-
-        .ementa-content {
-            margin-right: 40px;
-            line-height: 1.6;
-        }
-
-        .referencia {
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-            font-style: italic;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        /* Copy button como ícone */
-        .copy-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            border: none;
-            border-radius: 4px;
-            padding: 8px;
-            background: var(--primary-color);
-            color: var(--white);
-            cursor: pointer;
-            font-size: 1rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .copy-btn:hover {
-            background: var(--secondary-color);
-        }
-
-        /* Pagination */
-        .pagination {
-            display: none;
-            justify-content: center;
-            gap: 6px;
-            margin: 20px auto;
-            max-width: 900px;
-            flex-wrap: wrap;
-            padding: 0 15px;
-        }
-
-        .pagination button {
-            background: var(--primary-color);
-            border: none;
-            border-radius: 4px;
-            color: var(--white);
-            padding: 8px 12px;
-            cursor: pointer;
-            min-width: 44px;
-        }
-
-        .pagination button.active {
-            background: #1c87c9;
-            font-weight: bold;
-        }
-
-        .pagination button[disabled] {
-            opacity: .5;
-            cursor: not-allowed;
-        }
-
-        /* Contêiner de resultados */
-        #allBlocks {
-            display: none;
-            padding: 0 15px;
-        }
-
-        /* Destaque dos termos encontrados */
-        .highlight {
-            background: #ffeb3b;
-            color: #000;
-            font-weight: bold;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
-
-        /* Media Queries para Mobile */
-        @media (max-width: 768px) {
-            #mobile-menu {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            #sidebar {
-                display: none;
-                width: 100%;
-                height: auto;
-                position: fixed;
-                top: 60px;
-                left: 0;
-            }
-
-            #sidebar.active {
-                display: flex;
-            }
-
-            #content {
-                margin-left: 0;
-                padding: 80px 0 20px 0;
-            }
-
-            .search-bar {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .search-bar input,
-            .search-bar select {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .search-bar button {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .opts {
-                justify-content: center;
-            }
-
-            .block {
-                margin: 10px 15px;
-                padding: 60px 20px 20px 20px;
-            }
-
-            .copy-btn {
-                top: 15px;
-                right: 15px;
-            }
-
-            #content h1 {
-                font-size: 1.5rem;
-                padding: 0 15px;
-            }
-
-            .subtitle {
-                font-size: 1rem;
-                padding: 0 15px;
-            }
-
-            .dataset-info {
-                padding: 0 15px;
-            }
-
-            .ementa-content {
-                margin-right: 0;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #content {
-                padding: 70px 0 15px 0;
-            }
-
-            .search-bar input,
-            .search-bar select {
-                max-width: 100%;
-            }
-
-            .search-bar button {
-                max-width: 100%;
-            }
-
-            .opts {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .help {
-                margin: 10px 15px 0 15px;
-            }
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    /* Modal para informações legais */
+    .modal{
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      background:rgba(0,0,0,.7);
+      z-index:40;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .modal-content{
+      background:var(--card);
+      border-radius:16px;
+      padding:24px;
+      max-width:500px;
+      width:100%;
+      max-height:80vh;
+      overflow-y:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    .modal-close{
+      background:none;
+      border:none;
+      font-size:1.5rem;
+      cursor:pointer;
+      color:var(--sepia);
+    }
+  </style>
 </head>
 <body>
-    <!-- Menu Mobile -->
-    <div id="mobile-menu">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <span style="color: white; font-weight: bold;">6ª Câmara Cível</span>
-        <div style="width: 40px;"></div>
+
+<header>
+  <h1>Contador de Prazos Cíveis — TJGO</h1>
+  <p class="legal">
+    <strong>Leitura</strong>: contagem no primeiro dia útil subsequente.<br>
+    <strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).<br>
+    <strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.<br>
+    <strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.
+  </p>
+  <div class="legal-toggle" id="toggleLegal">ℹ️ Mais informações</div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="grid">
+      <div class="field">
+        <label for="tipo">Tipo de marco inicial</label>
+        <select id="tipo">
+          <option value="leitura">Leitura (intimação lida)</option>
+          <option value="expedicao">Expedição (Dia em que o ato foi gerado no Projudi)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="dataBase">Data Inicial</label>
+        <input type="date" id="dataBase" />
+      </div>
+
+      <div class="field">
+        <label for="dias">Dias de prazo (dias úteis)</label>
+        <input type="number" id="dias" min="1" step="1" value="15"/>
+      </div>
     </div>
 
-    <!-- Sidebar -->
-    <div id="sidebar">
-        <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
-        <div id="clock">
-            <div id="clock-time">--:--:--</div>
-            <div id="clock-date">--/--/----</div>
-        </div>
+    <div class="actions">
+      <button class="btn primary" id="btnCalcular">Calcular prazo</button>
+      <div class="chips">
+        <button class="chip" data-d="5">5 dias</button>
+        <button class="chip" data-d="15">15 dias</button>
+        <button class="chip" data-d="30">30 dias</button>
+      </div>
+    </div>
+    <div style="margin-top:12px; font-size:.9rem; color:#7a6f61; text-align:center;">
+      Feriados TJGO (2023–2026), recesso (20/12–20/01), fins de semana e Quarta-feira de Cinzas com regra especial já aplicados.
     </div>
 
-    <!-- Conteúdo Principal -->
-    <div id="content">
-        <h1>Pesquisa de Jurisprudência</h1>
-        <div class="subtitle">6ª Câmara Cível - A partir de 2024</div>
-        <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
-
-        <p class="notice">
-            Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
-            <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
-            <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
-        </p>
-
-        <div class="search-bar">
-            <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
-            <input type="date" id="startDate">
-            <input type="date" id="endDate">
-            <select id="relator">
-                <option value="">Relator (todos)</option>
-            </select>
-            <div class="opts">
-                <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
-            </div>
-            <button onclick="performSearch()">Consultar</button>
-        </div>
-
-        <!-- Ajuda ao usuário -->
-        <div class="help" id="helpBox">
-            <details>
-                <summary>Como pesquisar (clique para expandir)</summary>
-                <div style="margin-top:10px">
-                    <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
-                    <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
-                    <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
-                    <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
-                    <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
-                    <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
-                    <p><strong>Fuzzy</strong>: marque "Fuzzy" para aceitar pequenas variações.</p>
-                    <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
-                </div>
-            </details>
-        </div>
-
-        <div id="resultCount"></div>
-        <div id="allBlocks"></div>
-        <div id="pagination" class="pagination"></div>
+    <div class="result" id="resultado" style="display:none">
+      <div class="final-date" id="finalDate"></div>
+      <div class="actions">
+        <button class="btn secondary" id="btnCopiar">Copiar resumo</button>
+        <button class="btn ghost" id="btnCSV">Exportar CSV</button>
+      </div>
+      <div class="table-container">
+        <table id="tabela">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data</th>
+              <th>Dia</th>
+              <th>Tipo</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p style="margin-top:12px; font-size:.85rem; color:#7a6f61; text-align:center;">
+        Planilha de auditoria contínua: todos os dias entre o marco e a data final são listados, com justificativa quando não contados.
+      </p>
     </div>
+  </section>
+</main>
 
-    <script>
-        let dataset = [];
-        let filteredData = [];
-        let lastUpdate = '';
-        let currentSearchTerms = '';
+<footer>
+  <p><strong>Fontes oficiais:</strong> Feriados do Tribunal de Justiça do Estado de Goiás (2023–2026) e Recesso Forense, conforme calendários publicados. Este utilitário não substitui a conferência oficial nos autos e normativos aplicáveis.</p>
+</footer>
 
-        // Alternar sidebar no mobile
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
+<!-- Menu móvel -->
+<div id="mobile-menu">
+  <a href="index.html">
+    <span class="icon">🏠</span>
+    <span>Início</span>
+  </a>
+  <button id="mobileCalc">
+    <span class="icon">📅</span>
+    <span>Calcular</span>
+  </button>
+  <button id="mobileCopy">
+    <span class="icon">📋</span>
+    <span>Copiar</span>
+  </button>
+  <button id="mobileExport">
+    <span class="icon">📤</span>
+    <span>Exportar</span>
+  </button>
+</div>
+
+<!-- Modal para informações legais -->
+<div class="modal" id="legalModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 style="margin:0;">Informações Legais</h2>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div>
+      <p><strong>Leitura</strong>: contagem no primeiro dia útil subsequente.</p>
+      <p><strong>Expedição</strong>: D1/D2; contagem no dia útil subsequente à publicação (D2).</p>
+      <p><strong>Quarta-Feira de Cinzas (QF)</strong>: não se inicia nem termina; conta-se durante o curso.</p>
+      <p><strong>Recesso</strong>: 20/12 a 20/01 (inclusive); aplica-se somente dia útil.</p>
+      <p><strong>Feriados TJGO</strong>: Incluem feriados nacionais, estaduais e municipais conforme calendário oficial do TJGO.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Utilidades de datas ----------
+  const fmtBR = (d)=>{
+    const pad = (n)=> String(n).padStart(2,'0');
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+  };
+  const diaSemana = (d)=>["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d.getDay()];
+  const ymd = (d)=>{
+    const pad=(n)=> String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  };
+  const parseISO = (s)=>{
+    const [Y,M,D] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(Y, M-1, D));
+    return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+  };
+  const addDays = (d, n)=>{
+    const nd = new Date(d);
+    nd.setDate(nd.getDate()+n);
+    return nd;
+  };
+
+  // ---------- Base de feriados TJGO (2023-2026) ----------
+  const HOLIDAYS = new Map(); // key: 'YYYY-MM-DD' → {name, yearTag}
+  const ASH = new Set(); // Quarta-Feira de Cinzas (datas específicas)
+
+  function add(name, dates, {ash=false}={}) {
+    dates.forEach(s=> {
+      HOLIDAYS.set(s, {name, yearTag: s.slice(0,4)});
+      if(ash) ASH.add(s);
+    });
+  }
+  function addRange(name, fromYMD, toYMD){
+    let d = parseISO(fromYMD);
+    const end = parseISO(toYMD);
+    while(d <= end){
+      HOLIDAYS.set(ymd(d), {name, yearTag: d.getFullYear().toString()});
+      d = addDays(d, 1);
+    }
+  }
+
+  // 2023
+  add("Confraternização Universal (Feriado Nacional)", ["2023-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2023-02-20","2023-02-21"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2023-02-22"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2023-04-05","2023-04-06"]);
+  add("Paixão de Cristo (Feriado Nacional)", ["2023-04-07"]);
+  add("Tiradentes (Feriado Nacional)", ["2023-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2023-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: Goiânia, Iporá, Leopoldo de Bulhões, Senador Canedo)", ["2023-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2023-06-08"]);
+  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2023-07-26"]);
+  add("Independência do Brasil (Feriado Nacional)", ["2023-09-07"]);
+  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2023-10-12"]);
+  add("Comemorativo pedra fundamental/Aniversário de Goiânia (Feriado no Tribunal)", ["2023-10-24"]);
+  add("Dia do Servidor Público (Feriado Estadual)", ["2023-10-28"]);
+  add("Finados (Feriado Nacional)", ["2023-11-02"]);
+  add("Proclamação da República (Feriado Nacional)", ["2023-11-15"]);
+  add("Dia da Justiça (Feriado no Tribunal)", ["2023-12-08"]);
+  add("Natal (Feriado Nacional)", ["2023-12-25"]);
+  addRange("Recesso Forense", "2023-12-20", "2024-01-20");
+
+  // 2024
+  add("Ano Novo (Feriado Nacional)", ["2024-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2024-02-12","2024-02-13"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2024-02-14"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2024-03-27","2024-03-28","2024-03-29"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2024-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2024-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2024-05-30"]);
+  add("Ponto Facultativo — PJ estadual", ["2024-05-31"]);
+  add("Fundação da Cidade de Goiás (feriado de 26/07 alterado para 22/07)", ["2024-07-22"]);
+  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2024-10-24"]);
+  add("Dia do Servidor Público (feriado do dia 28/10 alterado para 01/11)", ["2024-11-01"]);
+  add("Proclamação da República (Feriado Nacional)", ["2024-11-15"]);
+  add("Dia da Consciência Negra (Feriado Nacional)", ["2024-11-20"]);
+  add("Natal (Feriado Nacional)", ["2024-12-25"]);
+  addRange("Recesso Forense", "2024-12-20", "2025-01-20");
+
+  // 2025
+  add("Ano Novo (Feriado Nacional)", ["2025-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2025-03-03","2025-03-04"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2025-03-05"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2025-04-16","2025-04-17","2025-04-18"]);
+  add("Tiradentes (Feriado Nacional)", ["2025-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2025-05-01"]);
+  add("Nossa Senhora Auxiliadora (Feriado Municipal: TJ/Comarcas específicas)", ["2025-05-24"]);
+  add("Corpus Christi (Feriado Nacional)", ["2025-06-19"]);
+  add("Fundação da Cidade de Goiás (Feriado no Tribunal)", ["2025-07-26"]);
+  add("Independência do Brasil (Feriado Nacional)", ["2025-09-07"]);
+  add("Nossa Senhora Aparecida (Feriado Nacional)", ["2025-10-12"]);
+  add("Aniversário de Goiânia (Feriado no Tribunal e em todas as comarcas)", ["2025-10-24"]);
+  add("Dia do Servidor Público (Feriado Estadual)", ["2025-10-28"]);
+  add("Finados (Feriado Nacional)", ["2025-11-02"]);
+  add("Proclamação da República (Feriado Nacional)", ["2025-11-15"]);
+  add("Dia da Consciência Negra (Feriado Nacional)", ["2025-11-20"]);
+  add("Dia da Justiça (Feriado — Art. 123 RITJGO)", ["2025-12-08"]);
+  add("Natal (Feriado Nacional)", ["2025-12-25"]);
+  addRange("Recesso Forense", "2025-12-20", "2026-01-20");
+
+  // 2026 (incluso para cobertura)
+  add("Ano Novo (Feriado Nacional)", ["2026-01-01"]);
+  add("Carnaval (Feriado no Tribunal e em todas as comarcas)", ["2026-02-16","2026-02-17"]);
+  add("Quarta-feira de Cinzas (regra especial)", ["2026-02-18"], {ash:true});
+  add("Semana Santa — Feriado no Tribunal", ["2026-04-03","2026-04-04","2026-04-05"]);
+  add("Tiradentes (Feriado Nacional)", ["2026-04-21"]);
+  add("Dia do Trabalho (Feriado Nacional)", ["2026-05-01"]);
+  addRange("Recesso Forense", "2026-12-20", "2027-01-20"); // apenas placeholder caso necessário
+
+  // ---------- Helpers ----------
+  function isWeekend(d){ const g = d.getDay(); return g===0 || g===6; }
+  function isAshWednesday(d){ return ASH.has(ymd(d)); }
+  function holidayInfo(d){ const k=ymd(d); return HOLIDAYS.get(k) || null; }
+
+  // mode: 'counting' (contagem em curso, QF conta) | 'start_end' (início/fim, QF bloqueia)
+  function isHoliday(d, mode='counting'){
+    const info = holidayInfo(d);
+    if(info){
+      if(isAshWednesday(d)){
+        return mode === 'start_end' ? info : null;
+      }
+      return info;
+    }
+    return null;
+  }
+
+  function isBusinessDay(d, mode='counting'){
+    if(isWeekend(d)) return false;
+    const h = isHoliday(d, mode);
+    if(h) return false;
+    return true;
+  }
+  function nextBusinessDay(d, mode='counting'){
+    let cur = new Date(d);
+    while(!isBusinessDay(cur, mode)) cur = addDays(cur,1);
+    return cur;
+  }
+
+  function reasonNonUseful(d, mode='counting'){
+    // Prioridade: Recesso > Feriado > QF(start_end) > Fim de semana
+    const h = holidayInfo(d);
+    if(h){
+      if(h.name.toLowerCase().includes('recesso')) return 'Recesso forense';
+      if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+      return `Feriado — ${h.name}`;
+    }
+    if(isWeekend(d)) return 'Fim de semana';
+    if(isAshWednesday(d) && mode==='start_end') return 'QF — não inicia/não finaliza';
+    return '';
+  }
+
+  function classifyDay(d, mode='counting'){
+    const obj = {date: new Date(d), dow: diaSemana(d), tag: '', badge:'', obs:[], final:false};
+
+    // Fim de semana
+    if(isWeekend(d)){
+      obj.tag='Não útil'; obj.badge='warn';
+      obj.obs.push('Fim de semana');
+      return obj;
+    }
+
+    // Feriados e recesso
+    const h = isHoliday(d, mode);
+    if(h){
+      const isRec = h.name.toLowerCase().includes('recesso');
+      obj.tag = isRec ? 'Recesso' : 'Não útil';
+      obj.badge = isRec ? 'recesso' : 'warn';
+      obj.obs.push(isRec ? 'Recesso forense' : h.name);
+      if(isAshWednesday(d) && mode==='start_end'){ obj.obs = ['QF — não inicia/não finaliza']; obj.badge='info'; }
+      return obj;
+    }
+
+    // Quarta-feira de Cinzas — durante contagem é útil
+    if(isAshWednesday(d) && mode==='counting'){
+      obj.tag='Útil'; obj.badge='info'; obj.obs.push('QF — contado (contagem em curso)');
+      return obj;
+    }
+
+    obj.tag='Útil'; obj.badge='ok';
+    return obj;
+  }
+
+  // Conta N dias úteis; aplica prorrogação se final cair em QF (não pode finalizar)
+  function addBusinessDays(start, n, firstDayNote=null){
+    let cur = new Date(start);
+    let count = 0;
+    const counted = new Map(); // ymd -> obs array
+    while(count < n){
+      cur = addDays(cur, 1);
+      if(isBusinessDay(cur, 'counting')){
+        count++;
+        const obs = [`Dia útil de contagem #${count}`];
+        if(count === 1 && firstDayNote){ obs[0] += ` (${firstDayNote})`; }
+        if(count === n){ obs.push('Data teórica final do prazo'); }
+        counted.set(ymd(cur), obs);
+      }
+    }
+    // Se final cair em QF (start_end), prorroga para próximo útil
+    if(isAshWednesday(cur)){
+      const key = ymd(cur);
+      if(counted.has(key)) counted.get(key).push('QF — não finaliza; prorrogado');
+      let bump = nextBusinessDay(addDays(cur,1), 'start_end');
+      counted.set(ymd(bump), ['Prorrogação da final por QF → Data final']);
+      cur = bump;
+    } else {
+      const key = ymd(cur);
+      if(counted.has(key)) counted.get(key).push('Data final do prazo');
+      else counted.set(key, ['Data final do prazo']);
+    }
+    return {end: cur, counted};
+  }
+
+  // ---------- Regras específicas para publicação (D1/D2) ----------
+  function isRecessDay(d){
+    const h = holidayInfo(d);
+    return !!(h && h.name.toLowerCase().includes('recesso'));
+  }
+
+  // Mapa de observações de publicação (datas → array de anotações)
+  function pushNote(map, d, txt){
+    const k = ymd(d);
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(txt);
+  }
+
+  // Próximo dia de publicação a partir do dia anterior (marco ou D1)
+  // Regra híbrida: aceita dia útil normal OU dia útil de recesso; rejeita FDS e feriado não-recesso
+  function nextPublicationFrom(prevDate, pubIndex, pubLog){
+    let d = addDays(prevDate, 1);
+    while(true){
+      const wknd = isWeekend(d);
+      const h = holidayInfo(d);
+      const rec = isRecessDay(d);
+
+      // Sábado/Domingo sempre rejeitados para publicação (mesmo se dentro do recesso)
+      if(wknd){
+        // Observação jurídica padronizada
+        pushNote(pubLog, d, 'ato de publicação não se realiza em finais de semana.');
+        d = addDays(d, 1);
+        continue;
+      }
+
+      // Feriado não-recesso rejeitado
+      if(h && !rec && !isAshWednesday(d)){
+        pushNote(pubLog, d, `ato de publicação não se realiza em feriados — ${h.name}.`);
+        d = addDays(d, 1);
+        continue;
+      }
+
+      // Se chegou aqui: dia útil normal OU dia útil de recesso OU QF (tratada abaixo)
+      // Observações de aceitação: registrar Publicação Dn
+      pushNote(pubLog, d, `Publicação D${pubIndex} (${pubIndex===1 ? '1º' : '2º'} dia útil após expedição)`);
+      return d;
+    }
+  }
+
+  // ---------- Principal ----------
+  document.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('click', ()=>{
+      document.getElementById('dias').value = ch.dataset.d;
+    });
+  });
+
+  function calcularPrazo() {
+    const tipo = document.getElementById('tipo').value;
+    const sData = document.getElementById('dataBase').value;
+    const nDias = parseInt(document.getElementById('dias').value, 10);
+    if(!sData || isNaN(nDias) || nDias<=0){
+      alert('Informe a Data Inicial e um número válido de dias.');
+      return;
+    }
+
+    const marco = parseISO(sData);
+    let D1=null, D2=null, inicioContagem=null, firstNote=null;
+
+    // PUB_NOTES guarda candidaturas rejeitadas/aceitas para auditoria
+    const PUB_NOTES = new Map();
+
+    if(tipo === 'leitura'){
+      inicioContagem = nextBusinessDay(addDays(marco,1), 'start_end');
+      firstNote = '1º dia útil após leitura';
+    } else {
+      // Regras híbridas para D1/D2 com auditoria de candidatos rejeitados
+      D1 = nextPublicationFrom(marco, 1, PUB_NOTES);
+      D2 = nextPublicationFrom(D1,    2, PUB_NOTES);
+
+      // Início da contagem: 1º dia útil após D2 (respeitando recesso, feriados, QF)
+      inicioContagem = nextBusinessDay(addDays(D2,1), 'start_end');
+      firstNote = 'dia útil subsequente à publicação D2';
+    }
+
+    const {end: dataFinal, counted} = addBusinessDays(addDays(inicioContagem,-1), nDias, firstNote);
+
+    // --- Montar auditoria contínua ---
+    const tbody = document.querySelector('#tabela tbody');
+    tbody.innerHTML = '';
+    let idx = 0;
+
+    let cursor = new Date(marco);
+    const endInclusive = new Date(dataFinal);
+
+    while(cursor <= endInclusive){
+      idx++;
+      const key = ymd(cursor);
+      const isMarco = (key === ymd(marco));
+      let mode = (cursor < inicioContagem) ? 'start_end' : 'counting';
+
+      const base = classifyDay(cursor, mode);
+      const obsParts = [];
+
+      // Observação base para não útil (prioridade)
+      if(base.tag === 'Não útil'){
+        let reason = reasonNonUseful(cursor, mode);
+        if(isMarco){
+          const marcoTxt = (tipo==='leitura')?'Dia da leitura':'Dia da expedição';
+          const isRecesso = (reason.toLowerCase().includes('recesso'));
+          if(isRecesso){
+            reason = 'Recesso forense — ' + marcoTxt;
+            obsParts.push(reason);
+          } else {
+            obsParts.push(marcoTxt);
+          }
+        } else {
+          obsParts.push(reason);
         }
+      }
 
-        // Fechar sidebar ao clicar fora (mobile)
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const mobileMenu = document.getElementById('mobile-menu');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !mobileMenu.contains(event.target) &&
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-            }
-        });
+      // D1 / D2 (publicação): notas detalhadas (inclui candidatos rejeitados)
+      if(PUB_NOTES && PUB_NOTES.has(key)){
+        obsParts.push(...PUB_NOTES.get(key));
+      }
 
-        // Atualizar relógio
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('pt-BR');
-            const dateString = now.toLocaleDateString('pt-BR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            document.getElementById('clock-time').textContent = timeString;
-            document.getElementById('clock-date').textContent = dateString;
-        }
+      // Dias úteis contados
+      if(counted.has(key)){
+        base.tag = 'Útil'; base.badge='ok';
+        obsParts.push(...counted.get(key));
+      }else{
+        //
+      }
 
-        // Carregar dados da planilha
-        function loadDataset() {
-            const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=0&output=csv';
-            
-            document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados...';
-            
-            Papa.parse(csvUrl, {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    if (results.errors && results.errors.length > 0) {
-                        console.error('Erros no parse:', results.errors);
-                        document.getElementById('datasetInfo').textContent = 'Erro na formatação dos dados';
-                        return;
-                    }
-                    
-                    dataset = results.data.filter(item => 
-                        item && Object.keys(item).length > 0 && item.Processo
-                    );
-                    
-                    if (dataset.length === 0) {
-                        document.getElementById('datasetInfo').textContent = 'Nenhum dado encontrado na planilha';
-                        return;
-                    }
-                    
-                    updateDatasetInfo();
-                    populateFilters();
-                },
-                error: function(error) {
-                    console.error('Erro ao carregar:', error);
-                    document.getElementById('datasetInfo').innerHTML = 
-                        'Erro ao carregar dados. Verifique: <br>' +
-                        '1. Se a planilha está publicada corretamente<br>' +
-                        '2. Se o link de publicação é válido';
-                }
-            });
-        }
+      // Render
+      const tr = document.createElement('tr');
+      const tdIdx = document.createElement('td'); tdIdx.textContent = idx;
+      const tdData = document.createElement('td'); tdData.textContent = fmtBR(base.date);
+      const tdDow  = document.createElement('td'); tdDow.textContent = base.dow;
 
-        function updateDatasetInfo() {
-            const info = document.getElementById('datasetInfo');
-            
-            // Encontrar a última data na planilha (coluna Publicação)
-            let latestDate = '';
-            let latestDateObj = null;
-            
-            dataset.forEach(item => {
-                if (item.Publicação) {
-                    const dateObj = parseDate(item.Publicação);
-                    if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
-                        latestDateObj = dateObj;
-                        latestDate = item.Publicação;
-                    }
-                }
-            });
-            
-            lastUpdate = latestDate;
-            
-            const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
-            info.textContent = `Banco de dados: ${dataset.length} registros da 6ª Câmara Cível. ${updateText}`;
-        }
+      // badge: ok | warn | recesso | info
+      const tdTag  = document.createElement('td'); tdTag.innerHTML = `<span class="tag ${base.badge}">${base.tag}</span>`;
+      const tdObs  = document.createElement('td'); tdObs.textContent = obsParts.join(' • ');
+      tr.append(tdIdx, tdData, tdDow, tdTag, tdObs);
 
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            
-            try {
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                    return `${parts[0]}/${parts[1]}/${parts[2]}`;
-                }
-                
-                const date = new Date(dateString);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleDateString('pt-BR');
-                }
-                
-                return dateString;
-            } catch (e) {
-                return dateString;
-            }
-        }
+      if(key === ymd(dataFinal)) tr.style.outline = '2px solid var(--bad)';
+      tbody.appendChild(tr);
 
-        function parseDate(dateString) {
-            if (!dateString) return null;
-            
-            try {
-                // Formato DD/MM/YYYY
-                const parts = dateString.split('/');
-                if (parts.length === 3) {
-                    const day = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10) - 1;
-                    const year = parseInt(parts[2], 10);
-                    
-                    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2000) {
-                        return new Date(year, month, day);
-                    }
-                }
-                
-                // Tentar outros formatos
-                const date = new Date(dateString);
-                return !isNaN(date.getTime()) ? date : null;
-            } catch (e) {
-                return null;
-            }
-        }
+      cursor = addDays(cursor,1);
+    }
 
-        function populateFilters() {
-            const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
-            populateSelect('relator', relators);
-        }
+    document.getElementById('finalDate').innerHTML =
+      `Prazo de <span class="code">${nDias}</span> dias úteis — <strong>data final:</strong> <span class="danger">${fmtBR(dataFinal)}</span>`;
+    document.getElementById('resultado').style.display = 'block';
 
-        function populateSelect(selectId, options) {
-            const select = document.getElementById(selectId);
-            
-            while (select.children.length > 1) {
-                select.removeChild(select.lastChild);
-            }
-            
-            options.sort().forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                select.appendChild(opt);
-            });
-        }
+    // Copiar resumo / CSV
+    document.getElementById('btnCopiar').onclick = ()=>{
+      const resumo = [
+        `Tipo: ${tipo === 'leitura' ? 'Leitura' : 'Expedição'}`,
+        `Data Inicial: ${fmtBR(marco)}`,
+        `Dias de prazo: ${nDias}`,
+        `Data final: ${fmtBR(dataFinal)}`
+      ].join('\n');
+      navigator.clipboard.writeText(resumo).then(()=> alert('Resumo copiado.'));
+    };
 
-        // Função para destacar termos no texto
-        function highlightText(text, searchTerms) {
-            if (!searchTerms || !text) return text;
-            
-            const terms = searchTerms.toLowerCase()
-                .split(/\s+/)
-                .filter(term => term.length > 2)
-                .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            
-            if (terms.length === 0) return text;
-            
-            const regex = new RegExp(`(${terms.join('|')})`, 'gi');
-            return text.replace(regex, '<span class="highlight">$1</span>');
-        }
+    document.getElementById('btnCSV').onclick = ()=>{
+      const linhas = [["#", "Data", "Dia da semana", "Classificação", "Observação"]];
+      const trs = document.querySelectorAll('#tabela tbody tr');
+      trs.forEach(tr=>{
+        const tds = tr.querySelectorAll('td');
+        const cols = [tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].innerText, tds[4].textContent];
+        linhas.push(cols);
+      });
+      const csv = linhas.map(cols=> cols.map(col=> `"${String(col).replaceAll('"','""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'auditoria_prazo.csv';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    };
+  }
 
-        function performSearch() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
+  document.getElementById('btnCalcular').addEventListener('click', calcularPrazo);
 
-            const searchTerms = document.getElementById('terms').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const relator = document.getElementById('relator').value;
-            const useFuzzy = document.getElementById('fuzzy').checked;
-            
-            currentSearchTerms = searchTerms;
-            
-            // Filtrar dados
-            filteredData = dataset.filter(item => {
-                // Filtro por relator
-                if (relator && item.Relator !== relator) return false;
-                
-                // Filtro por data
-                if (startDate || endDate) {
-                    const itemDate = parseDate(item.Publicação);
-                    if (!itemDate) return false;
-                    
-                    if (startDate && itemDate < new Date(startDate)) return false;
-                    if (endDate && itemDate > new Date(endDate)) return false;
-                }
-                
-                // Filtro por termos de busca
-                if (searchTerms) {
-                    const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-                    const normalizedTerms = searchTerms.toLowerCase();
-                    
-                    if (!searchText.includes(normalizedTerms)) return false;
-                }
-                
-                return true;
-            });
-            
-            displayResults(filteredData);
-        }
+  // Menu móvel - funcionalidades
+  document.getElementById('mobileCalc').addEventListener('click', calcularPrazo);
+  document.getElementById('mobileCopy').addEventListener('click', ()=>{
+    document.getElementById('btnCopiar').click();
+  });
+  document.getElementById('mobileExport').addEventListener('click', ()=>{
+    document.getElementById('btnCSV').click();
+  });
 
-        function displayResults(results) {
-            const allBlocks = document.getElementById('allBlocks');
-            const resultCount = document.getElementById('resultCount');
-            const pagination = document.getElementById('pagination');
-            
-            allBlocks.innerHTML = '';
-            
-            if (results.length === 0) {
-                resultCount.textContent = 'Nenhum resultado encontrado.';
-                resultCount.style.display = 'block';
-                allBlocks.style.display = 'none';
-                pagination.style.display = 'none';
-                return;
-            }
-            
-            resultCount.textContent = `${results.length} resultado(s) encontrado(s).`;
-            resultCount.style.display = 'block';
-            allBlocks.style.display = 'block';
-            
-            // Exibir resultados
-            results.forEach((item, index) => {
-                const block = document.createElement('div');
-                block.className = 'block';
-                block.style.display = 'block';
-                
-                // Formatar referência
-                const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
-                
-                // Aplicar destaque na ementa
-                const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
-                
-                block.innerHTML = `
-                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
-                    <div class="ementa-content">
-                        ${ementaComDestaque}
-                        <div class="referencia">
-                            ${referencia}
-                        </div>
-                    </div>
-                `;
-                
-                allBlocks.appendChild(block);
-            });
-            
-            pagination.style.display = 'flex';
-        }
+  // Modal para informações legais
+  document.getElementById('toggleLegal').addEventListener('click', ()=>{
+    document.getElementById('legalModal').style.display = 'flex';
+  });
+  document.getElementById('closeModal').addEventListener('click', ()=>{
+    document.getElementById('legalModal').style.display = 'none';
+  });
+  document.getElementById('legalModal').addEventListener('click', (e)=>{
+    if(e.target === document.getElementById('legalModal')){
+      document.getElementById('legalModal').style.display = 'none';
+    }
+  });
 
-        function copyToClipboard(index) {
-            const item = filteredData[index];
-            const referencia = `(TJGO, ${item.Processo || ''}, Relator ${item.Relator || ''}, Publicação em ${item.Publicação || ''})`;
-            const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
-            
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                // Feedback visual
-                const btn = event.target;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✓';
-                btn.style.background = '#28a745';
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Erro ao copiar: ', err);
-                alert('Erro ao copiar para a área de transferência');
-            });
-        }
-
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDataset();
-            updateClock();
-            setInterval(updateClock, 1000);
-        });
-    </script>
+  // Melhorar a experiência em dispositivos móveis
+  // Definir data padrão como hoje
+  const today = new Date();
+  const todayFormatted = today.toISOString().split('T')[0];
+  document.getElementById('dataBase').value = todayFormatted;
+  
+  // Melhorar a usabilidade do input de data em mobile
+  document.getElementById('dataBase').addEventListener('focus', function() {
+    this.type = 'date';
+  });
+</script>
+  
 </body>
 </html>
