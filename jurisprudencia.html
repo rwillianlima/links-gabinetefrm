@@ -281,20 +281,20 @@
     line-height: 1.2;  /* Espaçamento mínimo entre linhas */
     text-align: justify;
     font-size: 0.95rem; /* Texto ligeiramente menor */
-    white-space: pre-line;
+    white-space: normal;
     margin: 0;
     padding: 0;
 }
 
 .referencia {
-    display: inline; /* Faz ficar na mesma linha */
+    display: inline !important; /* FORÇA ficar na mesma linha */
     font-style: italic;
     color: #666;
     font-size: 0.9rem;
-    margin-left: 8px; /* Pequeno espaço após a ementa */
+    margin-left: 8px;
     line-height: 1.2;
+    white-space: normal; /* Remove comportamento de quebra */
 }
-
         /* Destaque dos termos encontrados */
         .highlight {
             background: #ffeb3b;
@@ -1111,15 +1111,12 @@ function extractSearchTerms(query) {
                 // Aplicar destaque na ementa
                 const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
                 
-                block.innerHTML = `
-                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
-                    <div class="ementa-content">
-                        ${ementaComDestaque}
-                        <div class="referencia">
-                            ${referencia}
-                        </div>
-                    </div>
-                `;
+               block.innerHTML = `
+    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
+    <div class="ementa-content">
+        ${ementaComDestaque} <span class="referencia">${referencia}</span>
+    </div>
+`;
                 
                 allBlocks.appendChild(block);
             });
