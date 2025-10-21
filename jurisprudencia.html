@@ -484,10 +484,12 @@
     </div>
 
     <script>
-        let dataset = [];
-        let filteredData = [];
-        let lastUpdate = '';
-        let currentSearchTerms = '';
+            let dataset = [];
+            let filteredData = [];
+            let lastUpdate = '';
+            let currentSearchTerms = '';
+            let currentPage = 1;
+            let resultsPerPage = 50;
 
         // Alternar sidebar no mobile
         function toggleSidebar() {
@@ -860,74 +862,134 @@ function highlightText(text, searchTerms) {
     displayResults(filteredData);
 }
 
-        function displayResults(results) {
-            const allBlocks = document.getElementById('allBlocks');
-            const resultCount = document.getElementById('resultCount');
-            const pagination = document.getElementById('pagination');
-            
-            allBlocks.innerHTML = '';
-            
-            if (results.length === 0) {
-                resultCount.textContent = 'Nenhum resultado encontrado.';
-                resultCount.style.display = 'block';
-                allBlocks.style.display = 'none';
-                pagination.style.display = 'none';
-                return;
-            }
-            
-            resultCount.textContent = `${results.length} resultado(s) encontrado(s).`;
-            resultCount.style.display = 'block';
-            allBlocks.style.display = 'block';
-            
-            // Exibir resultados
-            results.forEach((item, index) => {
-                const block = document.createElement('div');
-                block.className = 'block';
-                block.style.display = 'block';
-                
-                // Formatar referência
-                const referencia = `(TJGO, ${item.Processo || ''}, Relator(a) ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-                
-                // Aplicar destaque na ementa
-                const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
-                
-                block.innerHTML = `
-                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
-                    <div class="ementa-content">
-                        ${ementaComDestaque}
-                        <div class="referencia">
-                            ${referencia}
-                        </div>
-                    </div>
-                `;
-                
-                allBlocks.appendChild(block);
-            });
-            
-            pagination.style.display = 'flex';
-        }
+    function displayResults(results) {
+    const allBlocks = document.getElementById('allBlocks');
+    const resultCount = document.getElementById('resultCount');
+    const pagination = document.getElementById('pagination');
+    
+    allBlocks.innerHTML = '';
+    pagination.innerHTML = '';
+    
+    if (results.length === 0) {
+        resultCount.textContent = 'Nenhum resultado encontrado.';
+        resultCount.style.display = 'block';
+        allBlocks.style.display = 'none';
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    // Calcular paginação
+    const totalPages = Math.ceil(results.length / resultsPerPage);
+    currentPage = Math.min(currentPage, totalPages);
+    
+    // Calcular índices dos resultados
+    const startIndex = (currentPage - 1) * resultsPerPage;
+    const endIndex = Math.min(startIndex + resultsPerPage, results.length);
+    const pageResults = results.slice(startIndex, endIndex);
+    
+    resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
+    resultCount.style.display = 'block';
+    allBlocks.style.display = 'block';
+    
+    // Exibir resultados da página atual
+    pageResults.forEach((item, index) => {
+        const block = document.createElement('div');
+        block.className = 'block';
+        block.style.display = 'block';
+        
+        // Formatar referência (CORRIGIDO - removido Relator(a))
+        const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+        
+        // Aplicar destaque na ementa
+        const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
+        
+        block.innerHTML = `
+            <button class="copy-btn" onclick="copyToClipboard(${startIndex + index})" title="Copiar ementa">📋</button>
+            <div class="ementa-content">
+                ${ementaComDestaque}
+                <div class="referencia">
+                    ${referencia}
+                </div>
+            </div>
+        `;
+        
+        allBlocks.appendChild(block);
+    });
+    
+    // Criar paginação se houver mais de uma página
+    if (totalPages > 1) {
+        createPagination(totalPages);
+        pagination.style.display = 'flex';
+    } else {
+        pagination.style.display = 'none';
+    }
+}
 
-        function copyToClipboard(index) {
-            const item = filteredData[index];
-            const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-            const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
-            
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                // Feedback visual
-                const btn = event.target;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✓';
-                btn.style.background = '#28a745';
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Erro ao copiar: ', err);
-                alert('Erro ao copiar para a área de transferência');
-            });
+function createPagination(totalPages) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    // Botão Anterior
+    const prevButton = document.createElement('button');
+    prevButton.innerHTML = '‹';
+    prevButton.disabled = currentPage === 1;
+    prevButton.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            displayResults(filteredData);
         }
+    };
+    pagination.appendChild(prevButton);
+    
+    // Páginas numéricas
+    const startPage = Math.max(1, currentPage - 4);
+    const endPage = Math.min(totalPages, startPage + 9);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.className = i === currentPage ? 'active' : '';
+        pageButton.onclick = () => {
+            currentPage = i;
+            displayResults(filteredData);
+        };
+        pagination.appendChild(pageButton);
+    }
+    
+    // Botão Próximo
+    const nextButton = document.createElement('button');
+    nextButton.innerHTML = '›';
+    nextButton.disabled = currentPage === totalPages;
+    nextButton.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            displayResults(filteredData);
+        }
+    };
+    pagination.appendChild(nextButton);
+}
+
+function copyToClipboard(index) {
+    const item = filteredData[index];
+    const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+    const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // Feedback visual
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓';
+        btn.style.background = '#28a745';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+        alert('Erro ao copiar para a área de transferência');
+    });
+}
         // Executar busca ao pressionar Enter no campo de pesquisa
 document.getElementById('terms').addEventListener('keypress', function(event) {
     if (event.key === 'Enter') {
