@@ -129,294 +129,227 @@
             padding: 0 10px;
         }
 
-        /* Search */
-        .search-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin: 10px auto;
-            padding: 0 10px;
-        }
+/* Search */
+.search-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin: 10px auto;
+    padding: 0 10px;
+}
 
-        .search-bar input,
-        .search-bar select {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 200px;
-            max-width: 100%;
-            background: var(--white);
-            color: var(--text-color);
-            font-size: 16px;
-        }
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 0;
+}
 
-        .search-bar button {
-            padding: 12px 18px;
-            border: none;
-            border-radius: 4px;
-            background: var(--primary-color);
-            color: var(--white);
-            font-weight: bold;
-            cursor: pointer;
-            min-width: 80px;
-            font-size: 16px;
-        }
+.search-bar input,
+.search-bar select {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+    max-width: 100%;
+    background: var(--white);
+    color: var(--text-color);
+    font-size: 16px;
+}
 
-        .search-bar button:hover {
-            background: var(--secondary-color);
-        }
+.button-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
 
-        .opts {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #444;
-            font-size: .9rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+/* Efeito melhorado no botão */
+.search-bar button {
+    padding: 14px 30px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--white);
+    font-weight: bold;
+    cursor: pointer;
+    min-width: 120px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
 
-        .opts label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+.search-bar button:hover {
+    background: linear-gradient(135deg, var(--secondary-color), #4a6572);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
 
-        /* Help */
-        .help {
-            max-width: 920px;
-            margin: 10px auto 0 auto;
-            text-align: left;
-            background: var(--white);
-            border: 1px solid #ddd;
-            padding: 12px 16px;
-            border-radius: 6px;
-            font-size: .92rem;
-            line-height: 1.45;
-            color: var(--text-color);
-        }
+.search-bar button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
-        .help code {
-            background: rgba(0,0,0,.05);
-            padding: 0 4px;
-            border-radius: 3px;
-        }
+.opts {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #444;
+    font-size: .9rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
 
-        .help summary {
-            cursor: pointer;
-            font-weight: 700;
-        }
+/* Pagination */
+.pagination {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    margin: 20px auto;
+    max-width: 900px;
+    flex-wrap: wrap;
+    padding: 0 15px;
+}
 
-        /* Result count */
-        #resultCount {
-            font-size: .95rem;
-            margin: 10px auto;
-            max-width: 900px;
-            text-align: left;
-            color: var(--text-color);
-            display: none;
-            padding: 0 15px;
-        }
+.pagination button {
+    background: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    color: var(--white);
+    padding: 8px 12px;
+    cursor: pointer;
+    min-width: 44px;
+}
 
-        /* Blocks */
-        .block {
-            background: var(--white);
-            border-radius: 6px;
-            padding: 20px;
-            margin: 15px auto;
-            max-width: 900px;
-            display: none;
-            position: relative;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
+.pagination button.active {
+    background: #1c87c9;
+    font-weight: bold;
+}
 
-        .ementa-content {
-            margin-right: 40px;
-            line-height: 1.6;
-            text-align: justify;
-        }
+.pagination button[disabled] {
+    opacity: .5;
+    cursor: not-allowed;
+}
 
-        .referencia {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #eee;
-            color: #444;
-            font-size: 0.9rem;
-            font-weight: normal;
-            text-align: left;
-        }
+/* Contêiner de resultados */
+#allBlocks {
+    display: none;
+    padding: 0 15px;
+}
 
-        /* Copy button como ícone */
-        .copy-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            border: none;
-            border-radius: 4px;
-            padding: 8px;
-            background: var(--primary-color);
-            color: var(--white);
-            cursor: pointer;
-            font-size: 1rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+/* Destaque dos termos encontrados */
+.highlight {
+    background: #ffeb3b;
+    color: #000;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+}
 
-        .copy-btn:hover {
-            background: var(--secondary-color);
-        }
+/* Media Queries para Mobile */
+@media (max-width: 768px) {
+    #mobile-menu {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        /* Pagination */
-        .pagination {
-            display: none;
-            justify-content: center;
-            gap: 6px;
-            margin: 20px auto;
-            max-width: 900px;
-            flex-wrap: wrap;
-            padding: 0 15px;
-        }
+    #sidebar {
+        display: none;
+        width: 100%;
+        height: auto;
+        position: fixed;
+        top: 60px;
+        left: 0;
+    }
 
-        .pagination button {
-            background: var(--primary-color);
-            border: none;
-            border-radius: 4px;
-            color: var(--white);
-            padding: 8px 12px;
-            cursor: pointer;
-            min-width: 44px;
-        }
+    #sidebar.active {
+        display: flex;
+    }
 
-        .pagination button.active {
-            background: #1c87c9;
-            font-weight: bold;
-        }
+    #content {
+        margin-left: 0;
+        padding: 80px 0 20px 0;
+    }
 
-        .pagination button[disabled] {
-            opacity: .5;
-            cursor: not-allowed;
-        }
+    .search-bar {
+        flex-direction: column;
+        align-items: center;
+    }
 
-        /* Contêiner de resultados */
-        #allBlocks {
-            display: none;
-            padding: 0 15px;
-        }
+    .form-row {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .form-row input,
+    .form-row select {
+        width: 100%;
+        max-width: 300px;
+    }
 
-        /* Destaque dos termos encontrados */
-        .highlight {
-            background: #ffeb3b;
-            color: #000;
-            font-weight: bold;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
+    .search-bar button {
+        width: 100%;
+        max-width: 300px;
+    }
 
-        /* Media Queries para Mobile */
-        @media (max-width: 768px) {
-            #mobile-menu {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
+    .opts {
+        justify-content: center;
+    }
 
-            #sidebar {
-                display: none;
-                width: 100%;
-                height: auto;
-                position: fixed;
-                top: 60px;
-                left: 0;
-            }
+    .block {
+        margin: 10px 15px;
+        padding: 60px 20px 20px 20px;
+    }
 
-            #sidebar.active {
-                display: flex;
-            }
+    .copy-btn {
+        top: 15px;
+        right: 15px;
+    }
 
-            #content {
-                margin-left: 0;
-                padding: 80px 0 20px 0;
-            }
+    #content h1 {
+        font-size: 2rem;
+        padding: 0 15px;
+    }
 
-            .search-bar {
-                flex-direction: column;
-                align-items: center;
-            }
+    .subtitle {
+        font-size: 1rem;
+        padding: 0 15px;
+    }
 
-            .search-bar input,
-            .search-bar select {
-                width: 100%;
-                max-width: 300px;
-            }
+    .dataset-info {
+        padding: 0 15px;
+    }
 
-            .search-bar button {
-                width: 100%;
-                max-width: 300px;
-            }
+    .ementa-content {
+        margin-right: 0;
+    }
+}
 
-            .opts {
-                justify-content: center;
-            }
+@media (max-width: 480px) {
+    #content {
+        padding: 70px 0 15px 0;
+    }
 
-            .block {
-                margin: 10px 15px;
-                padding: 60px 20px 20px 20px;
-            }
+    .search-bar input,
+    .search-bar select {
+        max-width: 100%;
+    }
 
-            .copy-btn {
-                top: 15px;
-                right: 15px;
-            }
+    .search-bar button {
+        max-width: 100%;
+    }
 
-            #content h1 {
-                font-size: 1.5rem;
-                padding: 0 15px;
-            }
+    .opts {
+        flex-direction: column;
+        gap: 8px;
+    }
 
-            .subtitle {
-                font-size: 1rem;
-                padding: 0 15px;
-            }
-
-            .dataset-info {
-                padding: 0 15px;
-            }
-
-            .ementa-content {
-                margin-right: 0;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #content {
-                padding: 70px 0 15px 0;
-            }
-
-            .search-bar input,
-            .search-bar select {
-                max-width: 100%;
-            }
-
-            .search-bar button {
-                max-width: 100%;
-            }
-
-            .opts {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .help {
-                margin: 10px 15px 0 15px;
-            }
-        }
+    .help {
+        margin: 10px 15px 0 15px;
+    }
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
@@ -449,18 +382,22 @@
             <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
         </p>
 
-        <div class="search-bar">
-            <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
-            <input type="date" id="startDate">
-            <input type="date" id="endDate">
-            <select id="relator">
-                <option value="">Relator (todos)</option>
-            </select>
-            <div class="opts">
-                <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
-            </div>
-            <button onclick="performSearch()">Consultar</button>
+     <div class="search-bar">
+    <div class="form-row">
+        <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
+        <input type="date" id="startDate">
+        <input type="date" id="endDate">
+        <select id="relator">
+            <option value="">Relator (todos)</option>
+        </select>
+        <div class="opts">
+            <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
         </div>
+    </div>
+    <div class="button-container">
+        <button onclick="performSearch()">Consultar</button>
+    </div>
+</div>
 
         <!-- Ajuda ao usuário -->
         <div class="help" id="helpBox">
