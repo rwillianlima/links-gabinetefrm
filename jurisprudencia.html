@@ -277,19 +277,27 @@
             background: var(--success-color);
         }
 
-        .ementa-content {
-            line-height: 1.6;
-            text-align: justify;
-            font-size: 1rem;
-        }
+.ementa-content {
+    line-height: 1.2;  /* Espaçamento mínimo entre linhas */
+    text-align: justify;
+    font-size: 0.95rem; /* Texto ligeiramente menor */
+    white-space: pre-line;
+    margin: 0;
+    padding: 0;
+}
 
-        .referencia {
-            margin-top: 15px;
-            font-style: italic;
-            color: #666;
-            font-size: 0.9rem;
-            text-align: right;
-        }
+.block {
+    padding: 60px 20px 15px 15px; /* Reduz padding inferior */
+}
+
+.referencia {
+    display: inline; /* Faz ficar na mesma linha */
+    font-style: italic;
+    color: #666;
+    font-size: 0.9rem;
+    margin-left: 8px; /* Pequeno espaço após a ementa */
+    line-height: 1.2;
+}
 
         /* Destaque dos termos encontrados */
         .highlight {
