@@ -1185,36 +1185,49 @@ function extractSearchTerms(query) {
         }
 
         function copyToClipboard(index) {
-            // Calcular índice correto considerando a paginação
-            const actualIndex = (currentPage - 1) * resultsPerPage + index;
-            const item = filteredData[actualIndex];
+    // Calcular índice correto considerando a paginação
+    const actualIndex = (currentPage - 1) * resultsPerPage + index;
+    const item = filteredData[actualIndex];
+    
+    if (!item) {
+        showAlert('Erro ao copiar: item não encontrado.', 'error');
+        return;
+    }
+    
+    const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+    const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
+    
+    // Criar área de texto temporária
+    const textArea = document.createElement('textarea');
+    textArea.value = textToCopy;
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            // Feedback visual
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓';
+            btn.classList.add('copied');
             
-            if (!item) {
-                showAlert('Erro ao copiar: item não encontrado.', 'error');
-                return;
-            }
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
             
-            const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
-            const textToCopy = `${item.Ementa || ''}\n\n${referencia}`;
-            
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                // Feedback visual
-                const btn = event.target;
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = '✓';
-                btn.classList.add('copied');
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.classList.remove('copied');
-                }, 2000);
-                
-                showAlert('Ementa copiada para a área de transferência!', 'success');
-            }).catch(err => {
-                console.error('Erro ao copiar: ', err);
-                showAlert('Erro ao copiar para a área de transferência', 'error');
-            });
+            showAlert('Ementa copiada para a área de transferência!', 'success');
+        } else {
+            showAlert('Erro ao copiar para a área de transferência', 'error');
         }
+    } catch (err) {
+        console.error('Erro ao copiar: ', err);
+        showAlert('Erro ao copiar para a área de transferência', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
 
         // Executar busca ao pressionar Enter no campo de pesquisa
         document.getElementById('terms').addEventListener('keypress', function(event) {
