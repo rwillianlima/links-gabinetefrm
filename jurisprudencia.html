@@ -907,9 +907,6 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
     
     return true;
 }
-            // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
-            return mustNotHave.length > 0;
-        }
 
         // Busca aproximada (fuzzy)
         function fuzzyMatch(text, term) {
