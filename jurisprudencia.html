@@ -657,14 +657,27 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
     const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     
+    // Extrair termos entre aspas primeiro
+    const quotedTerms = [];
+    let processedQuery = normalizedQuery.replace(/"([^"]*)"/g, (match, p1) => {
+        quotedTerms.push(p1.toLowerCase());
+        return `QUOTED_${quotedTerms.length - 1}_TERM`;
+    });
+    
     // Dividir a query em partes usando operadores
-    const parts = normalizedQuery.split(/\s+/);
+    const parts = processedQuery.split(/\s+/);
     let mustHave = [];
     let mustNotHave = [];
     let currentOperator = 'AND'; // padrão
     
     for (let i = 0; i < parts.length; i++) {
-        const part = parts[i].trim();
+        let part = parts[i].trim();
+        
+        // Restaurar termos entre aspas
+        if (part.startsWith('QUOTED_') && part.endsWith('_TERM')) {
+            const index = parseInt(part.replace('QUOTED_', '').replace('_TERM', ''));
+            part = quotedTerms[index];
+        }
         
         if (part === 'e' || part === ';') {
             currentOperator = 'AND';
@@ -706,77 +719,78 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
     // Se não há termos obrigatórios mas há termos excluídos, e passou na exclusão, retorna true
     return mustNotHave.length > 0;
 }
-        // Busca aproximada (fuzzy)
-        function fuzzyMatch(text, term) {
-            if (term.length <= 3) {
-                return text.includes(term);
-            }
-            
-            // Para termos maiores, permite 1 caractere de diferença
-            const termLen = term.length;
-            for (let i = 0; i <= text.length - termLen; i++) {
-                const substring = text.substr(i, termLen);
-                if (calculateSimilarity(substring, term) >= 0.8) {
-                    return true;
-                }
-            }
-            return false;
-        }
 
-        // Calcular similaridade entre strings
-        function calculateSimilarity(str1, str2) {
-            const longer = str1.length > str2.length ? str1 : str2;
-            const shorter = str1.length > str2.length ? str2 : str1;
-            
-            if (longer.length === 0) return 1.0;
-            
-            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+// Busca aproximada (fuzzy)
+function fuzzyMatch(text, term) {
+    if (term.length <= 3) {
+        return text.includes(term);
+    }
+    
+    // Para termos maiores, permite 1 caractere de diferença
+    const termLen = term.length;
+    for (let i = 0; i <= text.length - termLen; i++) {
+        const substring = text.substr(i, termLen);
+        if (calculateSimilarity(substring, term) >= 0.8) {
+            return true;
         }
+    }
+    return false;
+}
 
-        // Distância de edição (para fuzzy match)
-        function editDistance(str1, str2) {
-            str1 = str1.toLowerCase();
-            str2 = str2.toLowerCase();
-            
-            const costs = [];
-            for (let i = 0; i <= str1.length; i++) {
-                let lastValue = i;
-                for (let j = 0; j <= str2.length; j++) {
-                    if (i === 0) {
-                        costs[j] = j;
-                    } else {
-                        if (j > 0) {
-                            let newValue = costs[j - 1];
-                            if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
-                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                            }
-                            costs[j - 1] = lastValue;
-                            lastValue = newValue;
-                        }
+// Calcular similaridade entre strings
+function calculateSimilarity(str1, str2) {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+}
+
+// Distância de edição (para fuzzy match)
+function editDistance(str1, str2) {
+    str1 = str1.toLowerCase();
+    str2 = str2.toLowerCase();
+    
+    const costs = [];
+    for (let i = 0; i <= str1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= str2.length; j++) {
+            if (i === 0) {
+                costs[j] = j;
+            } else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
                     }
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
                 }
-                if (i > 0) costs[str2.length] = lastValue;
             }
-            return costs[str2.length];
         }
+        if (i > 0) costs[str2.length] = lastValue;
+    }
+    return costs[str2.length];
+}
 
-        // Função para destacar termos no texto
-        function highlightText(text, searchTerms) {
-            if (!searchTerms || !text) return text;
-            
-            const terms = extractSearchTerms(searchTerms);
-            if (terms.length === 0) return text;
-            
-            let highlightedText = text;
-            terms.forEach(term => {
-                if (term.length > 2) {
-                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                    highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
-                }
-            });
-            
-            return highlightedText;
+// Função para destacar termos no texto
+function highlightText(text, searchTerms) {
+    if (!searchTerms || !text) return text;
+    
+    const terms = extractSearchTerms(searchTerms);
+    if (terms.length === 0) return text;
+    
+    let highlightedText = text;
+    terms.forEach(term => {
+        if (term.length > 2) {
+            const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
         }
+    });
+    
+    return highlightedText;
+}
 
         // Extrair termos de busca para highlight
         function extractSearchTerms(query) {
