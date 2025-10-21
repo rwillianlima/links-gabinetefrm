@@ -443,20 +443,20 @@
         <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
 
         <p class="notice">
-            Use <strong>aspas</strong> para frases exatas (sem curingas); <strong>;</strong> ou <strong>AND</strong> para termos obrigatórios; 
-            <strong>OR</strong> para alternância; <strong>-</strong> ou <strong>NOT</strong> para excluir; 
-            <strong>*</strong> como curinga <u>apenas fora</u> das aspas. Parênteses são aceitos. Acentos são ignorados.
+            Use <strong>aspas</strong> para frases exatas; <strong>E</strong> ou <strong>;</strong> para termos obrigatórios; 
+            <strong>OU</strong> para alternância; <strong>NÃO</strong> ou <strong>-</strong> para excluir; 
+            <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
         </p>
 
         <div class="search-bar">
-            <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
+            <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
             <input type="date" id="startDate">
             <input type="date" id="endDate">
             <select id="relator">
                 <option value="">Relator (todos)</option>
             </select>
             <div class="opts">
-                <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
+                <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
             </div>
             <button onclick="performSearch()">Consultar</button>
         </div>
@@ -467,12 +467,12 @@
                 <summary>Como pesquisar (clique para expandir)</summary>
                 <div style="margin-top:10px">
                     <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
-                    <p><strong>AND</strong>: <code>termo1;termo2</code> ou <code>termo1 AND termo2</code></p>
-                    <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
-                    <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
-                    <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
+                    <p><strong>E (AND)</strong>: <code>termo1 E termo2</code> ou <code>termo1;termo2</code></p>
+                    <p><strong>OU (OR)</strong>: <code>cláusulaA OU cláusulaB</code></p>
+                    <p><strong>NÃO (NOT)</strong>: <code>NÃO termo</code> ou <code>-termo</code></p>
+                    <p><strong>Parênteses</strong>: <code>BACEN E ("dano moral" OU "dano extrapatrimonial")</code></p>
                     <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
-                    <p><strong>Fuzzy</strong>: marque "Fuzzy" para aceitar pequenas variações.</p>
+                    <p><strong>Busca aproximada</strong>: marque para aceitar pequenas variações.</p>
                     <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
                 </div>
             </details>
@@ -648,19 +648,197 @@
             });
         }
 
+        // FUNÇÃO PRINCIPAL: Busca com operadores lógicos em português
+        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+            if (!query.trim()) return true;
+            
+            // Normalizar o texto (remover acentos)
+            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            
+            // Processar a query
+            const processedQuery = query
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/\bE\b/g, ' AND ')
+                .replace(/\bOU\b/g, ' OR ')
+                .replace(/\bNÃO\b/g, ' NOT ')
+                .replace(/;/g, ' AND ');
+            
+            return evaluateQuery(normalizedText, processedQuery, useFuzzy);
+        }
+
+        // Avaliar a query com operadores lógicos
+        function evaluateQuery(text, query, useFuzzy) {
+            // Remover parênteses externos se existirem
+            query = query.trim();
+            if (query.startsWith('(') && query.endsWith(')')) {
+                query = query.slice(1, -1).trim();
+            }
+            
+            // Procurar por OR primeiro (menor precedência)
+            const orIndex = findOperatorIndex(query, ' OR ');
+            if (orIndex !== -1) {
+                const left = query.slice(0, orIndex).trim();
+                const right = query.slice(orIndex + 4).trim();
+                return evaluateQuery(text, left, useFuzzy) || evaluateQuery(text, right, useFuzzy);
+            }
+            
+            // Procurar por AND
+            const andIndex = findOperatorIndex(query, ' AND ');
+            if (andIndex !== -1) {
+                const left = query.slice(0, andIndex).trim();
+                const right = query.slice(andIndex + 5).trim();
+                return evaluateQuery(text, left, useFuzzy) && evaluateQuery(text, right, useFuzzy);
+            }
+            
+            // Procurar por NOT
+            if (query.startsWith('NOT ')) {
+                const term = query.slice(4).trim();
+                return !evaluateQuery(text, term, useFuzzy);
+            }
+            
+            // Termo simples (com ou sem aspas)
+            return evaluateTerm(text, query, useFuzzy);
+        }
+
+        // Encontrar índice do operador, ignorando dentro de aspas
+        function findOperatorIndex(query, operator) {
+            let inQuotes = false;
+            for (let i = 0; i < query.length - operator.length + 1; i++) {
+                if (query[i] === '"') inQuotes = !inQuotes;
+                if (!inQuotes && query.startsWith(operator, i)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Avaliar um termo individual
+        function evaluateTerm(text, term, useFuzzy) {
+            term = term.trim();
+            
+            // Termo entre aspas (busca exata)
+            if (term.startsWith('"') && term.endsWith('"')) {
+                const exactTerm = term.slice(1, -1).toLowerCase();
+                if (useFuzzy) {
+                    return fuzzyMatch(text, exactTerm);
+                }
+                return text.includes(exactTerm);
+            }
+            
+            // Termo com NOT
+            if (term.startsWith('-')) {
+                const searchTerm = term.slice(1).toLowerCase();
+                if (useFuzzy) {
+                    return !fuzzyMatch(text, searchTerm);
+                }
+                return !text.includes(searchTerm);
+            }
+            
+            // Termo com curinga
+            if (term.includes('*')) {
+                const regex = new RegExp(term.replace(/\*/g, '.*'), 'i');
+                return regex.test(text);
+            }
+            
+            // Termo simples
+            if (useFuzzy) {
+                return fuzzyMatch(text, term);
+            }
+            return text.includes(term.toLowerCase());
+        }
+
+        // Busca aproximada (fuzzy)
+        function fuzzyMatch(text, term) {
+            if (term.length <= 3) {
+                return text.includes(term);
+            }
+            
+            // Para termos maiores, permite 1 caractere de diferença
+            const termLen = term.length;
+            for (let i = 0; i <= text.length - termLen; i++) {
+                const substring = text.substr(i, termLen);
+                if (calculateSimilarity(substring, term) >= 0.8) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Calcular similaridade entre strings
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+        }
+
+        // Distância de edição (para fuzzy match)
+        function editDistance(str1, str2) {
+            str1 = str1.toLowerCase();
+            str2 = str2.toLowerCase();
+            
+            const costs = [];
+            for (let i = 0; i <= str1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= str2.length; j++) {
+                    if (i === 0) {
+                        costs[j] = j;
+                    } else {
+                        if (j > 0) {
+                            let newValue = costs[j - 1];
+                            if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                            }
+                            costs[j - 1] = lastValue;
+                            lastValue = newValue;
+                        }
+                    }
+                }
+                if (i > 0) costs[str2.length] = lastValue;
+            }
+            return costs[str2.length];
+        }
+
         // Função para destacar termos no texto
         function highlightText(text, searchTerms) {
             if (!searchTerms || !text) return text;
             
-            const terms = searchTerms.toLowerCase()
-                .split(/\s+/)
-                .filter(term => term.length > 2)
-                .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-            
+            const terms = extractSearchTerms(searchTerms);
             if (terms.length === 0) return text;
             
-            const regex = new RegExp(`(${terms.join('|')})`, 'gi');
-            return text.replace(regex, '<span class="highlight">$1</span>');
+            let highlightedText = text;
+            terms.forEach(term => {
+                if (term.length > 2) {
+                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+                }
+            });
+            
+            return highlightedText;
+        }
+
+        // Extrair termos de busca para highlight
+        function extractSearchTerms(query) {
+            const terms = [];
+            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            
+            // Remover operadores lógicos
+            const cleanQuery = normalizedQuery
+                .replace(/\b(e|ou|não|and|or|not)\b/gi, ' ')
+                .replace(/[;()\-]/g, ' ')
+                .replace(/"([^"]*)"/g, (match, p1) => {
+                    terms.push(p1);
+                    return ' ';
+                });
+            
+            // Adicionar termos individuais
+            cleanQuery.split(/\s+/)
+                .filter(term => term.length > 2 && !terms.includes(term))
+                .forEach(term => terms.push(term));
+            
+            return terms;
         }
 
         function performSearch() {
@@ -690,12 +868,10 @@
                     if (endDate && itemDate > new Date(endDate)) return false;
                 }
                 
-                // Filtro por termos de busca
+                // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
                 if (searchTerms) {
                     const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-                    const normalizedTerms = searchTerms.toLowerCase();
-                    
-                    if (!searchText.includes(normalizedTerms)) return false;
+                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
                 }
                 
                 return true;
