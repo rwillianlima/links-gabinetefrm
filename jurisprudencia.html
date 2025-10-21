@@ -2,12 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>Pesquisa de Jurisprudência – Gabinete Des. F. R. Montefusco</title>
+<title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
 <style>
   body {
     font-family: Arial, Helvetica, sans-serif;
-    background: #f4f4f4; /* cinza claro */
-    color: #222; /* texto escuro */
+    background: #f4f4f4;
+    color: #222;
     margin: 0;
   }
 
@@ -18,8 +18,10 @@
     left: 0;
     width: 240px;
     height: 100%;
-    background: #2f4050; /* azul acinzentado */
+    background: #2f4050;
     box-shadow: 2px 0 6px rgba(0,0,0,.2);
+    display: flex;
+    flex-direction: column;
   }
   #sidebar a {
     display: block;
@@ -30,6 +32,25 @@
   }
   #sidebar a:hover {
     background: #3b5165;
+  }
+  
+  /* Relógio na sidebar */
+  #clock {
+    margin-top: auto;
+    padding: 15px 20px;
+    color: #fff;
+    font-size: 0.9rem;
+    border-top: 1px solid #3b5165;
+    background: #263340;
+  }
+  #clock-time {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  #clock-date {
+    font-size: 0.85rem;
+    opacity: 0.8;
   }
 
   /* Content */
@@ -45,9 +66,14 @@
     margin-bottom: 8px;
     color: #2f4050;
   }
+  .subtitle {
+    font-size: 1.1rem;
+    color: #444;
+    margin-bottom: 5px;
+  }
   .dataset-info {
     font-size: .92rem;
-    color: #444;
+    color: #666;
     margin: 2px auto 18px auto;
     max-width: 920px;
   }
@@ -83,6 +109,7 @@
     color: #fff;
     font-weight: bold;
     cursor: pointer;
+    min-width: 80px;
   }
   .search-bar button:hover {
     background: #3b5165;
@@ -200,7 +227,7 @@
     cursor: pointer;
   }
   .pagination button.active {
-    background: #1c87c9; /* destaque */
+    background: #1c87c9;
     font-weight: bold;
   }
   .pagination button[disabled] {
@@ -215,7 +242,7 @@
 
   /* Destaque dos termos encontrados */
   mark {
-    background: #ffeb3b; /* amarelo claro */
+    background: #ffeb3b;
     color: #000;
     font-weight: bold;
     padding: 0 2px;
@@ -225,10 +252,17 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-<div id="sidebar"><a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a></div>
+<div id="sidebar">
+  <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
+  <div id="clock">
+    <div id="clock-time">--:--:--</div>
+    <div id="clock-date">--/--/----</div>
+  </div>
+</div>
 
 <div id="content">
-  <h1>🔎 Pesquisa Avançada de Jurisprudência</h1>
+  <h1>🔎 Pesquisa de Jurisprudência</h1>
+  <div class="subtitle">6ª Câmara Cível - A partir de 2024</div>
   <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
 
   <p class="notice">
@@ -239,10 +273,11 @@
 
   <div class="search-bar">
     <input type="text" id="terms" placeholder='Ex.: BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade'>
-    <input type="date" id="startDate"><input type="date" id="endDate">
-    <select id="relator"><option value="">Relator (todos)</option></select>
-    <select id="camera"><option value="">Câmara (todas)</option></select>
-    <select id="ato"><option value="">Ato (todos)</option></select>
+    <input type="date" id="startDate">
+    <input type="date" id="endDate">
+    <select id="relator">
+      <option value="">Relator (todos)</option>
+    </select>
     <div class="opts">
       <label><input type="checkbox" id="fuzzy"> Fuzzy (aproximações)</label>
     </div>
@@ -259,8 +294,8 @@
         <p><strong>OR</strong>: <code>cláusulaA OR cláusulaB</code></p>
         <p><strong>NOT</strong>: <code>-termo</code> ou <code>NOT termo</code></p>
         <p><strong>Parênteses</strong>: <code>BACEN; ("dano moral" OR "dano extrapatrimonial") ; responsabilidade</code></p>
-        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra “contrato”, “contratual”</p>
-        <p><strong>Fuzzy</strong>: marque “Fuzzy” para aceitar pequenas variações.</p>
+        <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
+        <p><strong>Fuzzy</strong>: marque "Fuzzy" para aceitar pequenas variações.</p>
         <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
       </div>
     </details>
@@ -271,9 +306,173 @@
   <div id="pagination" class="pagination"></div>
 </div>
 
-<!-- JS original mantido -->
 <script>
-/* Seu código JS original de busca e renderização vai aqui */
+let dataset = [];
+let filteredData = [];
+let lastUpdate = '';
+
+// Atualizar relógio
+function updateClock() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('pt-BR');
+  const dateString = now.toLocaleDateString('pt-BR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
+  document.getElementById('clock-time').textContent = timeString;
+  document.getElementById('clock-date').textContent = dateString;
+}
+
+// Carregar dados da planilha
+function loadDataset() {
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?output=csv';
+  
+  Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    complete: function(results) {
+      dataset = results.data.filter(item => Object.keys(item).length > 0);
+      updateDatasetInfo();
+      populateFilters();
+    },
+    error: function(error) {
+      document.getElementById('datasetInfo').textContent = 'Erro ao carregar dados';
+      console.error('Erro:', error);
+    }
+  });
+}
+
+function updateDatasetInfo() {
+  const info = document.getElementById('datasetInfo');
+  
+  // Encontrar a última data na planilha
+  let latestDate = '';
+  dataset.forEach(item => {
+    if (item.data && item.data > latestDate) {
+      latestDate = item.data;
+    }
+  });
+  
+  lastUpdate = latestDate;
+  
+  const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
+  info.textContent = `Banco de dados: ${dataset.length} registros da 6ª Câmara Cível. ${updateText}`;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  try {
+    const parts = dateString.split('/');
+    if (parts.length === 3) {
+      return `${parts[0]}/${parts[1]}/${parts[2]}`;
+    }
+    
+    // Tentar outros formatos de data
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('pt-BR');
+    }
+    
+    return dateString;
+  } catch (e) {
+    return dateString;
+  }
+}
+
+function populateFilters() {
+  // Preencher filtro de relatores com valores únicos
+  const relators = [...new Set(dataset.map(item => item.relator))].filter(Boolean);
+  populateSelect('relator', relators);
+}
+
+function populateSelect(selectId, options) {
+  const select = document.getElementById(selectId);
+  
+  // Limpar opções existentes (exceto a primeira)
+  while (select.children.length > 1) {
+    select.removeChild(select.lastChild);
+  }
+  
+  options.sort().forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option;
+    opt.textContent = option;
+    select.appendChild(opt);
+  });
+}
+
+function performSearch() {
+  const searchTerms = document.getElementById('terms').value;
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  const relator = document.getElementById('relator').value;
+  const useFuzzy = document.getElementById('fuzzy').checked;
+  
+  // Implementar lógica de busca aqui
+  console.log('Busca realizada:', { searchTerms, startDate, endDate, relator, useFuzzy });
+  
+  // Exemplo de resultado (substituir pela lógica real)
+  displayResults(dataset.slice(0, 5));
+}
+
+function displayResults(results) {
+  const allBlocks = document.getElementById('allBlocks');
+  const resultCount = document.getElementById('resultCount');
+  const pagination = document.getElementById('pagination');
+  
+  // Limpar resultados anteriores
+  allBlocks.innerHTML = '';
+  
+  if (results.length === 0) {
+    resultCount.textContent = 'Nenhum resultado encontrado.';
+    resultCount.style.display = 'block';
+    allBlocks.style.display = 'none';
+    pagination.style.display = 'none';
+    return;
+  }
+  
+  resultCount.textContent = `${results.length} resultado(s) encontrado(s).`;
+  resultCount.style.display = 'block';
+  allBlocks.style.display = 'block';
+  
+  // Exibir resultados (exemplo)
+  results.forEach((item, index) => {
+    const block = document.createElement('div');
+    block.className = 'block';
+    block.style.display = 'block';
+    
+    block.innerHTML = `
+      <button class="copy-btn" onclick="copyToClipboard(${index})">Copiar</button>
+      <p><strong>${item.ementa || 'Sem ementa'}</strong></p>
+      <div class="meta">
+        ${item.data ? `Data: ${item.data}` : ''} 
+        ${item.relator ? ` | Relator: ${item.relator}` : ''}
+        ${item.processo ? ` | Processo: ${item.processo}` : ''}
+      </div>
+    `;
+    
+    allBlocks.appendChild(block);
+  });
+  
+  // Configurar paginação (simplificado)
+  pagination.style.display = 'flex';
+}
+
+function copyToClipboard(index) {
+  // Implementar função de copiar
+  alert(`Conteúdo ${index + 1} copiado para a área de transferência!`);
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+  loadDataset();
+  updateClock();
+  setInterval(updateClock, 1000);
+});
 </script>
 </body>
 </html>
