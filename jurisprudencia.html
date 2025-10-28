@@ -969,31 +969,32 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             return costs[str2.length];
         }
 
-        // Função para destacar termos no texto
-       // Função para destacar termos no texto - CORRIGIDA
-// Função para destacar termos no texto - VERSÃO CORRIGIDA
-// Função para destacar termos no texto - VERSÃO FINAL CORRIGIDA
+       // 👨‍💻 CÓDIGO CORRIGIDO
+
 function highlightText(text, searchTerms) {
-    if (!searchTerms || !text) return text;
-    
+    if (!searchTerms || !text) {
+        return text;
+    }
+
+    // Extrai os termos únicos e válidos da string de busca
     const terms = extractSearchTerms(searchTerms);
-    if (terms.length === 0) return text;
     
-    let highlightedText = text;
-    
-    // Para cada termo, aplicar o destaque GLOBALMENTE
-    terms.forEach(term => {
-        if (term.length > 2) {
-            // Usar uma abordagem mais direta sem regex complexo
-            const termRegex = new RegExp(escapeRegex(term), 'gi');
-            highlightedText = highlightedText.replace(termRegex, '<span class="highlight">$&</span>');
-        }
-    });
-    
-    return highlightedText;
+    if (terms.length === 0) {
+        return text;
+    }
+
+    // Escapa caracteres especiais de regex para cada termo
+    const escapedTerms = terms.map(term => escapeRegex(term));
+
+    // Cria uma única expressão regular global e insensível a maiúsculas/minúsculas
+    // Exemplo: /(dano moral|responsabilidade|contrato)/gi
+    const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+
+    // Executa a substituição UMA ÚNICA VEZ, usando a regex combinada
+    return text.replace(regex, '<span class="highlight">$1</span>');
 }
 
-// Função auxiliar para escapar caracteres especiais do regex
+// Função auxiliar que você já tem no código, apenas para referência
 function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
