@@ -969,32 +969,48 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             return costs[str2.length];
         }
 
-       // 👨‍💻 CÓDIGO CORRIGIDO
+   // 👨‍💻 CÓDIGO CORRIGIDO
+
+/**
+ * Cria uma string de regex que ignora acentos.
+ * Exemplo: "esteticos" se torna "[eéèêë]st[eéèêë]ticos".
+ * @param {string} text - O texto a ser convertido.
+ * @returns {string} - Uma string pronta para ser usada em uma RegExp.
+ */
+function createAccentInsensitiveRegexString(text) {
+    return text.replace(/a/g, '[aáàâã]')
+               .replace(/e/g, '[eéèêë]')
+               .replace(/i/g, '[iíìîï]')
+               .replace(/o/g, '[oóòôõö]')
+               .replace(/u/g, '[uúùûü]')
+               .replace(/c/g, '[cç]');
+}
 
 function highlightText(text, searchTerms) {
     if (!searchTerms || !text) {
         return text;
     }
 
-    // Extrai os termos únicos e válidos da string de busca
     const terms = extractSearchTerms(searchTerms);
     
     if (terms.length === 0) {
         return text;
     }
 
-    // Escapa caracteres especiais de regex para cada termo
-    const escapedTerms = terms.map(term => escapeRegex(term));
+    // Para cada termo, cria uma versão que ignora acentos e escapa caracteres de regex
+    const accentInsensitiveTerms = terms.map(term => {
+        const escapedTerm = escapeRegex(term);
+        return createAccentInsensitiveRegexString(escapedTerm);
+    });
 
-    // Cria uma única expressão regular global e insensível a maiúsculas/minúsculas
-    // Exemplo: /(dano moral|responsabilidade|contrato)/gi
-    const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+    // Cria a expressão regular final com todos os termos
+    const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
 
-    // Executa a substituição UMA ÚNICA VEZ, usando a regex combinada
+    // Executa a substituição
     return text.replace(regex, '<span class="highlight">$1</span>');
 }
 
-// Função auxiliar que você já tem no código, apenas para referência
+// A função escapeRegex que você já tem deve ser mantida como está
 function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
