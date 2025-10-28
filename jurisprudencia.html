@@ -969,13 +969,11 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             return costs[str2.length];
         }
 
-   // 👨‍💻 CÓDIGO CORRIGIDO
+ // 👨‍💻 CÓDIGO COMPLETO PARA SUBSTITUIÇÃO
 
 /**
  * Cria uma string de regex que ignora acentos.
  * Exemplo: "esteticos" se torna "[eéèêë]st[eéèêë]ticos".
- * @param {string} text - O texto a ser convertido.
- * @returns {string} - Uma string pronta para ser usada em uma RegExp.
  */
 function createAccentInsensitiveRegexString(text) {
     return text.replace(/a/g, '[aáàâã]')
@@ -986,6 +984,10 @@ function createAccentInsensitiveRegexString(text) {
                .replace(/c/g, '[cç]');
 }
 
+/**
+ * Função de destaque CORRIGIDA para priorizar termos mais longos
+ * e ser insensível a acentos.
+ */
 function highlightText(text, searchTerms) {
     if (!searchTerms || !text) {
         return text;
@@ -997,59 +999,30 @@ function highlightText(text, searchTerms) {
         return text;
     }
 
-    // Para cada termo, cria uma versão que ignora acentos e escapa caracteres de regex
+    // Ordena os termos do mais longo para o mais curto.
+    // Isso evita que termos menores (ex: "dano") sejam destacados
+    // dentro de termos maiores (ex: "dano moral").
+    terms.sort((a, b) => b.length - a.length);
+
+    // Para cada termo, cria uma versão que ignora acentos
     const accentInsensitiveTerms = terms.map(term => {
         const escapedTerm = escapeRegex(term);
         return createAccentInsensitiveRegexString(escapedTerm);
     });
 
-    // Cria a expressão regular final com todos os termos
+    // Cria a expressão regular final com todos os termos já ordenados
     const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
 
     // Executa a substituição
     return text.replace(regex, '<span class="highlight">$1</span>');
 }
 
-// A função escapeRegex que você já tem deve ser mantida como está
+/**
+ * Escapa caracteres especiais para que possam ser usados em uma RegExp.
+ */
 function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-// Função para debug (opcional - remover em produção)
-function debugSearch(text, query, useFuzzy = false) {
-    console.log('=== DEBUG SEARCH ===');
-    console.log('Texto:', text.substring(0, 100) + '...');
-    console.log('Query:', query);
-    console.log('Fuzzy:', useFuzzy);
-    console.log('Resultado:', portugueseAdvancedSearch(text, query, useFuzzy));
-    console.log('===================');
-}
-        
-        // Extrair termos de busca para highlight
-// Extrair termos de busca para highlight - VERSÃO CORRIGIDA
-function extractSearchTerms(query) {
-    if (!query.trim()) return [];
-    
-    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    
-    // Extrair termos entre aspas
-    const quotedTerms = [];
-    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-        quotedTerms.push(p1);
-        return ' ';
-    });
-    
-    // Extrair termos individuais (remover operadores)
-    const individualTerms = processedQuery
-        .split(/\s+/)
-        .filter(term => term.length > 2)
-        .filter(term => !['e', 'ou', 'não', 'and', 'or', 'not'].includes(term))
-        .filter(term => !term.startsWith('-'));
-    
-    // Combinar e remover duplicatas
-    const allTerms = [...quotedTerms, ...individualTerms];
-    return [...new Set(allTerms)];
-}
-
         function performSearch() {
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('active');
