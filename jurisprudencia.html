@@ -970,22 +970,39 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
         }
 
         // Função para destacar termos no texto
-        function highlightText(text, searchTerms) {
-            if (!searchTerms || !text) return text;
+       // Função para destacar termos no texto - CORRIGIDA
+function highlightText(text, searchTerms) {
+    if (!searchTerms || !text) return text;
+    
+    const terms = extractSearchTerms(searchTerms);
+    if (terms.length === 0) return text;
+    
+    let highlightedText = text;
+    
+    // Criar um mapa para evitar substituições duplicadas
+    const replacementMap = new Map();
+    
+    terms.forEach(term => {
+        if (term.length > 2) {
+            // Encontrar todas as ocorrências do termo
+            const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            let match;
             
-            const terms = extractSearchTerms(searchTerms);
-            if (terms.length === 0) return text;
-            
-            let highlightedText = text;
-            terms.forEach(term => {
-                if (term.length > 2) {
-                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                    highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
-                }
-            });
-            
-            return highlightedText;
+            while ((match = regex.exec(text)) !== null) {
+                const originalText = match[0];
+                const highlighted = `<span class="highlight">${originalText}</span>`;
+                replacementMap.set(originalText, highlighted);
+            }
         }
+    });
+    
+    // Aplicar todas as substituições
+    replacementMap.forEach((highlighted, original) => {
+        highlightedText = highlightedText.split(original).join(highlighted);
+    });
+    
+    return highlightedText;
+}
 // Função para debug (opcional - remover em produção)
 function debugSearch(text, query, useFuzzy = false) {
     console.log('=== DEBUG SEARCH ===');
