@@ -971,34 +971,25 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
 
         // Função para destacar termos no texto
        // Função para destacar termos no texto - CORRIGIDA
+// Função para destacar termos no texto - VERSÃO CORRIGIDA
 function highlightText(text, searchTerms) {
     if (!searchTerms || !text) return text;
     
     const terms = extractSearchTerms(searchTerms);
     if (terms.length === 0) return text;
     
+    // Criar uma cópia do texto para trabalhar
     let highlightedText = text;
     
-    // Criar um mapa para evitar substituições duplicadas
-    const replacementMap = new Map();
-    
+    // Para cada termo, aplicar o destaque
     terms.forEach(term => {
         if (term.length > 2) {
-            // Encontrar todas as ocorrências do termo
-            const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            let match;
-            
-            while ((match = regex.exec(text)) !== null) {
-                const originalText = match[0];
-                const highlighted = `<span class="highlight">${originalText}</span>`;
-                replacementMap.set(originalText, highlighted);
-            }
+            // Criar regex case-insensitive e que ignora acentos
+            const regex = new RegExp(term, 'gi');
+            highlightedText = highlightedText.replace(regex, match => 
+                `<span class="highlight">${match}</span>`
+            );
         }
-    });
-    
-    // Aplicar todas as substituições
-    replacementMap.forEach((highlighted, original) => {
-        highlightedText = highlightedText.split(original).join(highlighted);
     });
     
     return highlightedText;
@@ -1014,29 +1005,29 @@ function debugSearch(text, query, useFuzzy = false) {
 }
         
         // Extrair termos de busca para highlight
+// Extrair termos de busca para highlight - VERSÃO CORRIGIDA
 function extractSearchTerms(query) {
-    const terms = [];
+    if (!query.trim()) return [];
+    
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     
-    // Extrair termos entre aspas primeiro
+    // Extrair termos entre aspas
     const quotedTerms = [];
     let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-        quotedTerms.push(p1.toLowerCase().trim());
+        quotedTerms.push(p1);
         return ' ';
     });
     
-    // Adicionar termos entre aspas
-    terms.push(...quotedTerms);
-    
-    // Adicionar termos individuais (remover operadores)
-    processedQuery
-        .replace(/\b(e|ou|não|and|or|not)\b/gi, ' ')
-        .replace(/[;()\-]/g, ' ')
+    // Extrair termos individuais (remover operadores)
+    const individualTerms = processedQuery
         .split(/\s+/)
-        .filter(term => term.length > 2 && !terms.includes(term))
-        .forEach(term => terms.push(term));
+        .filter(term => term.length > 2)
+        .filter(term => !['e', 'ou', 'não', 'and', 'or', 'not'].includes(term))
+        .filter(term => !term.startsWith('-'));
     
-    return terms;
+    // Combinar e remover duplicatas
+    const allTerms = [...quotedTerms, ...individualTerms];
+    return [...new Set(allTerms)];
 }
 
         function performSearch() {
