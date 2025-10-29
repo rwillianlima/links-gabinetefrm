@@ -805,114 +805,106 @@
             });
         }
 
-        // Busca com operadores lógicos em português
-        // FUNÇÃO CORRIGIDA: Busca com operadores lógicos em português
+ // 👨‍💻 PASSO 1: ADICIONE ESTA NOVA FUNÇÃO
+
+/**
+ * Verifica se um termo corresponde ao texto, usando limites de palavra para
+ * termos exatos e permitindo curingas (*).
+ * @param {string} text - O texto completo onde a busca é feita.
+ * @param {string} term - O termo de busca.
+ * @returns {boolean} - Retorna true se houver correspondência.
+ */
+function termMatches(text, term) {
+    // Escapa caracteres especiais de regex, exceto o nosso curinga '*'
+    const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    let regex;
+
+    if (escapedTerm.includes('*')) {
+        // Se for um curinga, substitui '*' por '.*' para corresponder a qualquer caractere.
+        // Não usamos limites de palavra aqui.
+        const regexString = escapedTerm.replace(/\*/g, '.*');
+        regex = new RegExp(regexString, 'i'); // 'i' para ignorar maiúsculas/minúsculas
+    } else {
+        // Para termos exatos, cria uma regex com limites de palavra (\b).
+        // Isso garante que "scr" não corresponda a "inscrição".
+        regex = new RegExp(`\\b${escapedTerm}\\b`, 'i');
+    }
+    return regex.test(text);
+}
+        
+// 👨‍💻 PASSO 2: SUBSTITUA A SUA FUNÇÃO ANTIGA POR ESTA
+
 function portugueseAdvancedSearch(text, query, useFuzzy = false) {
     if (!query.trim()) return true;
     
-    // Normalizar o texto
-    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizedText = text.normalize('NFD').replace(/[\u0000-\u001F\u007F-\u009F]|[\u0300-\u036f]/g, '').toLowerCase();
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     
-    // Extrair termos entre aspas primeiro - CORREÇÃO: manter espaços nos termos entre aspas
     const quotedTerms = [];
     let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-        quotedTerms.push(p1.toLowerCase().trim());
+        quotedTerms.push(p1.trim());
         return ` QUOTED_${quotedTerms.length - 1}_TERM `;
     });
+
+    // Trata o curinga '*' para que ele não seja separado como um token
+    processedQuery = processedQuery.replace(/(\w+)\*/g, '$1_WILDCARD_');
+
+    const tokens = processedQuery.split(/\s+/).filter(Boolean);
     
-    // Processar operadores lógicos - CORREÇÃO: lógica simplificada
-    const tokens = processedQuery.split(/\s+/).filter(token => token.length > 0);
-    
-    let conditions = [];
-    let currentCondition = { type: 'AND', terms: [] };
-    
-    for (let i = 0; i < tokens.length; i++) {
-        let token = tokens[i];
+    let logicalStructure = [];
+    let currentGroup = { type: 'AND', terms: [] };
+
+    tokens.forEach(token => {
+        const lowerToken = token.toLowerCase();
         
-        // Restaurar termos entre aspas
-        if (token.startsWith('QUOTED_') && token.endsWith('_TERM')) {
-            const index = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
-            token = quotedTerms[index];
-            currentCondition.terms.push(token);
-            continue;
-        }
-        
-        // Verificar operadores
-        if (token === 'e' || token === ';') {
-            if (currentCondition.terms.length > 0) {
-                conditions.push({...currentCondition});
-                currentCondition = { type: 'AND', terms: [] };
-            }
-        } else if (token === 'ou') {
-            if (currentCondition.terms.length > 0) {
-                conditions.push({...currentCondition});
-                currentCondition = { type: 'OR', terms: [] };
-            }
-        } else if (token === 'não' || token === '-') {
-            if (i + 1 < tokens.length) {
-                let nextToken = tokens[++i];
-                // Restaurar termos entre aspas após NÃO
-                if (nextToken.startsWith('QUOTED_') && nextToken.endsWith('_TERM')) {
-                    const index = parseInt(nextToken.replace('QUOTED_', '').replace('_TERM', ''));
-                    nextToken = quotedTerms[index];
-                }
-                conditions.push({ type: 'NOT', terms: [nextToken] });
-            }
+        if (lowerToken === 'e' || lowerToken === ';') {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            currentGroup = { type: 'AND', terms: [] };
+        } else if (lowerToken === 'ou') {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            currentGroup = { type: 'OR', terms: [] };
+        } else if (lowerToken === 'não' || token.startsWith('-')) {
+             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            const termToNegate = token.startsWith('-') ? token.substring(1) : (tokens[tokens.indexOf(token) + 1] || "");
+            logicalStructure.push({ type: 'NOT', terms: [termToNegate] });
+            currentGroup = { type: 'AND', terms: [] }; 
         } else {
-            // Termo normal
-            currentCondition.terms.push(token);
+            let finalTerm = token;
+            if (token.startsWith('QUOTED_')) {
+                const index = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+                finalTerm = quotedTerms[index];
+            } else if (token.endsWith('_WILDCARD_')) {
+                finalTerm = token.replace('_WILDCARD_', '*');
+            }
+            if (finalTerm) currentGroup.terms.push(finalTerm);
+        }
+    });
+
+    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+
+    // Lógica de avaliação
+    for (const group of logicalStructure) {
+        if (useFuzzy) { // A lógica fuzzy permanece a mesma
+             if (group.type === 'NOT') {
+                if (group.terms.some(term => fuzzyMatch(normalizedText, term))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(term => fuzzyMatch(normalizedText, term))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(term => fuzzyMatch(normalizedText, term))) return false;
+            }
+        } else { // Lógica padrão usando a nova função termMatches
+            if (group.type === 'NOT') {
+                if (group.terms.some(term => termMatches(normalizedText, term))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(term => termMatches(normalizedText, term))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(term => termMatches(normalizedText, term))) return false;
+            }
         }
     }
-    
-    // Adicionar a última condição
-    if (currentCondition.terms.length > 0) {
-        conditions.push(currentCondition);
-    }
-    
-    // Se não há condições, retorna true
-    if (conditions.length === 0) return true;
-    
-    // Avaliar condições
-    for (const condition of conditions) {
-        if (condition.type === 'NOT') {
-            for (const term of condition.terms) {
-                if (useFuzzy) {
-                    if (fuzzyMatch(normalizedText, term)) return false;
-                } else {
-                    if (normalizedText.includes(term)) return false;
-                }
-            }
-        } else if (condition.type === 'AND') {
-            for (const term of condition.terms) {
-                if (useFuzzy) {
-                    if (!fuzzyMatch(normalizedText, term)) return false;
-                } else {
-                    if (!normalizedText.includes(term)) return false;
-                }
-            }
-        } else if (condition.type === 'OR') {
-            let found = false;
-            for (const term of condition.terms) {
-                if (useFuzzy) {
-                    if (fuzzyMatch(normalizedText, term)) {
-                        found = true;
-                        break;
-                    }
-                } else {
-                    if (normalizedText.includes(term)) {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-            if (!found) return false;
-        }
-    }
-    
+
     return true;
 }
-
         // Busca aproximada (fuzzy)
         function fuzzyMatch(text, term) {
             if (term.length <= 3) {
