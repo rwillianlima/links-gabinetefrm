@@ -805,39 +805,10 @@
             });
         }
 
- // 👨‍💻 PASSO 1: ADICIONE ESTA NOVA FUNÇÃO
-
-/**
- * Verifica se um termo corresponde ao texto, usando limites de palavra para
- * termos exatos e permitindo curingas (*).
- * @param {string} text - O texto completo onde a busca é feita.
- * @param {string} term - O termo de busca.
- * @returns {boolean} - Retorna true se houver correspondência.
- */
-function termMatches(text, term) {
-    // Escapa caracteres especiais de regex, exceto o nosso curinga '*'
-    const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-    let regex;
-
-    if (escapedTerm.includes('*')) {
-        // Se for um curinga, substitui '*' por '.*' para corresponder a qualquer caractere.
-        // Não usamos limites de palavra aqui.
-        const regexString = escapedTerm.replace(/\*/g, '.*');
-        regex = new RegExp(regexString, 'i'); // 'i' para ignorar maiúsculas/minúsculas
-    } else {
-        // Para termos exatos, cria uma regex com limites de palavra (\b).
-        // Isso garante que "scr" não corresponda a "inscrição".
-        regex = new RegExp(`\\b${escapedTerm}\\b`, 'i');
-    }
-    return regex.test(text);
-}
-        
-// 👨‍💻 PASSO 2: SUBSTITUA A SUA FUNÇÃO ANTIGA POR ESTA
-
 function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-    if (!query.trim()) return true;
-    
-    const normalizedText = text.normalize('NFD').replace(/[\u0000-\u001F\u007F-\u009F]|[\u0300-\u036f]/g, '').toLowerCase();
+    if (!query || !query.trim()) return true;
+
+    // --- Otimização: Pré-processamento da query (feito apenas uma vez) ---
     const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     
     const quotedTerms = [];
@@ -846,59 +817,87 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
         return ` QUOTED_${quotedTerms.length - 1}_TERM `;
     });
 
-    // Trata o curinga '*' para que ele não seja separado como um token
-    processedQuery = processedQuery.replace(/(\w+)\*/g, '$1_WILDCARD_');
-
     const tokens = processedQuery.split(/\s+/).filter(Boolean);
     
     let logicalStructure = [];
     let currentGroup = { type: 'AND', terms: [] };
 
-    tokens.forEach(token => {
+    // --- Otimização: Criar as Regex uma única vez ANTES do loop principal ---
+    const preCompiledRegex = {};
+
+    function getOrCreateRegex(term) {
+        if (!preCompiledRegex[term]) {
+            const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            if (escapedTerm.includes('*')) {
+                const regexString = escapedTerm.replace(/\*/g, '.*');
+                preCompiledRegex[term] = new RegExp(regexString, 'i');
+            } else {
+                preCompiledRegex[term] = new RegExp(`\\b${escapedTerm}\\b`, 'i');
+            }
+        }
+        return preCompiledRegex[term];
+    }
+    
+    // Processa a estrutura lógica da query
+    tokens.forEach((token, index) => {
         const lowerToken = token.toLowerCase();
+        let isOperator = false;
         
         if (lowerToken === 'e' || lowerToken === ';') {
             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
             currentGroup = { type: 'AND', terms: [] };
+            isOperator = true;
         } else if (lowerToken === 'ou') {
             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
             currentGroup = { type: 'OR', terms: [] };
+            isOperator = true;
         } else if (lowerToken === 'não' || token.startsWith('-')) {
-             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-            const termToNegate = token.startsWith('-') ? token.substring(1) : (tokens[tokens.indexOf(token) + 1] || "");
-            logicalStructure.push({ type: 'NOT', terms: [termToNegate] });
-            currentGroup = { type: 'AND', terms: [] }; 
-        } else {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            let nextToken = tokens[index + 1];
+            if (token.startsWith('-')) {
+                nextToken = token.substring(1);
+            }
+            if(nextToken) {
+                logicalStructure.push({ type: 'NOT', terms: [getOrCreateRegex(nextToken)] });
+            }
+            currentGroup = { type: 'AND', terms: [] };
+            // Pula o próximo token se o operador for "não"
+            if (lowerToken === 'não') tokens[index + 1] = null; 
+            isOperator = true;
+        }
+        
+        if (!isOperator && token) {
             let finalTerm = token;
             if (token.startsWith('QUOTED_')) {
-                const index = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
-                finalTerm = quotedTerms[index];
-            } else if (token.endsWith('_WILDCARD_')) {
-                finalTerm = token.replace('_WILDCARD_', '*');
+                const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+                finalTerm = quotedTerms[qIndex];
             }
-            if (finalTerm) currentGroup.terms.push(finalTerm);
+            if (finalTerm) currentGroup.terms.push(getOrCreateRegex(finalTerm));
         }
     });
 
     if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+    
+    // --- Avaliação final usando as Regex pré-compiladas ---
+    const normalizedText = text.normalize('NFD').replace(/[\u0000-\u001F\u007F-\u009F]|[\u0300-\u036f]/g, '').toLowerCase();
 
-    // Lógica de avaliação
     for (const group of logicalStructure) {
-        if (useFuzzy) { // A lógica fuzzy permanece a mesma
-             if (group.type === 'NOT') {
-                if (group.terms.some(term => fuzzyMatch(normalizedText, term))) return false;
-            } else if (group.type === 'AND') {
-                if (!group.terms.every(term => fuzzyMatch(normalizedText, term))) return false;
-            } else if (group.type === 'OR') {
-                if (!group.terms.some(term => fuzzyMatch(normalizedText, term))) return false;
-            }
-        } else { // Lógica padrão usando a nova função termMatches
+        if (useFuzzy) { // Lógica fuzzy não foi otimizada, pois já é lenta por natureza
             if (group.type === 'NOT') {
-                if (group.terms.some(term => termMatches(normalizedText, term))) return false;
+                if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
             } else if (group.type === 'AND') {
-                if (!group.terms.every(term => termMatches(normalizedText, term))) return false;
+                if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
             } else if (group.type === 'OR') {
-                if (!group.terms.some(term => termMatches(normalizedText, term))) return false;
+                if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            }
+        } else {
+            // Avaliação padrão (agora muito mais rápida)
+            if (group.type === 'NOT') {
+                if (group.terms.some(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(regex => regex.test(normalizedText))) return false;
             }
         }
     }
@@ -961,12 +960,37 @@ function portugueseAdvancedSearch(text, query, useFuzzy = false) {
             return costs[str2.length];
         }
 
- // 👨‍💻 CÓDIGO COMPLETO PARA SUBSTITUIÇÃO
+// 👇 COLE ESTA FUNÇÃO FALTANTE NO SEU SCRIPT
 
 /**
- * Cria uma string de regex que ignora acentos.
- * Exemplo: "esteticos" se torna "[eéèêë]st[eéèêë]ticos".
+ * Extrai os termos de busca da query do usuário.
+ * Remove operadores e lida com frases entre aspas.
+ * @param {string} query - A string de busca do usuário.
+ * @returns {string[]} - Um array com os termos a serem destacados.
  */
+function extractSearchTerms(query) {
+    if (!query || !query.trim()) return [];
+    
+    // Normaliza a query removendo acentos e convertendo para minúsculas
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    const quotedTerms = [];
+    // Extrai termos exatos (entre aspas)
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        if (p1) quotedTerms.push(p1);
+        return ' ';
+    });
+
+    // Extrai termos individuais, remove operadores e termos curtos
+    const individualTerms = processedQuery
+        .split(/\s+/)
+        .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
+
+    // Combina os termos de aspas com os individuais e remove duplicatas
+    const allTerms = [...new Set([...quotedTerms, ...individualTerms])];
+    
+    return allTerms;
+}
 function createAccentInsensitiveRegexString(text) {
     return text.replace(/a/g, '[aáàâã]')
                .replace(/e/g, '[eéèêë]')
