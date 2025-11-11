@@ -766,21 +766,29 @@
         setSearchButtonState(false);
     }
 
-    function updateDatasetInfo() {
-        const dataSource = document.getElementById('dataSource').value;
-        const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
-        
-        // Encontrar última data
-        let latestDate = '';
-        dataset.forEach(item => {
-            if (item.Publicação && (!latestDate || item.Publicação > latestDate)) {
-                latestDate = item.Publicação;
+ function updateDatasetInfo() {
+    const dataSource = document.getElementById('dataSource').value;
+    const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
+    
+    // Variáveis para armazenar a data mais recente
+    let latestDateString = ''; // Armazena a string original (DD/MM/YYYY)
+    let latestDateValue = new Date(0); // Armazena o objeto Date mais recente
+
+    dataset.forEach(item => {
+        if (item.Publicação) {
+            // Converte a string (DD/MM/YYYY) em um objeto Date válido para comparação
+            const itemDate = parseDate(item.Publicação); 
+            
+            if (itemDate && itemDate > latestDateValue) {
+                latestDateValue = itemDate;
+                latestDateString = item.Publicação; // Mantém a string original DD/MM/YYYY
             }
-        });
-        
-        const updateText = latestDate ? `Última atualização: ${formatDate(latestDate)}` : '';
-        document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
-    }
+        }
+    });
+    
+    const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
+    document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
+}
 
     function formatDate(dateString) {
         if (!dateString) return '';
