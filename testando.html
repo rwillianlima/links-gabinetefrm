@@ -1154,11 +1154,10 @@
             }
         }
 
-       function createResultBlock(item, index) {
+  function createResultBlock(item, index) {
     const block = document.createElement('div');
     block.className = 'block';
     
-    // Adicionar classe conforme a origem
     if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
     else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
     else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
@@ -1166,37 +1165,27 @@
     
     let conteudo, referencia;
     
-    // --- LÓGICA DE EXTRAÇÃO DE DADOS CORRIGIDA AQUI ---
-    
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // **Formato Súmulas (Usando os nomes fornecidos: "Número da Súmula" e "Enunciado")**
-        
-        // Acessa o número da súmula. O PapaParse pode ter removido o espaço e o acento.
-        // Tentativa 1: Nome exato com colchetes (mais seguro)
-        const numeroSumula = item['Número da Súmula'] || item.Processo || '--'; 
-        
-        // Tentativa 2: Acessa o conteúdo.
-        const enunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+    // Campos das planilhas:
+    const numeroProcessoOuSumula = item.Processo || item['Número da Súmula'] || '--';
+    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
 
-        const tribunal = getTribunalName(item.dataSource);
+    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+        // *** SOLUÇÃO SIMPLIFICADA PARA SÚMULAS ***
+        // Assumimos que a coluna 'Enunciado' já contém a frase completa formatada.
+        conteudo = ementaOuEnunciado; 
         
-        conteudo = `Súmula n. ${numeroSumula} do ${tribunal}: ${enunciado}`;
+        // A referência de publicação deve ser separada.
         referencia = `(Publicação em ${item.Publicação || ''})`;
         
     } else {
-        // **Formato Jurisprudência (Mantido como estava)**
+        // Formato Jurisprudência (Base '0')
         const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
         
-        // Mantém a lógica da Jurisprudência, que deve usar Processo e Ementa
-        const ementa = item.Ementa || 'Sem ementa'; 
-        const numeroProcesso = item.Processo || '--';
-        
-        conteudo = ementa;
-        referencia = `(TJGO, ${numeroProcesso}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+        conteudo = ementaOuEnunciado;
+        referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
     }
     
-    // --- FIM DA LÓGICA CORRIGIDA ---
-    
+    // Aplicação do destaque e montagem do bloco de resultados
     const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
     const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
     
