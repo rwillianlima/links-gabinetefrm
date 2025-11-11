@@ -53,7 +53,7 @@
             padding: 5px;
         }
 
-        /* Sidebar para desktop */
+        /* Sidebar */
         #sidebar {
             position: fixed;
             top: 0;
@@ -81,7 +81,7 @@
             background: var(--secondary-color);
         }
         
-        /* Relógio na sidebar */
+        /* Relógio */
         #clock {
             margin-top: auto;
             padding: 15px 20px;
@@ -185,7 +185,6 @@
             width: 100%;
         }
 
-        /* Efeito melhorado no botão */
         .search-bar button {
             padding: 14px 30px;
             border: none;
@@ -295,14 +294,10 @@
             background: rgba(0, 0, 0, 0.05);
             opacity: 1;
             transform: scale(1.05);
-            border: none;
         }
 
         .copy-btn.copied {
-            border-color: var(--success-color);
             color: var(--success-color);
-            background: transparent;
-            border: none
         }
 
         .ementa-content {
@@ -321,10 +316,9 @@
             margin-left: 8px;
             line-height: 1.2;
             white-space: normal;
-            font-style: normal; 
         }
 
-        /* Destaque dos termos encontrados */
+        /* Destaque */
         .highlight {
             background: #ffeb3b;
             color: #000;
@@ -504,20 +498,17 @@
                 padding: 60px 20px 20px 20px;
             }
 
-           .copy-btn {
+            .copy-btn {
                 top: 15px;
                 right: 15px;
                 padding: 5px 7px;
                 font-size: 14px;
             }
 
-            /* Ementas - Mobile */
             .ementa-content {
-                margin-right: 0;
                 line-height: 1.4;
                 text-align: justify;
                 font-size: 0.9rem;
-                text-justify: inter-word;
             }
         }
 
@@ -623,54 +614,59 @@
     </div>
 
     <script>
+        // Variáveis globais
         let dataset = [];
         let filteredData = [];
-        let lastUpdate = '';
         let currentSearchTerms = '';
         let currentPage = 1;
-        let resultsPerPage = 50;
-        let searchTimeout = null;
+        const resultsPerPage = 50;
 
-        // Alternar sidebar no mobile
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
+        // URLs das planilhas
+        const SPREADSHEET_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub';
+        
+        // Configuração das bases
+        const DATA_SOURCES = {
+            '0': { name: 'Jurisprudência', gid: '0' },
+            '2110972132': { name: 'Súmulas do TJGO', gid: '2110972132' },
+            '1277187400': { name: 'Súmulas do STJ', gid: '1277187400' },
+            '503544784': { name: 'Súmulas do STF', gid: '503544784' }
+        };
 
-        // Fechar sidebar ao clicar fora (mobile)
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const mobileMenu = document.getElementById('mobile-menu');
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDataset();
+            updateClock();
+            setInterval(updateClock, 1000);
             
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !mobileMenu.contains(event.target) &&
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-            }
+            // Event listeners
+            document.getElementById('terms').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') performSearch();
+            });
+
+            document.getElementById('dataSource').addEventListener('change', function() {
+                resetSearch();
+                loadDataset();
+            });
+
+            setTimeout(() => document.getElementById('terms').focus(), 500);
         });
 
-        // Atualizar relógio
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('pt-BR');
-            const dateString = now.toLocaleDateString('pt-BR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            document.getElementById('clock-time').textContent = timeString;
-            document.getElementById('clock-date').textContent = dateString;
+        // Funções de UI
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
         }
 
-        // Mostrar alerta
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+        }
+
         function showAlert(message, type = 'error') {
             const existingAlert = document.querySelector('.alert');
-            if (existingAlert) {
-                existingAlert.remove();
-            }
+            if (existingAlert) existingAlert.remove();
             
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
@@ -678,27 +674,15 @@
             
             document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
             
-            setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.remove();
-                }
-            }, type === 'success' ? 5000 : 10000);
+            setTimeout(() => alert.remove(), type === 'success' ? 5000 : 10000);
         }
 
-        // Atualizar estado do botão de busca
         function setSearchButtonState(loading = false, text = null) {
             const button = document.getElementById('searchButton');
-            
-            if (loading) {
-                button.innerHTML = '<span class="spinner"></span> Consultando...';
-                button.disabled = true;
-            } else {
-                button.innerHTML = text || 'Consultar';
-                button.disabled = false;
-            }
+            button.innerHTML = loading ? '<span class="spinner"></span> Consultando...' : (text || 'Consultar');
+            button.disabled = loading;
         }
 
-        // Atualizar interface conforme a fonte de dados
         function updateInterfaceForDataSource(source) {
             const title = document.querySelector('h1');
             const subtitle = document.querySelector('.subtitle');
@@ -706,41 +690,30 @@
             if (source === 'all') {
                 title.textContent = 'Pesquisa Integrada';
                 subtitle.textContent = 'Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF';
-            } else if (source === '0') {
-                title.textContent = 'Pesquisa de Jurisprudência';
-                subtitle.textContent = '6ª Câmara Cível - A partir de 2023 (somente ementas)';
-            } else if (source === '2110972132') {
-                title.textContent = 'Pesquisa de Súmulas';
-                subtitle.textContent = 'Súmulas do TJGO';
-            } else if (source === '1277187400') {
-                title.textContent = 'Pesquisa de Súmulas';
-                subtitle.textContent = 'Súmulas do STJ';
-            } else {
-                title.textContent = 'Pesquisa de Súmulas';
-                subtitle.textContent = 'Súmulas do STF';
+            } else if (DATA_SOURCES[source]) {
+                const sourceInfo = DATA_SOURCES[source];
+                title.textContent = source === '0' ? 'Pesquisa de Jurisprudência' : 'Pesquisa de Súmulas';
+                subtitle.textContent = sourceInfo.name;
             }
         }
 
-        // Carregar dados da planilha
+        // Funções de dados
         function loadDataset() {
             const dataSource = document.getElementById('dataSource').value;
             
-            // Se for "Todas as Bases", carrega um dataset vazio inicialmente
             if (dataSource === '') {
                 dataset = [];
                 updateInterfaceForDataSource('all');
                 document.getElementById('datasetInfo').textContent = 'Pronto para buscar em todas as bases simultaneamente';
                 populateFilters();
                 setSearchButtonState(false);
-                showAlert('Sistema pronto para buscar em todas as bases de dados.', 'success');
                 return;
             }
             
-         const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=${dataSource}&single=true&output=csv`;
+            const sourceInfo = DATA_SOURCES[dataSource];
+            const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${sourceInfo.gid}&single=true&output=csv`;
             
-            // Atualizar interface
             updateInterfaceForDataSource(dataSource);
-            
             document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados...';
             setSearchButtonState(true, 'Carregando dados...');
             
@@ -748,22 +721,15 @@
                 download: true,
                 header: true,
                 complete: function(results) {
-                    if (results.errors && results.errors.length > 0) {
-                        console.error('Erros no parse:', results.errors);
-                        document.getElementById('datasetInfo').textContent = 'Erro na formatação dos dados';
-                        showAlert('Erro ao processar os dados da planilha. Verifique o formato.', 'error');
-                        setSearchButtonState(false);
+                    if (results.errors?.length > 0) {
+                        handleDataError('Erro na formatação dos dados');
                         return;
                     }
                     
-                    dataset = results.data.filter(item => 
-                        item && Object.keys(item).length > 0 && item.Processo
-                    );
+                    dataset = results.data.filter(item => item && item.Processo);
                     
                     if (dataset.length === 0) {
-                        document.getElementById('datasetInfo').textContent = 'Nenhum dado encontrado na planilha';
-                        showAlert('Nenhum registro encontrado na planilha.', 'error');
-                        setSearchButtonState(false);
+                        handleDataError('Nenhum dado encontrado na planilha');
                         return;
                     }
                     
@@ -773,61 +739,41 @@
                     showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
                 },
                 error: function(error) {
-                    console.error('Erro ao carregar:', error);
-                    document.getElementById('datasetInfo').innerHTML = 
-                        'Erro ao carregar dados. Verifique: <br>' +
-                        '1. Se a planilha está publicada corretamente<br>' +
-                        '2. Se o link de publicação é válido';
-                    showAlert('Erro ao carregar dados da planilha. Verifique a conexão.', 'error');
-                    setSearchButtonState(false);
+                    handleDataError('Erro ao carregar dados da planilha');
+                    console.error('Erro detalhado:', error);
                 }
             });
         }
 
+        function handleDataError(message) {
+            document.getElementById('datasetInfo').textContent = message;
+            showAlert(message, 'error');
+            setSearchButtonState(false);
+        }
+
         function updateDatasetInfo() {
-            const info = document.getElementById('datasetInfo');
             const dataSource = document.getElementById('dataSource').value;
+            const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
             
-            let sourceName = 'Base de dados';
-            if (dataSource === '0') sourceName = 'Jurisprudência';
-            else if (dataSource === '2110972132') sourceName = 'Súmulas do TJGO';
-            else if (dataSource === '1277187400') sourceName = 'Súmulas do STJ';
-            else if (dataSource === '503544784') sourceName = 'Súmulas do STF';
-            
+            // Encontrar última data
             let latestDate = '';
-            let latestDateObj = null;
-            
             dataset.forEach(item => {
-                if (item.Publicação) {
-                    const dateObj = parseDate(item.Publicação);
-                    if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
-                        latestDateObj = dateObj;
-                        latestDate = item.Publicação;
-                    }
+                if (item.Publicação && (!latestDate || item.Publicação > latestDate)) {
+                    latestDate = item.Publicação;
                 }
             });
             
-            lastUpdate = latestDate;
-            
-            const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
-            info.textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
+            const updateText = latestDate ? `Última atualização: ${formatDate(latestDate)}` : '';
+            document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
         }
 
         function formatDate(dateString) {
             if (!dateString) return '';
-            
             try {
                 const parts = dateString.split('/');
-                if (parts.length === 3) {
-                    return `${parts[0]}/${parts[1]}/${parts[2]}`;
-                }
-                
+                if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
                 const date = new Date(dateString);
-                if (!isNaN(date.getTime())) {
-                    return date.toLocaleDateString('pt-BR');
-                }
-                
-                return dateString;
+                return !isNaN(date.getTime()) ? date.toLocaleDateString('pt-BR') : dateString;
             } catch (e) {
                 return dateString;
             }
@@ -835,21 +781,12 @@
 
         function parseDate(dateString) {
             if (!dateString) return null;
-            
             try {
-                // Formato DD/MM/YYYY
                 const parts = dateString.split('/');
                 if (parts.length === 3) {
-                    const day = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10) - 1;
-                    const year = parseInt(parts[2], 10);
-                    
-                    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2000) {
-                        return new Date(year, month, day);
-                    }
+                    const date = new Date(parts[2], parts[1] - 1, parts[0]);
+                    return !isNaN(date.getTime()) ? date : null;
                 }
-                
-                // Tentar outros formatos
                 const date = new Date(dateString);
                 return !isNaN(date.getTime()) ? date : null;
             } catch (e) {
@@ -859,30 +796,162 @@
 
         function populateFilters() {
             const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
-            populateSelect('relator', relators);
+            const select = document.getElementById('relator');
+            
+            while (select.children.length > 1) select.removeChild(select.lastChild);
+            
+            relators.sort().forEach(relator => {
+                const option = document.createElement('option');
+                option.value = relator;
+                option.textContent = relator;
+                select.appendChild(option);
+            });
         }
 
-        function populateSelect(selectId, options) {
-            const select = document.getElementById(selectId);
+        // Funções de busca
+        function performSearch() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+
+            const searchTerms = document.getElementById('terms').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const relator = document.getElementById('relator').value;
+            const useFuzzy = document.getElementById('fuzzy').checked;
+            const dataSource = document.getElementById('dataSource').value;
             
-            while (select.children.length > 1) {
-                select.removeChild(select.lastChild);
+            // Validação
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+                return;
             }
             
-            options.sort().forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                select.appendChild(opt);
+            currentSearchTerms = searchTerms;
+            setSearchButtonState(true);
+            
+            setTimeout(async () => {
+                try {
+                    if (dataSource === '') {
+                        filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
+                    } else {
+                        filteredData = filterSingleDataset(searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
+                    }
+                    
+                    displayResults(filteredData);
+                    setSearchButtonState(false);
+                } catch (error) {
+                    console.error('Erro na busca:', error);
+                    showAlert('Erro durante a busca. Tente novamente.', 'error');
+                    setSearchButtonState(false);
+                }
+            }, 100);
+        }
+
+        function filterSingleDataset(searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
+            return dataset.filter(item => {
+                if (relator && item.Relator !== relator) return false;
+                
+                if (startDate || endDate) {
+                    const itemDate = parseDate(item.Publicação);
+                    if (!itemDate) return false;
+                    if (startDate && itemDate < new Date(startDate)) return false;
+                    if (endDate && itemDate > new Date(endDate)) return false;
+                }
+                
+                if (searchTerms) {
+                    const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                }
+                
+                return true;
+            }).map(item => ({
+                ...item,
+                dataSource: dataSource,
+                baseName: DATA_SOURCES[dataSource].name
+            })).sort((a, b) => {
+                const dateA = parseDate(a.Publicação) || new Date(0);
+                const dateB = parseDate(b.Publicação) || new Date(0);
+                return dateB - dateA;
+            });
+        }
+
+        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
+            const allGids = ['2110972132', '1277187400', '503544784', '0']; // Súmulas primeiro
+            let allResults = [];
+            let loadedCount = 0;
+            
+            setSearchButtonState(true, `Carregando bases... (0/${allGids.length})`);
+            
+            for (const gid of allGids) {
+                try {
+                    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
+                    const data = await loadSingleDataset(csvUrl);
+                    loadedCount++;
+                    
+                    setSearchButtonState(true, `Carregando bases... (${loadedCount}/${allGids.length})`);
+                    
+                    const filtered = data.filter(item => {
+                        if (relator && item.Relator !== relator) return false;
+                        
+                        if (startDate || endDate) {
+                            const itemDate = parseDate(item.Publicação);
+                            if (!itemDate) return false;
+                            if (startDate && itemDate < new Date(startDate)) return false;
+                            if (endDate && itemDate > new Date(endDate)) return false;
+                        }
+                        
+                        if (searchTerms) {
+                            const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                        }
+                        
+                        return true;
+                    }).map(item => ({
+                        ...item,
+                        dataSource: gid,
+                        baseName: DATA_SOURCES[gid].name
+                    }));
+                    
+                    allResults = allResults.concat(filtered);
+                    
+                } catch (error) {
+                    console.error(`Erro ao carregar base ${gid}:`, error);
+                }
+            }
+            
+            // Ordenar por data (mais recente primeiro)
+            return allResults.sort((a, b) => {
+                const dateA = parseDate(a.Publicação) || new Date(0);
+                const dateB = parseDate(b.Publicação) || new Date(0);
+                return dateB - dateA;
+            });
+        }
+
+        function loadSingleDataset(url) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    complete: function(results) {
+                        if (results.errors?.length > 0) {
+                            reject(new Error(results.errors.map(e => e.message).join(', ')));
+                        } else {
+                            resolve(results.data.filter(item => item && Object.keys(item).length > 0));
+                        }
+                    },
+                    error: reject
+                });
             });
         }
 
         // Busca avançada em português
         function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-            if (!query || !query.trim()) return true;
+            if (!query?.trim()) return true;
 
             const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
+            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
             const quotedTerms = [];
             let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
                 quotedTerms.push(p1.trim());
@@ -890,26 +959,9 @@
             });
 
             const tokens = processedQuery.split(/\s+/).filter(Boolean);
-            
             let logicalStructure = [];
             let currentGroup = { type: 'AND', terms: [] };
 
-            const preCompiledRegex = {};
-
-            function getOrCreateRegex(term) {
-                if (!preCompiledRegex[term]) {
-                    const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-                    if (escapedTerm.includes('*')) {
-                        const regexString = escapedTerm.replace(/\*/g, '.*');
-                        preCompiledRegex[term] = new RegExp(regexString, 'i');
-                    } else {
-                        preCompiledRegex[term] = new RegExp(`\\b${escapedTerm}\\b`, 'i');
-                    }
-                }
-                return preCompiledRegex[term];
-            }
-            
-            // Processa a estrutura lógica da query
             tokens.forEach((token, index) => {
                 const lowerToken = token.toLowerCase();
                 let isOperator = false;
@@ -925,14 +977,12 @@
                 } else if (lowerToken === 'não' || token.startsWith('-')) {
                     if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
                     let nextToken = tokens[index + 1];
-                    if (token.startsWith('-')) {
-                        nextToken = token.substring(1);
-                    }
-                    if(nextToken) {
-                        logicalStructure.push({ type: 'NOT', terms: [getOrCreateRegex(nextToken)] });
+                    if (token.startsWith('-')) nextToken = token.substring(1);
+                    if (nextToken) {
+                        logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(nextToken)] });
                     }
                     currentGroup = { type: 'AND', terms: [] };
-                    if (lowerToken === 'não') tokens[index + 1] = null; 
+                    if (lowerToken === 'não') tokens[index + 1] = null;
                     isOperator = true;
                 }
                 
@@ -942,14 +992,12 @@
                         const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
                         finalTerm = quotedTerms[qIndex];
                     }
-                    if (finalTerm) currentGroup.terms.push(getOrCreateRegex(finalTerm));
+                    if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
                 }
             });
 
             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
             
-            const normalizedText = text.normalize('NFD').replace(/[\u0000-\u001F\u007F-\u009F]|[\u0300-\u036f]/g, '').toLowerCase();
-
             for (const group of logicalStructure) {
                 if (useFuzzy) {
                     if (group.type === 'NOT') {
@@ -973,33 +1021,33 @@
             return true;
         }
 
-        // Busca aproximada (fuzzy)
-        function fuzzyMatch(text, term) {
-            if (term.length <= 3) {
-                return text.includes(term);
+        function createSearchRegex(term) {
+            const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            if (escapedTerm.includes('*')) {
+                return new RegExp(escapedTerm.replace(/\*/g, '.*'), 'i');
+            } else {
+                return new RegExp(`\\b${escapedTerm}\\b`, 'i');
             }
+        }
+
+        function fuzzyMatch(text, term) {
+            if (term.length <= 3) return text.includes(term);
             
             const termLen = term.length;
             for (let i = 0; i <= text.length - termLen; i++) {
                 const substring = text.substr(i, termLen);
-                if (calculateSimilarity(substring, term) >= 0.8) {
-                    return true;
-                }
+                if (calculateSimilarity(substring, term) >= 0.8) return true;
             }
             return false;
         }
 
-        // Calcular similaridade entre strings
         function calculateSimilarity(str1, str2) {
             const longer = str1.length > str2.length ? str1 : str2;
             const shorter = str1.length > str2.length ? str2 : str1;
-            
             if (longer.length === 0) return 1.0;
-            
             return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
         }
 
-        // Distância de edição (para fuzzy match)
         function editDistance(str1, str2) {
             str1 = str1.toLowerCase();
             str2 = str2.toLowerCase();
@@ -1010,15 +1058,13 @@
                 for (let j = 0; j <= str2.length; j++) {
                     if (i === 0) {
                         costs[j] = j;
-                    } else {
-                        if (j > 0) {
-                            let newValue = costs[j - 1];
-                            if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
-                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                            }
-                            costs[j - 1] = lastValue;
-                            lastValue = newValue;
+                    } else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
                         }
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
                     }
                 }
                 if (i > 0) costs[str2.length] = lastValue;
@@ -1026,225 +1072,7 @@
             return costs[str2.length];
         }
 
-        // Extrair termos de busca
-        function extractSearchTerms(query) {
-            if (!query || !query.trim()) return [];
-            
-            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
-            const quotedTerms = [];
-            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-                if (p1) quotedTerms.push(p1);
-                return ' ';
-            });
-
-            const individualTerms = processedQuery
-                .split(/\s+/)
-                .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
-
-            const allTerms = [...new Set([...quotedTerms, ...individualTerms])];
-            
-            return allTerms;
-        }
-
-        function createAccentInsensitiveRegexString(text) {
-            return text.replace(/a/g, '[aáàâã]')
-                       .replace(/e/g, '[eéèêë]')
-                       .replace(/i/g, '[iíìîï]')
-                       .replace(/o/g, '[oóòôõö]')
-                       .replace(/u/g, '[uúùûü]')
-                       .replace(/c/g, '[cç]');
-        }
-
-        // Função de destaque
-        function highlightText(text, searchTerms) {
-            if (!searchTerms || !text) {
-                return text;
-            }
-
-            const terms = extractSearchTerms(searchTerms);
-            
-            if (terms.length === 0) {
-                return text;
-            }
-
-            terms.sort((a, b) => b.length - a.length);
-
-            const accentInsensitiveTerms = terms.map(term => {
-                const escapedTerm = escapeRegex(term);
-                return createAccentInsensitiveRegexString(escapedTerm);
-            });
-
-            const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
-
-            return text.replace(regex, '<span class="highlight">$1</span>');
-        }
-
-        // Escapar caracteres especiais para Regex
-        function escapeRegex(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
-
-        // Função auxiliar para obter o nome do tribunal
-        function getTribunalName(dataSource) {
-            const tribunais = {
-                '2110972132': 'TJGO',
-                '1277187400': 'STJ', 
-                '503544784': 'STF',
-                '0': 'TJGO'
-            };
-            return tribunais[dataSource] || 'TRIBUNAL';
-        }
-
-        // Carregar dataset individual
-        function loadSingleDataset(url) {
-            return new Promise((resolve, reject) => {
-                Papa.parse(url, {
-                    download: true,
-                    header: true,
-                    complete: function(results) {
-                        if (results.errors && results.errors.length > 0) {
-                            reject(results.errors);
-                        } else {
-                            resolve(results.data.filter(item => item && Object.keys(item).length > 0));
-                        }
-                    },
-                    error: reject
-                });
-            });
-        }
-
-        // Buscar em todas as bases
-        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-            const allGids = [
-                '2110972132', // Súmulas TJGO (PRIMEIRO)
-                '1277187400', // Súmulas STJ (SEGUNDO)  
-                '503544784',  // Súmulas STF (TERCEIRO)
-                '0'           // Jurisprudência (ÚLTIMO)
-            ];
-            
-            const baseNames = {
-                '0': 'Jurisprudência',
-                '2110972132': 'Súmulas TJGO', 
-                '1277187400': 'Súmulas STJ',
-                '503544784': 'Súmulas STF'
-            };
-
-            let allResults = [];
-            let loadedCount = 0;
-            
-            setSearchButtonState(true, `Carregando bases... (0/4)`);
-            
-            for (const gid of allGids) {
-                try {
-                 const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=${gid}&single=true&output=csv`;
-                    
-                    const data = await loadSingleDataset(csvUrl);
-                    loadedCount++;
-                    
-                    setSearchButtonState(true, `Carregando bases... (${loadedCount}/4)`);
-                    
-                    const filtered = data.filter(item => {
-                        if (relator && item.Relator !== relator) return false;
-                        
-                        if (startDate || endDate) {
-                            const itemDate = parseDate(item.Publicação);
-                            if (!itemDate) return false;
-                            
-                            if (startDate && itemDate < new Date(startDate)) return false;
-                            if (endDate && itemDate > new Date(endDate)) return false;
-                        }
-                        
-                        if (searchTerms) {
-                            const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                        }
-                        
-                        return true;
-                    }).map(item => {
-                        return {
-                            ...item,
-                            dataSource: gid,
-                            baseName: baseNames[gid]
-                        };
-                    });
-                    
-                    allResults = allResults.concat(filtered);
-                    
-                } catch (error) {
-                    console.error(`Erro ao carregar base ${gid}:`, error);
-                }
-            }
-            
-            // ORDENAR DO MAIS RECENTE PARA O MAIS ANTIGO
-            allResults.sort((a, b) => {
-                const dateA = parseDate(a.Publicação) || new Date(0);
-                const dateB = parseDate(b.Publicação) || new Date(0);
-                return dateB - dateA;
-            });
-            
-            return allResults;
-        }
-
-        function performSearch() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
-
-            const searchTerms = document.getElementById('terms').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            const relator = document.getElementById('relator').value;
-            const useFuzzy = document.getElementById('fuzzy').checked;
-            const dataSource = document.getElementById('dataSource').value;
-            
-            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
-                return;
-            }
-            
-            currentSearchTerms = searchTerms;
-            setSearchButtonState(true);
-            
-            setTimeout(async () => {
-                if (dataSource === '') {
-                    filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
-                } else {
-                    filteredData = dataset.filter(item => {
-                        if (relator && item.Relator !== relator) return false;
-                        
-                        if (startDate || endDate) {
-                            const itemDate = parseDate(item.Publicação);
-                            if (!itemDate) return false;
-                            
-                            if (startDate && itemDate < new Date(startDate)) return false;
-                            if (endDate && itemDate > new Date(endDate)) return false;
-                        }
-                        
-                        if (searchTerms) {
-                            const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
-                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                        }
-                        
-                        return true;
-                    }).map(item => ({
-                        ...item,
-                        dataSource: dataSource,
-                        baseName: dataSource === '0' ? 'Jurisprudência' : 'Súmulas'
-                    }));
-                    
-                    filteredData.sort((a, b) => {
-                        const dateA = parseDate(a.Publicação) || new Date(0);
-                        const dateB = parseDate(b.Publicação) || new Date(0);
-                        return dateB - dateA;
-                    });
-                }
-                
-                displayResults(filteredData);
-                setSearchButtonState(false);
-            }, 100);
-        }
-
+        // Funções de exibição
         function displayResults(results) {
             const allBlocks = document.getElementById('allBlocks');
             const resultCount = document.getElementById('resultCount');
@@ -1273,44 +1101,7 @@
             allBlocks.style.display = 'block';
             
             pageResults.forEach((item, index) => {
-                const block = document.createElement('div');
-                block.className = 'block';
-                
-                if (item.dataSource === '2110972132') {
-                    block.classList.add('sumula-tjgo');
-                } else if (item.dataSource === '1277187400') {
-                    block.classList.add('sumula-stj');
-                } else if (item.dataSource === '503544784') {
-                    block.classList.add('sumula-stf');
-                } else {
-                    block.classList.add('jurisprudencia');
-                }
-                
-                let conteudo, referencia;
-                
-                if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-                    const tribunal = getTribunalName(item.dataSource);
-                    const numeroSumula = item.Processo || item['Número'] || '--';
-                    
-                    conteudo = `Súmula n. ${numeroSumula} do ${tribunal}: ${item.Ementa || 'Sem conteúdo'}`;
-                    referencia = `(Publicação em ${item.Publicação || ''})`;
-                    
-                } else {
-                    const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-                    conteudo = item.Ementa || 'Sem ementa';
-                    referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-                }
-                
-                const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-                const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
-                
-                block.innerHTML = `
-                    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar">📋</button>
-                    <div class="ementa-content">
-                        ${conteudoComDestaque} <span class="referencia">${referenciaComDestaque}</span>
-                    </div>
-                `;
-                
+                const block = createResultBlock(item, index);
                 allBlocks.appendChild(block);
             });
             
@@ -1322,48 +1113,137 @@
             }
         }
 
+        function createResultBlock(item, index) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            
+            // Adicionar classe conforme a origem
+            if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+            else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+            else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+            else block.classList.add('jurisprudencia');
+            
+            let conteudo, referencia;
+            
+            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+                // Formato Súmulas
+                const tribunal = getTribunalName(item.dataSource);
+                const numeroSumula = item.Processo || item['Número'] || '--';
+                conteudo = `Súmula n. ${numeroSumula} do ${tribunal}: ${item.Ementa || 'Sem conteúdo'}`;
+                referencia = `(Publicação em ${item.Publicação || ''})`;
+            } else {
+                // Formato Jurisprudência
+                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+                conteudo = item.Ementa || 'Sem ementa';
+                referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+            }
+            
+            const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
+            const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
+            
+            block.innerHTML = `
+                <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar">📋</button>
+                <div class="ementa-content">
+                    ${conteudoComDestaque} <span class="referencia">${referenciaComDestaque}</span>
+                </div>
+            `;
+            
+            return block;
+        }
+
+        function getTribunalName(dataSource) {
+            const tribunais = {
+                '2110972132': 'TJGO',
+                '1277187400': 'STJ', 
+                '503544784': 'STF',
+                '0': 'TJGO'
+            };
+            return tribunais[dataSource] || 'TRIBUNAL';
+        }
+
+        function extractSearchTerms(query) {
+            if (!query?.trim()) return [];
+            
+            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const quotedTerms = [];
+            
+            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+                if (p1) quotedTerms.push(p1);
+                return ' ';
+            });
+
+            const individualTerms = processedQuery
+                .split(/\s+/)
+                .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
+
+            return [...new Set([...quotedTerms, ...individualTerms])];
+        }
+
+        function createAccentInsensitiveRegexString(text) {
+            return text.replace(/a/g, '[aáàâã]')
+                       .replace(/e/g, '[eéèêë]')
+                       .replace(/i/g, '[iíìîï]')
+                       .replace(/o/g, '[oóòôõö]')
+                       .replace(/u/g, '[uúùûü]')
+                       .replace(/c/g, '[cç]');
+        }
+
+        function highlightText(text, searchTerms) {
+            if (!searchTerms || !text) return text;
+
+            const terms = extractSearchTerms(searchTerms);
+            if (terms.length === 0) return text;
+
+            terms.sort((a, b) => b.length - a.length);
+
+            const accentInsensitiveTerms = terms.map(term => {
+                const escapedTerm = escapeRegex(term);
+                return createAccentInsensitiveRegexString(escapedTerm);
+            });
+
+            const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         function createPagination(totalPages) {
             const pagination = document.getElementById('pagination');
             pagination.innerHTML = '';
             
+            // Botão Anterior
             const prevButton = document.createElement('button');
             prevButton.innerHTML = '‹';
             prevButton.disabled = currentPage === 1;
-            prevButton.onclick = () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    displayResults(filteredData);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            };
+            prevButton.onclick = () => changePage(currentPage - 1);
             pagination.appendChild(prevButton);
             
-            const startPage = Math.max(1, currentPage - 4);
-            const endPage = Math.min(totalPages, startPage + 9);
+            // Páginas
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
             
             for (let i = startPage; i <= endPage; i++) {
                 const pageButton = document.createElement('button');
                 pageButton.textContent = i;
                 pageButton.className = i === currentPage ? 'active' : '';
-                pageButton.onclick = () => {
-                    currentPage = i;
-                    displayResults(filteredData);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                };
+                pageButton.onclick = () => changePage(i);
                 pagination.appendChild(pageButton);
             }
             
+            // Botão Próximo
             const nextButton = document.createElement('button');
             nextButton.innerHTML = '›';
             nextButton.disabled = currentPage === totalPages;
-            nextButton.onclick = () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    displayResults(filteredData);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            };
+            nextButton.onclick = () => changePage(currentPage + 1);
             pagination.appendChild(nextButton);
+        }
+
+        function changePage(newPage) {
+            currentPage = newPage;
+            displayResults(filteredData);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function copyToClipboard(index) {
@@ -1416,32 +1296,12 @@
             document.body.removeChild(textArea);
         }
 
-        // Event Listeners
-        document.getElementById('terms').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                performSearch();
-            }
-        });
-
-        document.getElementById('dataSource').addEventListener('change', function() {
+        function resetSearch() {
             document.getElementById('allBlocks').innerHTML = '';
             document.getElementById('resultCount').textContent = '';
             document.getElementById('pagination').innerHTML = '';
             document.getElementById('relator').innerHTML = '<option value="">Relator (todos)</option>';
-            
-            loadDataset();
-        });
-     
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDataset();
-            updateClock();
-            setInterval(updateClock, 1000);
-            
-            setTimeout(() => {
-                document.getElementById('terms').focus();
-            }, 500);
-        });
+        }
     </script>
 </body>
 </html>
