@@ -736,7 +736,7 @@
                 return;
             }
             
-          const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06tEqZgbx7UJRvY1Hu/pub?gid=${dataSource}&single=true&output=csv`;
+         const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=${dataSource}&single=true&output=csv`;
             
             // Atualizar interface
             updateInterfaceForDataSource(dataSource);
@@ -1137,7 +1137,7 @@
             
             for (const gid of allGids) {
                 try {
-                  const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06tEqZgbx7UJRvY1Hu/pub?gid=${gid}&single=true&output=csv`;
+                 const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=${gid}&single=true&output=csv`;
                     
                     const data = await loadSingleDataset(csvUrl);
                     loadedCount++;
