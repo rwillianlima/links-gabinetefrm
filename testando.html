@@ -615,9 +615,9 @@
         <div id="pagination" class="pagination"></div>
     </div>
 
-    <script>
+   <script>
     // Variáveis globais
-    let dataset = []; // Usado apenas para armazenar a Jurisprudência (Base '0') se selecionada
+    let dataset = []; 
     let filteredData = [];
     let currentSearchTerms = '';
     let currentPage = 1;
@@ -639,10 +639,8 @@
         updateClock();
         setInterval(updateClock, 1000);
         
-        // Inicializa o filtro Relator desabilitado, pois 'Todas as Bases' é o padrão
         document.getElementById('relator').disabled = true;
 
-        // Event listeners
         document.getElementById('terms').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') performSearch();
         });
@@ -652,15 +650,14 @@
             const relatorSelect = document.getElementById('relator');
             
             resetSearch();
-            dataset = []; // Limpa o dataset anterior
+            dataset = []; 
 
-            // Lógica para controle do filtro Relator e carregamento da Jurisprudência
-            if (selectedValue === '0') { // Selecionou Jurisprudência (Base '0')
+            if (selectedValue === '0') { 
                 relatorSelect.disabled = false;
-                loadDataset(); // Carrega os dados da Jurisprudência
+                loadDataset(); 
             } else {
                 relatorSelect.value = '';
-                relatorSelect.disabled = true; // Desabilita para "Todas as Bases" e Súmulas
+                relatorSelect.disabled = true; 
                 
                 updateInterfaceForDataSource(selectedValue === '' ? 'all' : selectedValue);
                 document.getElementById('datasetInfo').textContent = selectedValue === ''
@@ -673,7 +670,8 @@
         setTimeout(() => document.getElementById('terms').focus(), 500);
     });
 
-    // Funções de UI
+    // ============== FUNÇÕES DE UI E UTILS ==============
+
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('active');
     }
@@ -718,12 +716,48 @@
             subtitle.textContent = sourceInfo.name;
         }
     }
+    
+    function resetSearch() {
+        document.getElementById('allBlocks').innerHTML = '';
+        document.getElementById('resultCount').textContent = '';
+        document.getElementById('pagination').innerHTML = '';
+        const relatorSelect = document.getElementById('relator');
+        relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
+    }
 
-    // Funções de dados
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
+            const parts = dateString.split('/');
+            if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
+            return dateString;
+        } catch (e) {
+            return dateString;
+        }
+    }
+
+    function parseDate(dateString) {
+        if (!dateString) return null;
+        try {
+            const parts = dateString.split('/');
+            if (parts.length === 3) {
+                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                return !isNaN(date.getTime()) ? date : null;
+            }
+            const date = new Date(dateString);
+            return !isNaN(date.getTime()) ? date : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ============== FUNÇÕES DE DADOS E BUSCA ==============
+
     function loadDataset() {
         const dataSource = document.getElementById('dataSource').value;
-        
-        if (dataSource !== '0') return; // Só carrega para Jurisprudência
+        if (dataSource !== '0') return; 
 
         const sourceInfo = DATA_SOURCES[dataSource];
         const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${sourceInfo.gid}&single=true&output=csv`;
@@ -766,68 +800,32 @@
         setSearchButtonState(false);
     }
 
- function updateDatasetInfo() {
-    const dataSource = document.getElementById('dataSource').value;
-    const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
-    
-    // Variáveis para armazenar a data mais recente
-    let latestDateString = ''; // Armazena a string original (DD/MM/YYYY)
-    let latestDateValue = new Date(0); // Armazena o objeto Date mais recente
+    function updateDatasetInfo() {
+        const dataSource = document.getElementById('dataSource').value;
+        const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
+        
+        let latestDateString = '';
+        let latestDateValue = new Date(0); 
 
-    dataset.forEach(item => {
-        if (item.Publicação) {
-            // Converte a string (DD/MM/YYYY) em um objeto Date válido para comparação
-            const itemDate = parseDate(item.Publicação); 
-            
-            if (itemDate && itemDate > latestDateValue) {
-                latestDateValue = itemDate;
-                latestDateString = item.Publicação; // Mantém a string original DD/MM/YYYY
+        dataset.forEach(item => {
+            if (item.Publicação) {
+                const itemDate = parseDate(item.Publicação); 
+                
+                if (itemDate && itemDate > latestDateValue) {
+                    latestDateValue = itemDate;
+                    latestDateString = item.Publicação; 
+                }
             }
-        }
-    });
-    
-    const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
-    document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
-}
-
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        try {
-            // Tenta formato YYYY-MM-DD (input date)
-            const date = new Date(dateString);
-            if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
-            
-            // Tenta formato DD/MM/YYYY
-            const parts = dateString.split('/');
-            if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
-            
-            return dateString;
-        } catch (e) {
-            return dateString;
-        }
-    }
-
-    function parseDate(dateString) {
-        if (!dateString) return null;
-        try {
-            const parts = dateString.split('/');
-            if (parts.length === 3) {
-                // Assume DD/MM/YYYY e cria data no formato YYYY-MM-DD
-                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                return !isNaN(date.getTime()) ? date : null;
-            }
-            const date = new Date(dateString); // Tenta formato YYYY-MM-DD
-            return !isNaN(date.getTime()) ? date : null;
-        } catch (e) {
-            return null;
-        }
+        });
+        
+        const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
+        document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
     }
 
     function populateFilters() {
         const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
         const select = document.getElementById('relator');
         
-        // Mantém a primeira opção
         while (select.children.length > 1) select.removeChild(select.lastChild);
         
         relators.sort().forEach(relator => {
@@ -838,7 +836,14 @@
         });
     }
 
-    // Funções de busca
+    // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
+    function getSourcePriority(gid) {
+        if (['2110972132', '1277187400', '503544784'].includes(gid)) {
+            return 1; // Súmulas (mais alta)
+        }
+        return 2; // Jurisprudência (gid '0')
+    }
+
     function performSearch() {
         if (window.innerWidth <= 768) {
             document.getElementById('sidebar').classList.remove('active');
@@ -851,7 +856,6 @@
         const useFuzzy = document.getElementById('fuzzy').checked;
         const dataSource = document.getElementById('dataSource').value;
         
-        // Validação
         if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
             showAlert('A data de início não pode ser maior que a data de fim.', 'error');
             return;
@@ -863,11 +867,8 @@
         setTimeout(async () => {
             try {
                 if (dataSource === '') {
-                    // Busca Integrada em TODAS as bases (Súmulas e Jurisprudência)
                     filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
                 } else {
-                    // Busca em uma ÚNICA base (Jurisprudência ou uma das Súmulas)
-                    // Se for Súmula, precisa carregar a planilha primeiro.
                     const dataToFilter = dataSource === '0' ? dataset : await loadSingleDataset(`${SPREADSHEET_BASE_URL}?gid=${DATA_SOURCES[dataSource].gid}&single=true&output=csv`);
 
                     filteredData = filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
@@ -883,51 +884,44 @@
         }, 100);
     }
 
-   function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
-    
-    return dataToFilter.filter(item => {
-        const isJurisprudencia = dataSource === '0';
+    function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
         
-        // 1. Filtro de Relator: Só aplica se for Jurisprudência (Base '0')
-        if (isJurisprudencia && relator && item.Relator !== relator) return false;
-        
-        // 2. Filtro de Data
-        if (startDate || endDate) {
-            const itemDate = parseDate(item.Publicação);
-            if (!itemDate) return false;
-            if (startDate && itemDate < new Date(startDate)) return false;
-            if (endDate && itemDate > new Date(endDate)) return false;
-        }
-        
-        // 3. Filtro de Termos (O ÚNICO QUE PODE RETORNAR FALSE SE NÃO HOUVER TERMOS)
-        if (searchTerms) {
-            // CORREÇÃO DE LÓGICA DE TERMOS: Usa Ementa OU Enunciado
-            const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
-            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-        }
-        
-        // Se NÃO houver termos de busca (searchTerms está vazio), e passou nos filtros de data e relator,
-        // o item é considerado um resultado válido.
-        return true; 
-    }).map(item => ({
-        ...item,
-        dataSource: dataSource,
-        baseName: DATA_SOURCES[dataSource].name
-    })).sort((a, b) => {
-        const dateA = parseDate(a.Publicação) || new Date(0);
-        const dateB = parseDate(b.Publicação) || new Date(0);
-        return dateB - dateA;
-    });
-}
+        return dataToFilter.filter(item => {
+            const isJurisprudencia = dataSource === '0';
+            
+            if (isJurisprudencia && relator && item.Relator !== relator) return false;
+            
+            if (startDate || endDate) {
+                const itemDate = parseDate(item.Publicação);
+                if (!itemDate) return false;
+                if (startDate && itemDate < new Date(startDate)) return false;
+                if (endDate && itemDate > new Date(endDate)) return false;
+            }
+            
+            if (searchTerms) {
+                const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
+                return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+            }
+            
+            return true; 
+        }).map(item => ({
+            ...item,
+            dataSource: dataSource,
+            baseName: DATA_SOURCES[dataSource].name
+        })).sort((a, b) => {
+            const dateA = parseDate(a.Publicação) || new Date(0);
+            const dateB = parseDate(b.Publicação) || new Date(0);
+            return dateB - dateA;
+        });
+    }
+
     async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-        // Ordem de carregamento: Súmulas primeiro, depois Jurisprudência (0)
         const allGids = ['2110972132', '1277187400', '503544784', '0']; 
         let allResults = [];
         let loadedCount = 0;
         
         setSearchButtonState(true, `Carregando bases...`);
         
-        // Carrega e filtra sequencialmente
         for (const gid of allGids) {
             try {
                 const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
@@ -939,7 +933,6 @@
                 const isJurisprudencia = gid === '0';
 
                 const filtered = data.filter(item => {
-                    // Filtro de Relator: SÓ aplica se for Jurisprudência (Base '0')
                     if (isJurisprudencia && relator && item.Relator !== relator) return false;
                     
                     if (startDate || endDate) {
@@ -950,7 +943,6 @@
                     }
                     
                     if (searchTerms) {
-                        // CORREÇÃO: Busca por termos em Ementa OU Enunciado
                         const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
                         return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
                     }
@@ -970,18 +962,7 @@
             }
         }
         
-        // -----------------------------------------------------------------------
         // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
-        // -----------------------------------------------------------------------
-        
-        function getSourcePriority(gid) {
-            // Retorna 1 (Súmula) para alta prioridade, 2 (Jurisprudência) para baixa
-            if (['2110972132', '1277187400', '503544784'].includes(gid)) {
-                return 1; // Súmulas
-            }
-            return 2; // Jurisprudência (gid '0')
-        }
-
         return allResults.sort((a, b) => {
             const priorityA = getSourcePriority(a.dataSource);
             const priorityB = getSourcePriority(b.dataSource);
@@ -1007,7 +988,6 @@
                     if (results.errors?.length > 0) {
                         reject(new Error(results.errors.map(e => e.message).join(', ')));
                     } else {
-                        // Filtra linhas vazias. Verifica se pelo menos uma chave de item não está vazia.
                         resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
                     }
                 },
@@ -1016,135 +996,8 @@
         });
     }
 
-    // Busca avançada em português (Mantida inalterada)
-    function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-        if (!query?.trim()) return true;
+    // ============== FUNÇÕES DE EXIBIÇÃO E DESTAQUE ==============
 
-        const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-        // ... (restante da lógica de busca inalterada)
-        const quotedTerms = [];
-        let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-            quotedTerms.push(p1.trim());
-            return ` QUOTED_${quotedTerms.length - 1}_TERM `;
-        });
-
-        const tokens = processedQuery.split(/\s+/).filter(Boolean);
-        let logicalStructure = [];
-        let currentGroup = { type: 'AND', terms: [] };
-
-        tokens.forEach((token, index) => {
-            const lowerToken = token.toLowerCase();
-            let isOperator = false;
-            
-            if (lowerToken === 'e' || lowerToken === ';') {
-                if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                currentGroup = { type: 'AND', terms: [] };
-                isOperator = true;
-            } else if (lowerToken === 'ou') {
-                if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                currentGroup = { type: 'OR', terms: [] };
-                isOperator = true;
-            } else if (lowerToken === 'não' || token.startsWith('-')) {
-                if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                let nextToken = tokens[index + 1];
-                if (token.startsWith('-')) nextToken = token.substring(1);
-                if (nextToken) {
-                    logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(nextToken)] });
-                }
-                currentGroup = { type: 'AND', terms: [] };
-                if (lowerToken === 'não') tokens[index + 1] = null;
-                isOperator = true;
-            }
-            
-            if (!isOperator && token) {
-                let finalTerm = token;
-                if (token.startsWith('QUOTED_')) {
-                    const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
-                    finalTerm = quotedTerms[qIndex];
-                }
-                if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
-            }
-        });
-
-        if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-        
-        for (const group of logicalStructure) {
-            if (useFuzzy) {
-                if (group.type === 'NOT') {
-                    if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                } else if (group.type === 'AND') {
-                    if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                } else if (group.type === 'OR') {
-                    if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                }
-            } else {
-                if (group.type === 'NOT') {
-                    if (group.terms.some(regex => regex.test(normalizedText))) return false;
-                } else if (group.type === 'AND') {
-                    if (!group.terms.every(regex => regex.test(normalizedText))) return false;
-                } else if (group.type === 'OR') {
-                    if (!group.terms.some(regex => regex.test(normalizedText))) return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    function createSearchRegex(term) {
-        const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-        if (escapedTerm.includes('*')) {
-            return new RegExp(escapedTerm.replace(/\*/g, '.*'), 'i');
-        } else {
-            return new RegExp(`\\b${escapedTerm}\\b`, 'i');
-        }
-    }
-
-    function fuzzyMatch(text, term) {
-        if (term.length <= 3) return text.includes(term);
-        
-        const termLen = term.length;
-        for (let i = 0; i <= text.length - termLen; i++) {
-            const substring = text.substr(i, termLen);
-            if (calculateSimilarity(substring, term) >= 0.8) return true;
-        }
-        return false;
-    }
-
-    function calculateSimilarity(str1, str2) {
-        const longer = str1.length > str2.length ? str1 : str2;
-        const shorter = str1.length > str2.length ? str2 : str1;
-        if (longer.length === 0) return 1.0;
-        return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
-    }
-
-    function editDistance(str1, str2) {
-        str1 = str1.toLowerCase();
-        str2 = str2.toLowerCase();
-        
-        const costs = [];
-        for (let i = 0; i <= str1.length; i++) {
-            let lastValue = i;
-            for (let j = 0; j <= str2.length; j++) {
-                if (i === 0) {
-                    costs[j] = j;
-                } else if (j > 0) {
-                    let newValue = costs[j - 1];
-                    if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
-                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                    }
-                    costs[j - 1] = lastValue;
-                    lastValue = newValue;
-                }
-            }
-            if (i > 0) costs[str2.length] = lastValue;
-        }
-        return costs[str2.length];
-    }
-
-    // Funções de exibição (Mantidas inalteradas)
     function displayResults(results) {
         const allBlocks = document.getElementById('allBlocks');
         const resultCount = document.getElementById('resultCount');
@@ -1186,58 +1039,53 @@
     }
 
     function createResultBlock(item, index) {
-    const block = document.createElement('div');
-    block.className = 'block';
-    
-    // Classes de estilo
-    if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-    else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-    else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-    else block.classList.add('jurisprudencia');
-    
-    let conteudo, referencia;
-    
-    // CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
-    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    // Tenta capturar o conteúdo principal (Ementa para Jurisprudência, Enunciado para Súmulas)
-    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+        const block = document.createElement('div');
+        block.className = 'block';
+        
+        // Classes de estilo
+        if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+        else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+        else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+        else block.classList.add('jurisprudencia');
+        
+        let conteudo, referencia;
+        
+        // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
+        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
 
-    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // *** FORMATO SÚMULAS (CORRIGIDO PARA DUPLICAÇÃO) ***
+        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+            // Usa o enunciado diretamente para EVITAR a duplicação do prefixo
+            conteudo = ementaOuEnunciado; 
+            
+            // Remove a data de publicação na exibição.
+            referencia = ''; 
+            
+        } else {
+            // FORMATO JURISPRUDÊNCIA (Base '0')
+            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+            
+            conteudo = ementaOuEnunciado;
+            // Referência completa, incluindo Publicação
+            referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+        }
         
-        // Se o Enunciado já vem formatado (Ex: "Súmula n.º 1 do TJGO: ..."), 
-        // usamos o conteúdo da coluna diretamente para evitar a duplicação do prefixo.
-        conteudo = ementaOuEnunciado; 
+        // Aplicação do destaque e montagem do bloco de resultados
+        const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
+        const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
         
-        // REFERÊNCIA: Vazia para eliminar o (Publicação em...)
-        referencia = ''; 
+        // Insere o span de referência apenas se houver conteúdo em 'referencia'
+        const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+
+        block.innerHTML = `
+            <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
+            <div class="ementa-content">
+                ${conteudoComDestaque} ${refHtml}
+            </div>
+        `;
         
-    } else {
-        // FORMATO JURISPRUDÊNCIA (Base '0')
-        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-        
-        // Para Jurisprudência, a coluna Ementa não costuma vir prefixada, então é usada diretamente.
-        conteudo = ementaOuEnunciado;
-        // Referência completa, incluindo Publicação
-        referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+        return block;
     }
-    
-    // Aplicação do destaque e montagem do bloco de resultados
-    const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-    const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
-    
-    // Insere o span de referência apenas se houver conteúdo em 'referencia'
-    const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
-
-    block.innerHTML = `
-        <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-        <div class="ementa-content">
-            ${conteudoComDestaque} ${refHtml}
-        </div>
-    `;
-    
-    return block;
-}
 
     function getTribunalName(dataSource) {
         const tribunais = {
@@ -1346,23 +1194,21 @@
             return;
         }
         
- let textToCopy;
+        let textToCopy;
 
-// CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
-const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-
-if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-    // *** FORMATO SÚMULAS: Usa o enunciado diretamente para evitar a duplicação ***
-    // Se o Enunciado já vem formatado (Ex: "Súmula n.º 1 do TJGO: ..."), 
-    // usamos o conteúdo da coluna diretamente para o texto copiado.
-    textToCopy = ementaOuEnunciado; 
-    
-} else {
-    // FORMATO JURISPRUDÊNCIA: Mantém o padrão original, pois o Enunciado/Ementa não vem prefixado.
-    const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-    textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-}
+        // Mapeamento Abrangente para o Número (copia)
+        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+        
+        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+            // Usa o enunciado diretamente para evitar a duplicação do prefixo
+            textToCopy = ementaOuEnunciado; 
+            
+        } else {
+            // FORMATO JURISPRUDÊNCIA: Mantém o padrão
+            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+            textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+        }
         
         // Usa a API de Clipboard moderna, se disponível
         if (navigator.clipboard) {
@@ -1423,6 +1269,15 @@ if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
         const relatorSelect = document.getElementById('relator');
         relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
     }
-</script>
+
+    // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
+    function getSourcePriority(gid) {
+        // Retorna 1 (Súmula) para alta prioridade, 2 (Jurisprudência) para baixa
+        if (['2110972132', '1277187400', '503544784'].includes(gid)) {
+            return 1; // Súmulas
+        }
+        return 2; // Jurisprudência (gid '0')
+    }
+    </script>
 </body>
 </html>
