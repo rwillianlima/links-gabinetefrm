@@ -1186,57 +1186,58 @@
     }
 
     function createResultBlock(item, index) {
-        const block = document.createElement('div');
-        block.className = 'block';
-        
-        if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-        else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-        else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-        else block.classList.add('jurisprudencia');
-        
-        let conteudo, referencia;
-        
-        // CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
-        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-        // Tenta capturar o conteúdo principal (Ementa para Jurisprudência, Enunciado para Súmulas)
-        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+    const block = document.createElement('div');
+    block.className = 'block';
+    
+    // Classes de estilo
+    if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+    else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+    else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+    else block.classList.add('jurisprudencia');
+    
+    let conteudo, referencia;
+    
+    // CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
+    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+    // Tenta capturar o conteúdo principal (Ementa para Jurisprudência, Enunciado para Súmulas)
+    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
 
-        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-            // *** FORMATO SÚMULAS ***
-            
-            const tribunal = getTribunalName(item.dataSource);
-            
-            // CONTEÚDO: Junta o prefixo formatado com o teor do Enunciado
-            conteudo = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`;
-            
-            // REFERÊNCIA: Vazia para eliminar o (Publicação em...)
-            referencia = ''; 
-            
-        } else {
-            // FORMATO JURISPRUDÊNCIA (Base '0')
-            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-            
-            conteudo = ementaOuEnunciado;
-            // Referência completa, incluindo Publicação
-            referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-        }
+    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+        // *** FORMATO SÚMULAS (CORRIGIDO PARA DUPLICAÇÃO) ***
         
-        // Aplicação do destaque e montagem do bloco de resultados
-        const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-        const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
+        // Se o Enunciado já vem formatado (Ex: "Súmula n.º 1 do TJGO: ..."), 
+        // usamos o conteúdo da coluna diretamente para evitar a duplicação do prefixo.
+        conteudo = ementaOuEnunciado; 
         
-        // Insere o span de referência apenas se houver conteúdo em 'referencia'
-        const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
-
-        block.innerHTML = `
-            <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-            <div class="ementa-content">
-                ${conteudoComDestaque} ${refHtml}
-            </div>
-        `;
+        // REFERÊNCIA: Vazia para eliminar o (Publicação em...)
+        referencia = ''; 
         
-        return block;
+    } else {
+        // FORMATO JURISPRUDÊNCIA (Base '0')
+        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+        
+        // Para Jurisprudência, a coluna Ementa não costuma vir prefixada, então é usada diretamente.
+        conteudo = ementaOuEnunciado;
+        // Referência completa, incluindo Publicação
+        referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
     }
+    
+    // Aplicação do destaque e montagem do bloco de resultados
+    const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
+    const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
+    
+    // Insere o span de referência apenas se houver conteúdo em 'referencia'
+    const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+
+    block.innerHTML = `
+        <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
+        <div class="ementa-content">
+            ${conteudoComDestaque} ${refHtml}
+        </div>
+    `;
+    
+    return block;
+}
 
     function getTribunalName(dataSource) {
         const tribunais = {
@@ -1345,22 +1346,23 @@
             return;
         }
         
-        let textToCopy;
+ let textToCopy;
 
-        // CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
-        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-        
-        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-            // *** FORMATO SÚMULAS: Reconstroi o texto exato SEM a publicação ***
-            const tribunal = getTribunalName(item.dataSource);
-            textToCopy = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`;
-            
-        } else {
-            // FORMATO JURISPRUDÊNCIA: Mantém o padrão
-            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-            textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-        }
+// CORREÇÃO FINAL PARA O NÚMERO DA SÚMULA (Mapeamento Abrangente)
+const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+
+if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+    // *** FORMATO SÚMULAS: Usa o enunciado diretamente para evitar a duplicação ***
+    // Se o Enunciado já vem formatado (Ex: "Súmula n.º 1 do TJGO: ..."), 
+    // usamos o conteúdo da coluna diretamente para o texto copiado.
+    textToCopy = ementaOuEnunciado; 
+    
+} else {
+    // FORMATO JURISPRUDÊNCIA: Mantém o padrão original, pois o Enunciado/Ementa não vem prefixado.
+    const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+    textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+}
         
         // Usa a API de Clipboard moderna, se disponível
         if (navigator.clipboard) {
