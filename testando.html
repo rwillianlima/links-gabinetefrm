@@ -890,11 +890,11 @@
                     if (endDate && itemDate > new Date(endDate)) return false;
                 }
                 
-                if (searchTerms) {
-                    // Inclui 'Ementa' e 'Processo' para busca, já que Súmulas usam a coluna 'Processo' como Número/Referência
-                    const searchText = `${item.Ementa || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
-                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                }
+               if (searchTerms) {
+    
+    const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
+    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+}
                 
                 return true;
             }).map(item => ({
@@ -938,8 +938,10 @@
                             if (endDate && itemDate > new Date(endDate)) return false;
                         }
                         
-                        if (searchTerms) {
-                            const searchText = `${item.Ementa || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
+                  
+                       if (searchTerms) {
+                            
+                            const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
                             return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
                         }
                         
@@ -1154,7 +1156,7 @@
             }
         }
 
-  function createResultBlock(item, index) {
+ function createResultBlock(item, index) {
     const block = document.createElement('div');
     block.className = 'block';
     
@@ -1165,23 +1167,29 @@
     
     let conteudo, referencia;
     
-    // Campos das planilhas:
+    // CAMPOS PRINCIPAIS DE CADA LINHA:
+    // Tenta capturar o número da súmula ou do processo
     const numeroProcessoOuSumula = item.Processo || item['Número da Súmula'] || '--';
+    // Tenta capturar o conteúdo principal (Ementa para Jurisprudência, Enunciado para Súmulas)
     const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
 
     if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // *** SOLUÇÃO SIMPLIFICADA PARA SÚMULAS ***
-        // Assumimos que a coluna 'Enunciado' já contém a frase completa formatada.
-        conteudo = ementaOuEnunciado; 
+        // *** FORMATO SÚMULAS ***
         
-        // A referência de publicação deve ser separada.
-        referencia = `(Publicação em ${item.Publicação || ''})`;
+        const tribunal = getTribunalName(item.dataSource);
+        
+        // CONTEÚDO: Junta o prefixo formatado com o teor do Enunciado
+        conteudo = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`;
+        
+        // REFERÊNCIA: Vazia para eliminar o (Publicação em...)
+        referencia = ''; 
         
     } else {
-        // Formato Jurisprudência (Base '0')
+        // FORMATO JURISPRUDÊNCIA (Base '0')
         const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
         
         conteudo = ementaOuEnunciado;
+        // Referência completa, incluindo Publicação
         referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
     }
     
@@ -1189,10 +1197,13 @@
     const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
     const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
     
+    // Insere o span de referência apenas se houver conteúdo em 'referencia'
+    const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+
     block.innerHTML = `
         <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
         <div class="ementa-content">
-            ${conteudoComDestaque} <span class="referencia">${referenciaComDestaque}</span>
+            ${conteudoComDestaque} ${refHtml}
         </div>
     `;
     
@@ -1297,76 +1308,82 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function copyToClipboard(event, index) {
-            const actualIndex = (currentPage - 1) * resultsPerPage + index;
-            const item = filteredData[actualIndex];
+       function copyToClipboard(event, index) {
+    const actualIndex = (currentPage - 1) * resultsPerPage + index;
+    const item = filteredData[actualIndex];
+    
+    if (!item) {
+        showAlert('Erro ao copiar: item não encontrado.', 'error');
+        return;
+    }
+    
+    let textToCopy;
+
+    // CAMPOS PRINCIPAIS (MESMO MAPA USADO EM createResultBlock):
+    const numeroProcessoOuSumula = item.Processo || item['Número da Súmula'] || '--';
+    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+    
+    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+        // *** FORMATO SÚMULAS: Reconstroi o texto exato SEM a publicação ***
+        const tribunal = getTribunalName(item.dataSource);
+        textToCopy = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`;
+        
+    } else {
+        // FORMATO JURISPRUDÊNCIA: Mantém o padrão
+        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+        textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+    }
+    
+    // Usa a API de Clipboard moderna, se disponível
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓';
+            btn.classList.add('copied');
             
-            if (!item) {
-                showAlert('Erro ao copiar: item não encontrado.', 'error');
-                return;
-            }
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
             
-            let textToCopy;
-            
-            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-                const tribunal = getTribunalName(item.dataSource);
-                const numeroSumula = item.Processo || item['Número'] || '--';
-                textToCopy = `Súmula n. ${numeroSumula} do ${tribunal}: ${item.Ementa || ''} (Publicação em ${item.Publicação || ''})`;
-            } else {
-                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-                textToCopy = `${item.Ementa || ''} (TJGO, ${item.Processo || ''}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-            }
-            
-            // Usa a API de Clipboard moderna, se disponível
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    const btn = event.currentTarget;
-                    const originalHTML = btn.innerHTML;
-                    btn.innerHTML = '✓';
-                    btn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalHTML;
-                        btn.classList.remove('copied');
-                    }, 2000);
-                    
-                    showAlert('Conteúdo copiado para a área de transferência!', 'success');
-                }).catch(err => {
-                    console.error('Erro ao copiar: ', err);
-                    showAlert('Erro ao copiar para a área de transferência', 'error');
-                });
-            } else {
-                // Fallback para navegadores mais antigos (manteremos o seu código original de fallback)
-                const textArea = document.createElement('textarea');
-                textArea.value = textToCopy;
-                textArea.style.position = 'fixed'; // Evita quebra de layout
-                document.body.appendChild(textArea);
-                textArea.select();
+            showAlert('Conteúdo copiado para a área de transferência!', 'success');
+        }).catch(err => {
+            console.error('Erro ao copiar: ', err);
+            showAlert('Erro ao copiar para a área de transferência', 'error');
+        });
+    } else {
+        // Fallback para navegadores mais antigos (código original mantido)
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed'; 
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                const btn = event.currentTarget;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '✓';
+                btn.classList.add('copied');
                 
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        const btn = event.currentTarget;
-                        const originalHTML = btn.innerHTML;
-                        btn.innerHTML = '✓';
-                        btn.classList.add('copied');
-                        
-                        setTimeout(() => {
-                            btn.innerHTML = originalHTML;
-                            btn.classList.remove('copied');
-                        }, 2000);
-                        
-                        showAlert('Conteúdo copiado para a área de transferência!', 'success');
-                    } else {
-                        showAlert('Erro ao copiar para a área de transferência', 'error');
-                    }
-                } catch (err) {
-                    showAlert('Erro ao copiar para a área de transferência', 'error');
-                }
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copied');
+                }, 2000);
                 
-                document.body.removeChild(textArea);
+                showAlert('Conteúdo copiado para a área de transferência!', 'success');
+            } else {
+                showAlert('Erro ao copiar para a área de transferência', 'error');
             }
+        } catch (err) {
+            showAlert('Erro ao copiar para a área de transferência', 'error');
         }
+        
+        document.body.removeChild(textArea);
+    }
+}
 
         function resetSearch() {
             document.getElementById('allBlocks').innerHTML = '';
