@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
+    <style>
+        :root {
+            --primary-color: #2f4050;
+            --secondary-color: #3b5165;
+            --background-color: #f4f4f4;
+            --text-color: #222;
+            --white: #fff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --warning-color: #ffc107;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        /* Mobile Menu */
+        #mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--primary-color);
+            padding: 15px;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Sidebar para desktop */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            height: 100%;
+            background: var(--primary-color);
+            box-shadow: 2px 0 6px rgba(0,0,0,.2);
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        #sidebar a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        #sidebar a:hover {
+            background: var(--secondary-color);
+        }
+        
+        /* Relógio na sidebar */
+        #clock {
+            margin-top: auto;
+            padding: 15px 20px;
+            color: var(--white);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--secondary-color);
+            background: #263340;
+        }
+
+        #clock-time {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #clock-date {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        /* Content */
+        #content {
+            margin-left: 260px;
+            padding: 40px 25px;
+            min-height: 100vh;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        #content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #444;
+            margin-bottom: 5px;
+        }
+
+        .dataset-info {
+            font-size: .92rem;
+            color: #666;
+            margin: 2px auto 18px auto;
+            max-width: 920px;
+        }
+
+        .notice {
+            font-size: .85rem;
+            margin-bottom: 6px;
+            color: #333;
+            padding: 0 10px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Search */
+        .search-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 10px auto;
+            padding: 0 10px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+
+        .search-bar input,
+        .search-bar select {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+            max-width: 100%;
+            background: var(--white);
+            color: var(--text-color);
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-bar input:focus,
+        .search-bar select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(47, 64, 80, 0.2);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Efeito melhorado no botão */
+        .search-bar button {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white);
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 120px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .search-bar button:hover {
+            background: linear-gradient(135deg, var(--secondary-color), #4a6572);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .search-bar button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-bar button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .opts {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #444;
+            font-size: .9rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Resultados */
+        #resultCount {
+            margin: 20px auto;
+            font-weight: bold;
+            color: var(--primary-color);
+            max-width: 900px;
+            padding: 0 15px;
+        }
+
+        /* Blocos de resultados */
+        .block {
+    position: relative;
+    background: var(--white);
+    margin: 15px auto;
+    padding: 60px 20px 15px 15px; /* ← Use o padding reduzido AQUI */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: left;
+    max-width: 900px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+        .block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .copy-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent; /* Sem preenchimento */
+    color: #222; /* Cor preta */
+    border: none;
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    opacity: 0.7; /* Levemente transparente */
+}
+
+.copy-btn:hover {
+    background: rgba(0, 0, 0, 0.05); /* Leve preenchimento ao passar mouse */
+    opacity: 1;
+    transform: scale(1.05);
+    border: none;
+}
+
+.copy-btn.copied {
+    border-color: var(--success-color);
+    color: var(--success-color);
+    background: transparent;
+    border: none
+}
+
+.ementa-content {
+    line-height: 1.2;  /* Espaçamento mínimo entre linhas */
+    text-align: justify;
+    font-size: 0.95rem; /* Texto ligeiramente menor */
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+}
+
+.referencia {
+    display: inline !important;
+    color: #666;  /* Mantém cinza para diferenciar visualmente */
+    font-size: 0.95rem; 
+    margin-left: 8px;
+    line-height: 1.2;
+    white-space: normal;
+    font-style: normal; 
+}
+        /* Destaque dos termos encontrados */
+        .highlight {
+            background: #ffeb3b;
+            color: #000;
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: none;
+            justify-content: center;
+            gap: 6px;
+            margin: 20px auto;
+            max-width: 900px;
+            flex-wrap: wrap;
+            padding: 0 15px;
+        }
+
+        .pagination button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 4px;
+            color: var(--white);
+            padding: 8px 12px;
+            cursor: pointer;
+            min-width: 44px;
+            transition: background 0.3s;
+        }
+
+        .pagination button:hover:not([disabled]):not(.active) {
+            background: var(--secondary-color);
+        }
+
+        .pagination button.active {
+            background: #1c87c9;
+            font-weight: bold;
+        }
+
+        .pagination button[disabled] {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        /* Contêiner de resultados */
+        #allBlocks {
+            display: none;
+            padding: 0 15px;
+        }
+
+        /* Ajuda */
+        .help {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .help details {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+
+        .help summary {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .help code {
+            background: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alertas */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin: 15px auto;
+            max-width: 800px;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* Media Queries para Mobile */
+        @media (max-width: 768px) {
+            #mobile-menu {
+                display: flex;
+            }
+
+            #sidebar {
+                display: none;
+                width: 100%;
+                height: auto;
+                position: fixed;
+                top: 60px;
+                left: 0;
+            }
+
+            #sidebar.active {
+                display: flex;
+            }
+
+            #content {
+                margin-left: 0;
+                padding: 80px 0 20px 0;
+            }
+
+            #content h1 {
+                font-size: 2rem;
+                padding: 0 15px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+
+            .dataset-info {
+                padding: 0 15px;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .form-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .form-row input,
+            .form-row select {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .search-bar button {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .opts {
+                justify-content: center;
+            }
+
+            .block {
+                margin: 10px 15px;
+                padding: 60px 20px 20px 20px;
+            }
+
+           .copy-btn {
+        top: 15px;
+        right: 15px;
+        padding: 5px 7px;
+        font-size: 14px;
+    }
+
+            /* Ementas - Mobile */
+            .ementa-content {
+                margin-right: 0;
+                line-height: 1.4;
+                text-align: justify;
+                font-size: 0.9rem;
+                text-justify: inter-word;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #content {
+                padding: 70px 0 15px 0;
+            }
+
+            .search-bar input,
+            .search-bar select {
+                max-width: 100%;
+            }
+
+            .search-bar button {
+                max-width: 100%;
+            }
+
+            .opts {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .help {
+                margin: 10px 15px 0 15px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <!-- Menu Mobile -->
+    <div id="mobile-menu">
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <span style="color: white; font-weight: bold;">6ª Câmara Cível</span>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <a href="index.html" rel="noopener noreferrer">🔙 Voltar à Página Inicial</a>
+        <div id="clock">
+            <div id="clock-time">--:--:--</div>
+            <div id="clock-date">--/--/----</div>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div id="content">
+        <h1>Pesquisa de Jurisprudência</h1>
+        <div class="subtitle">6ª Câmara Cível - A partir de 2023 (somente ementas)</div>
+        <div id="datasetInfo" class="dataset-info">Carregando informações do banco de dados…</div>
+
+        <p class="notice">
+            Use <strong>aspas</strong> para frases exatas; <strong>E</strong> ou <strong>;</strong> para termos obrigatórios; 
+            <strong>OU</strong> para alternância; <strong>NÃO</strong> ou <strong>-</strong> para excluir; 
+            <strong>*</strong> como curinga. Parênteses são aceitos. Acentos são ignorados.
+        </p>
+
+        <div class="search-bar">
+            <div class="form-row">
+                <input type="text" id="terms" placeholder='Ex.: "dano moral" E responsabilidade OU contrato*'>
+                <input type="date" id="startDate">
+                <input type="date" id="endDate">
+                <select id="dataSource">
+                    <option value="0">Jurisprudência</option>
+                    <option value="2110972132">Súmulas do TJGO</option>
+                </select>
+                <select id="relator">
+                    <option value="">Relator (todos)</option>
+                </select>
+                <div class="opts">
+                    <label><input type="checkbox" id="fuzzy"> Busca aproximada</label>
+                </div>
+            </div>
+            <div class="button-container">
+                <button id="searchButton" onclick="performSearch()">Consultar</button>
+            </div>
+        </div>
+
+        <!-- Ajuda ao usuário -->
+        <div class="help" id="helpBox">
+            <details>
+                <summary>Como pesquisar (clique para expandir)</summary>
+                <div style="margin-top:10px">
+                    <p><strong>Exato com aspas</strong>: <code>"erro material"</code></p>
+                    <p><strong>E (AND)</strong>: <code>termo1 E termo2</code> ou <code>termo1;termo2</code></p>
+                    <p><strong>OU (OR)</strong>: <code>cláusulaA OU cláusulaB</code></p>
+                    <p><strong>NÃO (NOT)</strong>: <code>NÃO termo</code> ou <code>-termo</code></p>
+                    <p><strong>Parênteses</strong>: <code>BACEN E ("dano moral" OU "dano extrapatrimonial")</code></p>
+                    <p><strong>Curinga *</strong>: <code>contrat*</code> encontra "contrato", "contratual"</p>
+                    <p><strong>Busca aproximada</strong>: marque para aceitar pequenas variações.</p>
+                    <p style="margin-top:8px;color:#666">Dica: acentos são ignorados tanto na busca quanto no destaque.</p>
+                </div>
+            </details>
+        </div>
+
+        <div id="resultCount"></div>
+        <div id="allBlocks"></div>
+        <div id="pagination" class="pagination"></div>
+    </div>
+
+    <script>
+        let dataset = [];
+        let filteredData = [];
+        let lastUpdate = '';
+        let currentSearchTerms = '';
+        let currentPage = 1;
+        let resultsPerPage = 50;
+        let searchTimeout = null;
+
+        // Alternar sidebar no mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        // Fechar sidebar ao clicar fora (mobile)
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !mobileMenu.contains(event.target) &&
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        // Atualizar relógio
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR');
+            const dateString = now.toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('clock-time').textContent = timeString;
+            document.getElementById('clock-date').textContent = dateString;
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type = 'error') {
+            // Remover alertas anteriores
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
+            
+            // Auto-remover após 5 segundos para sucesso, 10 para erro
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, type === 'success' ? 5000 : 10000);
+        }
+
+        // Atualizar estado do botão de busca
+        function setSearchButtonState(loading = false, text = null) {
+            const button = document.getElementById('searchButton');
+            
+            if (loading) {
+                button.innerHTML = '<span class="spinner"></span> Consultando...';
+                button.disabled = true;
+            } else {
+                button.innerHTML = text || 'Consultar';
+                button.disabled = false;
+            }
+        }
+
+        // Atualizar interface conforme a fonte de dados
+        function updateInterfaceForDataSource(source) {
+            const title = document.querySelector('h1');
+            const subtitle = document.querySelector('.subtitle');
+            
+            if (source === '0') {
+                title.textContent = 'Pesquisa de Jurisprudência';
+                subtitle.textContent = '6ª Câmara Cível - A partir de 2023 (somente ementas)';
+            } else {
+                title.textContent = 'Pesquisa de Súmulas';
+                subtitle.textContent = 'Súmulas do TJGO';
+            }
+        }
+
+        // Carregar dados da planilha
+        function loadDataset() {
+            const dataSource = document.getElementById('dataSource').value;
+            const csvUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub?gid=${dataSource}&output=csv`;
+            
+            // Atualizar interface
+            updateInterfaceForDataSource(dataSource);
+            
+            document.getElementById('datasetInfo').textContent = 'Conectando ao banco de dados...';
+            setSearchButtonState(true, 'Carregando dados...');
+            
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    if (results.errors && results.errors.length > 0) {
+                        console.error('Erros no parse:', results.errors);
+                        document.getElementById('datasetInfo').textContent = 'Erro na formatação dos dados';
+                        showAlert('Erro ao processar os dados da planilha. Verifique o formato.', 'error');
+                        setSearchButtonState(false);
+                        return;
+                    }
+                    
+                    dataset = results.data.filter(item => 
+                        item && Object.keys(item).length > 0 && item.Processo
+                    );
+                    
+                    if (dataset.length === 0) {
+                        document.getElementById('datasetInfo').textContent = 'Nenhum dado encontrado na planilha';
+                        showAlert('Nenhum registro encontrado na planilha.', 'error');
+                        setSearchButtonState(false);
+                        return;
+                    }
+                    
+                    updateDatasetInfo();
+                    populateFilters();
+                    setSearchButtonState(false);
+                    showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
+                },
+                error: function(error) {
+                    console.error('Erro ao carregar:', error);
+                    document.getElementById('datasetInfo').innerHTML = 
+                        'Erro ao carregar dados. Verifique: <br>' +
+                        '1. Se a planilha está publicada corretamente<br>' +
+                        '2. Se o link de publicação é válido';
+                    showAlert('Erro ao carregar dados da planilha. Verifique a conexão.', 'error');
+                    setSearchButtonState(false);
+                }
+            });
+        }
+
+        function updateDatasetInfo() {
+            const info = document.getElementById('datasetInfo');
+            const dataSource = document.getElementById('dataSource').value;
+            
+            let sourceName = dataSource === '0' ? 'Jurisprudência' : 'Súmulas do TJGO';
+            
+            // Encontrar a última data na planilha (coluna Publicação)
+            let latestDate = '';
+            let latestDateObj = null;
+            
+            dataset.forEach(item => {
+                if (item.Publicação) {
+                    const dateObj = parseDate(item.Publicação);
+                    if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
+                        latestDateObj = dateObj;
+                        latestDate = item.Publicação;
+                    }
+                }
+            });
+            
+            lastUpdate = latestDate;
+            
+            const updateText = lastUpdate ? `Última atualização: ${formatDate(lastUpdate)}` : '';
+            info.textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    return `${parts[0]}/${parts[1]}/${parts[2]}`;
+                }
+                
+                const date = new Date(dateString);
+                if (!isNaN(date.getTime())) {
+                    return date.toLocaleDateString('pt-BR');
+                }
+                
+                return dateString;
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            
+            try {
+                // Formato DD/MM/YYYY
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const year = parseInt(parts[2], 10);
+                    
+                    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2000) {
+                        return new Date(year, month, day);
+                    }
+                }
+                
+                // Tentar outros formatos
+                const date = new Date(dateString);
+                return !isNaN(date.getTime()) ? date : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function populateFilters() {
+            const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
+            populateSelect('relator', relators);
+        }
+
+        function populateSelect(selectId, options) {
+            const select = document.getElementById(selectId);
+            
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            options.sort().forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                select.appendChild(opt);
+            });
+        }
+
+function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+    if (!query || !query.trim()) return true;
+
+    // --- Otimização: Pré-processamento da query (feito apenas uma vez) ---
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    const quotedTerms = [];
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        quotedTerms.push(p1.trim());
+        return ` QUOTED_${quotedTerms.length - 1}_TERM `;
+    });
+
+    const tokens = processedQuery.split(/\s+/).filter(Boolean);
+    
+    let logicalStructure = [];
+    let currentGroup = { type: 'AND', terms: [] };
+
+    // --- Otimização: Criar as Regex uma única vez ANTES do loop principal ---
+    const preCompiledRegex = {};
+
+    function getOrCreateRegex(term) {
+        if (!preCompiledRegex[term]) {
+            const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            if (escapedTerm.includes('*')) {
+                const regexString = escapedTerm.replace(/\*/g, '.*');
+                preCompiledRegex[term] = new RegExp(regexString, 'i');
+            } else {
+                preCompiledRegex[term] = new RegExp(`\\b${escapedTerm}\\b`, 'i');
+            }
+        }
+        return preCompiledRegex[term];
+    }
+    
+    // Processa a estrutura lógica da query
+    tokens.forEach((token, index) => {
+        const lowerToken = token.toLowerCase();
+        let isOperator = false;
+        
+        if (lowerToken === 'e' || lowerToken === ';') {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            currentGroup = { type: 'AND', terms: [] };
+            isOperator = true;
+        } else if (lowerToken === 'ou') {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            currentGroup = { type: 'OR', terms: [] };
+            isOperator = true;
+        } else if (lowerToken === 'não' || token.startsWith('-')) {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            let nextToken = tokens[index + 1];
+            if (token.startsWith('-')) {
+                nextToken = token.substring(1);
+            }
+            if(nextToken) {
+                logicalStructure.push({ type: 'NOT', terms: [getOrCreateRegex(nextToken)] });
+            }
+            currentGroup = { type: 'AND', terms: [] };
+            // Pula o próximo token se o operador for "não"
+            if (lowerToken === 'não') tokens[index + 1] = null; 
+            isOperator = true;
+        }
+        
+        if (!isOperator && token) {
+            let finalTerm = token;
+            if (token.startsWith('QUOTED_')) {
+                const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+                finalTerm = quotedTerms[qIndex];
+            }
+            if (finalTerm) currentGroup.terms.push(getOrCreateRegex(finalTerm));
+        }
+    });
+
+    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+    
+    // --- Avaliação final usando as Regex pré-compiladas ---
+    const normalizedText = text.normalize('NFD').replace(/[\u0000-\u001F\u007F-\u009F]|[\u0300-\u036f]/g, '').toLowerCase();
+
+    for (const group of logicalStructure) {
+        if (useFuzzy) { // Lógica fuzzy não foi otimizada, pois já é lenta por natureza
+            if (group.type === 'NOT') {
+                if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            }
+        } else {
+            // Avaliação padrão (agora muito mais rápida)
+            if (group.type === 'NOT') {
+                if (group.terms.some(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(regex => regex.test(normalizedText))) return false;
+            }
+        }
+    }
+
+    return true;
+}
+        // Busca aproximada (fuzzy)
+        function fuzzyMatch(text, term) {
+            if (term.length <= 3) {
+                return text.includes(term);
+            }
+            
+            // Para termos maiores, permite 1 caractere de diferença
+            const termLen = term.length;
+            for (let i = 0; i <= text.length - termLen; i++) {
+                const substring = text.substr(i, termLen);
+                if (calculateSimilarity(substring, term) >= 0.8) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        
+
+        // Calcular similaridade entre strings
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+        }
+
+        // Distância de edição (para fuzzy match)
+        function editDistance(str1, str2) {
+            str1 = str1.toLowerCase();
+            str2 = str2.toLowerCase();
+            
+            const costs = [];
+            for (let i = 0; i <= str1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= str2.length; j++) {
+                    if (i === 0) {
+                        costs[j] = j;
+                    } else {
+                        if (j > 0) {
+                            let newValue = costs[j - 1];
+                            if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                                newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                            }
+                            costs[j - 1] = lastValue;
+                            lastValue = newValue;
+                        }
+                    }
+                }
+                if (i > 0) costs[str2.length] = lastValue;
+            }
+            return costs[str2.length];
+        }
+
+// 👇 COLE ESTA FUNÇÃO FALTANTE NO SEU SCRIPT
+
+/**
+ * Extrai os termos de busca da query do usuário.
+ * Remove operadores e lida com frases entre aspas.
+ * @param {string} query - A string de busca do usuário.
+ * @returns {string[]} - Um array com os termos a serem destacados.
+ */
+function extractSearchTerms(query) {
+    if (!query || !query.trim()) return [];
+    
+    // Normaliza a query removendo acentos e convertendo para minúsculas
+    const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    
+    const quotedTerms = [];
+    // Extrai termos exatos (entre aspas)
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        if (p1) quotedTerms.push(p1);
+        return ' ';
+    });
+
+    // Extrai termos individuais, remove operadores e termos curtos
+    const individualTerms = processedQuery
+        .split(/\s+/)
+        .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
+
+    // Combina os termos de aspas com os individuais e remove duplicatas
+    const allTerms = [...new Set([...quotedTerms, ...individualTerms])];
+    
+    return allTerms;
+}
+function createAccentInsensitiveRegexString(text) {
+    return text.replace(/a/g, '[aáàâã]')
+               .replace(/e/g, '[eéèêë]')
+               .replace(/i/g, '[iíìîï]')
+               .replace(/o/g, '[oóòôõö]')
+               .replace(/u/g, '[uúùûü]')
+               .replace(/c/g, '[cç]');
+}
+
+/**
+ * Função de destaque CORRIGIDA para priorizar termos mais longos
+ * e ser insensível a acentos.
+ */
+function highlightText(text, searchTerms) {
+    if (!searchTerms || !text) {
+        return text;
+    }
+
+    const terms = extractSearchTerms(searchTerms);
+    
+    if (terms.length === 0) {
+        return text;
+    }
+
+    // Ordena os termos do mais longo para o mais curto.
+    // Isso evita que termos menores (ex: "dano") sejam destacados
+    // dentro de termos maiores (ex: "dano moral").
+    terms.sort((a, b) => b.length - a.length);
+
+    // Para cada termo, cria uma versão que ignora acentos
+    const accentInsensitiveTerms = terms.map(term => {
+        const escapedTerm = escapeRegex(term);
+        return createAccentInsensitiveRegexString(escapedTerm);
+    });
+
+    // Cria a expressão regular final com todos os termos já ordenados
+    const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
+
+    // Executa a substituição
+    return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
+/**
+ * Escapa caracteres especiais para que possam ser usados em uma RegExp.
+ */
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+        function performSearch() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+
+            const searchTerms = document.getElementById('terms').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const relator = document.getElementById('relator').value;
+            const useFuzzy = document.getElementById('fuzzy').checked;
+            
+            // Validação de datas
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+                return;
+            }
+            
+            currentSearchTerms = searchTerms;
+            setSearchButtonState(true);
+            
+            // Usar setTimeout para não travar a UI
+            setTimeout(() => {
+                // Filtrar dados
+                filteredData = dataset.filter(item => {
+                    // Filtro por relator
+                    if (relator && item.Relator !== relator) return false;
+                    
+                    // Filtro por data
+                    if (startDate || endDate) {
+                        const itemDate = parseDate(item.Publicação);
+                        if (!itemDate) return false;
+                        
+                        if (startDate && itemDate < new Date(startDate)) return false;
+                        if (endDate && itemDate > new Date(endDate)) return false;
+                    }
+                    
+                    // Filtro por termos de busca COM OPERADORES LÓGICOS EM PORTUGUÊS
+                    if (searchTerms) {
+                        const searchText = `${item.Ementa || ''} ${item.Processo || ''}`.toLowerCase();
+                        return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                    }
+                    
+                    return true;
+                });
+                
+                // ORDENAR DO MAIS RECENTE PARA O MAIS ANTIGO
+                filteredData.sort((a, b) => {
+                    const dateA = parseDate(a.Publicação) || new Date(0);
+                    const dateB = parseDate(b.Publicação) || new Date(0);
+                    return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+                });
+                
+                displayResults(filteredData);
+                setSearchButtonState(false);
+            }, 100); // Pequeno delay para permitir atualização da UI
+        }
+
+        function displayResults(results) {
+            const allBlocks = document.getElementById('allBlocks');
+            const resultCount = document.getElementById('resultCount');
+            const pagination = document.getElementById('pagination');
+            
+            allBlocks.innerHTML = '';
+            pagination.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultCount.textContent = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
+                resultCount.style.display = 'block';
+                allBlocks.style.display = 'none';
+                pagination.style.display = 'none';
+                return;
+            }
+            
+            // Calcular paginação
+            const totalPages = Math.ceil(results.length / resultsPerPage);
+            currentPage = Math.min(currentPage, totalPages);
+            
+            // Calcular índices dos resultados
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = Math.min(startIndex + resultsPerPage, results.length);
+            const pageResults = results.slice(startIndex, endIndex);
+            
+            resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
+            resultCount.style.display = 'block';
+            allBlocks.style.display = 'block';
+            
+            // Exibir resultados da página atual
+            pageResults.forEach((item, index) => {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.style.display = 'block';
+                
+                // Formatar referência (CORRIGIDO - removido Relator(a))
+                const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+                
+                // Aplicar destaque na ementa
+                const ementaComDestaque = highlightText(item.Ementa || 'Sem ementa', currentSearchTerms);
+                
+               block.innerHTML = `
+    <button class="copy-btn" onclick="copyToClipboard(${index})" title="Copiar ementa">📋</button>
+    <div class="ementa-content">
+        ${ementaComDestaque} <span class="referencia">${referencia}</span>
+    </div>
+`;
+                
+                allBlocks.appendChild(block);
+            });
+            
+            // Criar paginação se houver mais de uma página
+            if (totalPages > 1) {
+                createPagination(totalPages);
+                pagination.style.display = 'flex';
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        function createPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Botão Anterior
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '‹';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+            pagination.appendChild(prevButton);
+            
+            // Páginas numéricas
+            const startPage = Math.max(1, currentPage - 4);
+            const endPage = Math.min(totalPages, startPage + 9);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.className = i === currentPage ? 'active' : '';
+                pageButton.onclick = () => {
+                    currentPage = i;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                pagination.appendChild(pageButton);
+            }
+            
+            // Botão Próximo
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '›';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayResults(filteredData);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+            pagination.appendChild(nextButton);
+        }
+
+      function copyToClipboard(index) {
+    // Calcular índice correto considerando a paginação
+    const actualIndex = (currentPage - 1) * resultsPerPage + index;
+    const item = filteredData[actualIndex];
+    
+    if (!item) {
+        showAlert('Erro ao copiar: item não encontrado.', 'error');
+        return;
+    }
+    
+    const referencia = `(TJGO, ${item.Processo || ''}, ${item.Relator || ''}, 6ª Câmara Cível, Publicação em ${item.Publicação || ''})`;
+    
+    // REMOVER as quebras de linha extras - usar apenas um espaço entre ementa e referência
+    const ementaText = item.Ementa || '';
+    const textToCopy = `${ementaText} ${referencia}`;
+    
+    // Criar área de texto temporária
+    const textArea = document.createElement('textarea');
+    textArea.value = textToCopy;
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            // Feedback visual
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+            
+            showAlert('Ementa copiada para a área de transferência!', 'success');
+        } else {
+            showAlert('Erro ao copiar para a área de transferência', 'error');
+        }
+    } catch (err) {
+        console.error('Erro ao copiar: ', err);
+        showAlert('Erro ao copiar para a área de transferência', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+        // Executar busca ao pressionar Enter no campo de pesquisa
+        document.getElementById('terms').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Trocar entre Jurisprudência e Súmulas
+        document.getElementById('dataSource').addEventListener('change', function() {
+            // Limpar resultados anteriores
+            document.getElementById('allBlocks').innerHTML = '';
+            document.getElementById('resultCount').textContent = '';
+            document.getElementById('pagination').innerHTML = '';
+            document.getElementById('relator').innerHTML = '<option value="">Relator (todos)</option>';
+            
+            // Recarregar dados da nova aba
+            loadDataset();
+        });
+     
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDataset();
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Focar no campo de busca
+            setTimeout(() => {
+                document.getElementById('terms').focus();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
