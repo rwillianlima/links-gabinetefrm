@@ -1027,81 +1027,127 @@
         }
 
         // Busca avançada em português (Mantida inalterada)
-        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
-            if (!query?.trim()) return true;
+        // A função de busca avançada em português
+function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+    if (!query?.trim()) return true;
 
-            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    let normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-            // ... (restante da lógica de busca inalterada)
-            const quotedTerms = [];
-            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-                quotedTerms.push(p1.trim());
-                return ` QUOTED_${quotedTerms.length - 1}_TERM `;
-            });
+    // --- INÍCIO DA CORREÇÃO ---
+    // Remove parênteses externos se eles englobam toda a query,
+    // pois sua lógica interna de parsing já lida com operadores "OU", "E", etc.
+    // e os parênteses externos podem estar sendo tratados como "termos" literais.
+    let tempQuery = normalizedQuery.trim();
+    if (tempQuery.length > 2 && tempQuery.startsWith('(') && tempQuery.endsWith(')')) {
+        // Verifica se a string entre os parênteses contém operadores OU/E/NÃO
+        // para garantir que não estamos removendo parênteses de um termo literal tipo "(teste)"
+        // ou de uma expressão complexa que use parênteses internos.
+        // Se a string interna não contiver operadores e não for uma frase entre aspas,
+        // é mais seguro remover os parênteses externos.
+        // Simplificado para este caso: assumimos que (A OU B) é o caso mais comum.
+        const innerContent = tempQuery.substring(1, tempQuery.length - 1).trim();
+        if (innerContent.includes('ou') || innerContent.includes('e') || innerContent.includes('não') || innerContent.includes(';')) {
+             normalizedQuery = innerContent; // Remove os parênteses externos
+        }
+        // Se for algo como ("termo exato"), o innerContent não terá operadores,
+        // mas a lógica de aspas abaixo já o transforma em QUOTED_X_TERM,
+        // então a remoção dos parênteses externos para QUOTED_X_TERM pode ser feita.
+        // Para simplificar, vamos arriscar remover se toda a query for "(...)"
+        // e confiar que a lógica de aspas e operadores internos funcionará.
+        // Uma verificação mais robusta seria ver se os parênteses não estão dentro de aspas.
 
-            const tokens = processedQuery.split(/\s+/).filter(Boolean);
-            let logicalStructure = [];
-            let currentGroup = { type: 'AND', terms: [] };
+        // CORREÇÃO MAIS SEGURA para seu cenário:
+        // Primeiro processamos as aspas, depois vemos se o que sobrou está entre parênteses
+    }
+    // --- FIM DA CORREÇÃO ---
 
-            tokens.forEach((token, index) => {
-                const lowerToken = token.toLowerCase();
-                let isOperator = false;
-                
-                if (lowerToken === 'e' || lowerToken === ';') {
-                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                    currentGroup = { type: 'AND', terms: [] };
-                    isOperator = true;
-                } else if (lowerToken === 'ou') {
-                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                    currentGroup = { type: 'OR', terms: [] };
-                    isOperator = true;
-                } else if (lowerToken === 'não' || token.startsWith('-')) {
-                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-                    let nextToken = tokens[index + 1];
-                    if (token.startsWith('-')) nextToken = token.substring(1);
-                    if (nextToken) {
-                        logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(nextToken)] });
-                    }
-                    currentGroup = { type: 'AND', terms: [] };
-                    if (lowerToken === 'não') tokens[index + 1] = null;
-                    isOperator = true;
-                }
-                
-                if (!isOperator && token) {
-                    let finalTerm = token;
-                    if (token.startsWith('QUOTED_')) {
-                        const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
-                        finalTerm = quotedTerms[qIndex];
-                    }
-                    if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
-                }
-            });
+    const quotedTerms = [];
+    let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+        quotedTerms.push(p1.trim());
+        return ` QUOTED_${quotedTerms.length - 1}_TERM `;
+    });
 
+    // --- REPOSICIONANDO A CORREÇÃO DE PARÊNTESES EXTERNOS APÓS O PROCESSAMENTO DE ASPAS ---
+    // Agora que as frases entre aspas foram convertidas para QUOTED_X_TERM,
+    // podemos verificar se a string resultante está *inteiramente* entre parênteses.
+    processedQuery = processedQuery.trim();
+    if (processedQuery.length > 2 && processedQuery.startsWith('(') && processedQuery.endsWith(')')) {
+        processedQuery = processedQuery.substring(1, processedQuery.length - 1).trim();
+    }
+    // --- FIM DO REPOSICIONAMENTO ---
+
+    const tokens = processedQuery.split(/\s+/).filter(Boolean);
+    let logicalStructure = [];
+    let currentGroup = { type: 'AND', terms: [] };
+
+    tokens.forEach((token, index) => {
+        const lowerToken = token.toLowerCase();
+        let isOperator = false;
+        
+        if (lowerToken === 'e' || lowerToken === ';') {
             if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
-            
-            for (const group of logicalStructure) {
-                if (useFuzzy) {
-                    if (group.type === 'NOT') {
-                        if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                    } else if (group.type === 'AND') {
-                        if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                    } else if (group.type === 'OR') {
-                        if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
-                    }
-                } else {
-                    if (group.type === 'NOT') {
-                        if (group.terms.some(regex => regex.test(normalizedText))) return false;
-                    } else if (group.type === 'AND') {
-                        if (!group.terms.every(regex => regex.test(normalizedText))) return false;
-                    } else if (group.type === 'OR') {
-                        if (!group.terms.some(regex => regex.test(normalizedText))) return false;
-                    }
-                }
+            currentGroup = { type: 'AND', terms: [] };
+            isOperator = true;
+        } else if (lowerToken === 'ou') {
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            currentGroup = { type: 'OR', terms: [] };
+            isOperator = true;
+        } else if (lowerToken === 'não' || token.startsWith('-')) {
+            // Garante que o operador NOT aplica-se ao próximo token.
+            // Se o token for '-' e o próximo existir, use o próximo.
+            // Se o token for 'não', o próximo é o termo a ser negado.
+            let termToNegate = null;
+            if (token.startsWith('-')) {
+                termToNegate = token.substring(1);
+            } else if (lowerToken === 'não' && tokens[index + 1]) {
+                termToNegate = tokens[index + 1];
+                tokens[index + 1] = null; // Consume o próximo token
             }
 
-            return true;
+            if (termToNegate) {
+                if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup); // Empurra grupo anterior
+                logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(termToNegate)] });
+                currentGroup = { type: 'AND', terms: [] }; // Reinicia o grupo atual como AND
+            }
+            isOperator = true;
         }
+        
+        if (!isOperator && token) { // Garante que não é um token nulo consumido por 'NÃO'
+            let finalTerm = token;
+            if (token.startsWith('QUOTED_')) {
+                const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+                finalTerm = quotedTerms[qIndex];
+            }
+            if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
+        }
+    });
+
+    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+    
+    // Agora avalia a logicalStructure
+    for (const group of logicalStructure) {
+        if (useFuzzy) {
+            if (group.type === 'NOT') {
+                if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+            }
+        } else {
+            if (group.type === 'NOT') {
+                if (group.terms.some(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'AND') {
+                if (!group.terms.every(regex => regex.test(normalizedText))) return false;
+            } else if (group.type === 'OR') {
+                if (!group.terms.some(regex => regex.test(normalizedText))) return false;
+            }
+        }
+    }
+
+    return true;
+}
 
         function createSearchRegex(term) {
             const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
