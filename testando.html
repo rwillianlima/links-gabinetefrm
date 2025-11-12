@@ -435,6 +435,20 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+        
+        /* NOVO ESTILO: MARCA DE VERSÃO */
+        #version-tag {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            font-size: 0.75rem;
+            color: #777;
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            opacity: 0.8;
+            z-index: 100;
+        }
 
         /* Media Queries para Mobile */
         @media (max-width: 768px) {
@@ -614,631 +628,641 @@
         <div id="allBlocks"></div>
         <div id="pagination" class="pagination"></div>
     </div>
-
-   <script>
-    // Variáveis globais
-    let dataset = []; 
-    let filteredData = [];
-    let currentSearchTerms = '';
-    let currentPage = 1;
-    const resultsPerPage = 50;
-
-    // URLs das planilhas
-    const SPREADSHEET_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub';
     
-    // Configuração das bases
-    const DATA_SOURCES = {
-        '0': { name: 'Jurisprudência', gid: '0' },
-        '2110972132': { name: 'Súmulas do TJGO', gid: '2110972132' },
-        '1277187400': { name: 'Súmulas do STJ', gid: '1277187400' },
-        '503544784': { name: 'Súmulas do STF', gid: '503544784' }
-    };
+    <div id="version-tag">v.2</div>
 
-    // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
-        updateClock();
-        setInterval(updateClock, 1000);
+    <script>
+        // Variáveis globais
+        let dataset = []; 
+        let filteredData = [];
+        let currentSearchTerms = '';
+        let currentPage = 1;
+        const resultsPerPage = 50;
+
+        // URLs das planilhas
+        const SPREADSHEET_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCwzKKtRs5uQ56A6GCx6FPVSKU8mTXxowFrVpJ1XjHLagJw-pA2ks46MO0b06TtEqZgbx7UJRvY1Hu/pub';
         
-        document.getElementById('relator').disabled = true;
+        // Configuração das bases
+        const DATA_SOURCES = {
+            '0': { name: 'Jurisprudência', gid: '0' },
+            '2110972132': { name: 'Súmulas do TJGO', gid: '2110972132' },
+            '1277187400': { name: 'Súmulas do STJ', gid: '1277187400' },
+            '503544784': { name: 'Súmulas do STF', gid: '503544784' }
+        };
 
-        document.getElementById('terms').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') performSearch();
-        });
-
-        document.getElementById('dataSource').addEventListener('change', function() {
-            const selectedValue = this.value;
-            const relatorSelect = document.getElementById('relator');
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            updateClock();
+            setInterval(updateClock, 1000);
             
-            resetSearch();
-            dataset = []; 
+            document.getElementById('relator').disabled = true;
 
-            if (selectedValue === '0') { 
-                relatorSelect.disabled = false;
-                loadDataset(); 
-            } else {
-                relatorSelect.value = '';
-                relatorSelect.disabled = true; 
+            document.getElementById('terms').addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') performSearch();
+            });
+
+            document.getElementById('dataSource').addEventListener('change', function() {
+                const selectedValue = this.value;
+                const relatorSelect = document.getElementById('relator');
                 
-                updateInterfaceForDataSource(selectedValue === '' ? 'all' : selectedValue);
-                document.getElementById('datasetInfo').textContent = selectedValue === ''
-                    ? 'Pronto para buscar em todas as bases simultaneamente'
-                    : `Pronto para buscar em ${DATA_SOURCES[selectedValue].name}`;
-                setSearchButtonState(false);
-            }
-        });
+                resetSearch();
+                dataset = []; 
 
-        setTimeout(() => document.getElementById('terms').focus(), 500);
-    });
-
-    // ============== FUNÇÕES DE UI E UTILS ==============
-
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-    }
-
-    function updateClock() {
-        const now = new Date();
-        document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
-        document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', { 
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-        });
-    }
-
-    function showAlert(message, type = 'error') {
-        const existingAlert = document.querySelector('.alert');
-        if (existingAlert) existingAlert.remove();
-        
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type}`;
-        alert.textContent = message;
-        
-        document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
-        
-        setTimeout(() => alert.remove(), type === 'success' ? 5000 : 10000);
-    }
-
-    function setSearchButtonState(loading = false, text = null) {
-        const button = document.getElementById('searchButton');
-        button.innerHTML = loading ? '<span class="spinner"></span> Consultando...' : (text || 'Consultar');
-        button.disabled = loading;
-    }
-
-    function updateInterfaceForDataSource(source) {
-        const title = document.querySelector('h1');
-        const subtitle = document.querySelector('.subtitle');
-        
-        if (source === 'all') {
-            title.textContent = 'Pesquisa Integrada';
-            subtitle.textContent = 'Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF';
-        } else if (DATA_SOURCES[source]) {
-            const sourceInfo = DATA_SOURCES[source];
-            title.textContent = source === '0' ? 'Pesquisa de Jurisprudência' : 'Pesquisa de Súmulas';
-            subtitle.textContent = sourceInfo.name;
-        }
-    }
-    
-    function resetSearch() {
-        document.getElementById('allBlocks').innerHTML = '';
-        document.getElementById('resultCount').textContent = '';
-        document.getElementById('pagination').innerHTML = '';
-        const relatorSelect = document.getElementById('relator');
-        relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        try {
-            const date = new Date(dateString);
-            if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
-            const parts = dateString.split('/');
-            if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
-            return dateString;
-        } catch (e) {
-            return dateString;
-        }
-    }
-
-    function parseDate(dateString) {
-        if (!dateString) return null;
-        try {
-            const parts = dateString.split('/');
-            if (parts.length === 3) {
-                const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
-                return !isNaN(date.getTime()) ? date : null;
-            }
-            const date = new Date(dateString);
-            return !isNaN(date.getTime()) ? date : null;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    // ============== FUNÇÕES DE DADOS E BUSCA ==============
-
-    function loadDataset() {
-        const dataSource = document.getElementById('dataSource').value;
-        if (dataSource !== '0') return; 
-
-        const sourceInfo = DATA_SOURCES[dataSource];
-        const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${sourceInfo.gid}&single=true&output=csv`;
-        
-        updateInterfaceForDataSource(dataSource);
-        document.getElementById('datasetInfo').textContent = `Conectando ao banco de dados ${sourceInfo.name}...`;
-        setSearchButtonState(true, 'Carregando dados...');
-        
-        Papa.parse(csvUrl, {
-            download: true,
-            header: true,
-            complete: function(results) {
-                if (results.errors?.length > 0) {
-                    handleDataError('Erro na formatação dos dados');
-                    return;
-                }
-                
-                dataset = results.data.filter(item => item && item.Processo);
-                
-                if (dataset.length === 0) {
-                    handleDataError('Nenhum dado encontrado na planilha');
-                    return;
-                }
-                
-                updateDatasetInfo();
-                populateFilters();
-                setSearchButtonState(false);
-                showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
-            },
-            error: function(error) {
-                handleDataError('Erro ao carregar dados da planilha');
-                console.error('Erro detalhado:', error);
-            }
-        });
-    }
-
-    function handleDataError(message) {
-        document.getElementById('datasetInfo').textContent = message;
-        showAlert(message, 'error');
-        setSearchButtonState(false);
-    }
-
-    function updateDatasetInfo() {
-        const dataSource = document.getElementById('dataSource').value;
-        const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
-        
-        let latestDateString = '';
-        let latestDateValue = new Date(0); 
-
-        dataset.forEach(item => {
-            if (item.Publicação) {
-                const itemDate = parseDate(item.Publicação); 
-                
-                if (itemDate && itemDate > latestDateValue) {
-                    latestDateValue = itemDate;
-                    latestDateString = item.Publicação; 
-                }
-            }
-        });
-        
-        const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
-        document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
-    }
-
-    function populateFilters() {
-        const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
-        const select = document.getElementById('relator');
-        
-        while (select.children.length > 1) select.removeChild(select.lastChild);
-        
-        relators.sort().forEach(relator => {
-            const option = document.createElement('option');
-            option.value = relator;
-            option.textContent = relator;
-            select.appendChild(option);
-        });
-    }
-
-    // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
-    function getSourcePriority(gid) {
-        if (['2110972132', '1277187400', '503544784'].includes(gid)) {
-            return 1; // Súmulas (mais alta)
-        }
-        return 2; // Jurisprudência (gid '0')
-    }
-
-    function performSearch() {
-        if (window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('active');
-        }
-
-        const searchTerms = document.getElementById('terms').value;
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const relator = document.getElementById('relator').value;
-        const useFuzzy = document.getElementById('fuzzy').checked;
-        const dataSource = document.getElementById('dataSource').value;
-        
-        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-            showAlert('A data de início não pode ser maior que a data de fim.', 'error');
-            return;
-        }
-        
-        currentSearchTerms = searchTerms;
-        setSearchButtonState(true);
-        
-        setTimeout(async () => {
-            try {
-                if (dataSource === '') {
-                    filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
+                if (selectedValue === '0') { 
+                    relatorSelect.disabled = false;
+                    loadDataset(); 
                 } else {
-                    const dataToFilter = dataSource === '0' ? dataset : await loadSingleDataset(`${SPREADSHEET_BASE_URL}?gid=${DATA_SOURCES[dataSource].gid}&single=true&output=csv`);
-
-                    filteredData = filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
+                    relatorSelect.value = '';
+                    relatorSelect.disabled = true; 
+                    
+                    updateInterfaceForDataSource(selectedValue === '' ? 'all' : selectedValue);
+                    document.getElementById('datasetInfo').textContent = selectedValue === ''
+                        ? 'Pronto para buscar em todas as bases simultaneamente'
+                        : `Pronto para buscar em ${DATA_SOURCES[selectedValue].name}`;
+                    setSearchButtonState(false);
                 }
-                
-                displayResults(filteredData);
-                setSearchButtonState(false);
-            } catch (error) {
-                console.error('Erro na busca:', error);
-                showAlert('Erro durante a busca. Tente novamente. Detalhe: ' + error.message, 'error');
-                setSearchButtonState(false);
-            }
-        }, 100);
-    }
+            });
 
-    function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
-        
-        return dataToFilter.filter(item => {
-            const isJurisprudencia = dataSource === '0';
-            
-            if (isJurisprudencia && relator && item.Relator !== relator) return false;
-            
-            if (startDate || endDate) {
-                const itemDate = parseDate(item.Publicação);
-                if (!itemDate) return false;
-                if (startDate && itemDate < new Date(startDate)) return false;
-                if (endDate && itemDate > new Date(endDate)) return false;
-            }
-            
-            if (searchTerms) {
-                const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
-                return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-            }
-            
-            return true; 
-        }).map(item => ({
-            ...item,
-            dataSource: dataSource,
-            baseName: DATA_SOURCES[dataSource].name
-        })).sort((a, b) => {
-            const dateA = parseDate(a.Publicação) || new Date(0);
-            const dateB = parseDate(b.Publicação) || new Date(0);
-            return dateB - dateA;
+            setTimeout(() => document.getElementById('terms').focus(), 500);
         });
-    }
 
-    async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-        const allGids = ['2110972132', '1277187400', '503544784', '0']; 
-        let allResults = [];
-        let loadedCount = 0;
-        
-        setSearchButtonState(true, `Carregando bases...`);
-        
-        for (const gid of allGids) {
-            try {
-                const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
-                const data = await loadSingleDataset(csvUrl);
-                loadedCount++;
-                
-                setSearchButtonState(true, `Filtrando base ${loadedCount}/${allGids.length}...`);
+        // ============== FUNÇÕES DE UI E UTILS ==============
 
-                const isJurisprudencia = gid === '0';
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
 
-                const filtered = data.filter(item => {
-                    if (isJurisprudencia && relator && item.Relator !== relator) return false;
-                    
-                    if (startDate || endDate) {
-                        const itemDate = parseDate(item.Publicação);
-                        if (!itemDate) return false;
-                        if (startDate && itemDate < new Date(startDate)) return false;
-                        if (endDate && itemDate > new Date(endDate)) return false;
-                    }
-                    
-                    if (searchTerms) {
-                        const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
-                        return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                    }
-                    
-                    return true;
-                }).map(item => ({
-                    ...item,
-                    dataSource: gid,
-                    baseName: DATA_SOURCES[gid].name
-                }));
-                
-                allResults = allResults.concat(filtered);
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-time').textContent = now.toLocaleTimeString('pt-BR');
+            document.getElementById('clock-date').textContent = now.toLocaleDateString('pt-BR', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+        }
 
-            } catch (error) {
-                console.error(`Erro ao carregar base ${gid}:`, error);
-                showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}. Resultados podem estar incompletos.`, 'warning');
+        function showAlert(message, type = 'error') {
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            document.getElementById('content').insertBefore(alert, document.getElementById('resultCount'));
+            
+            setTimeout(() => alert.remove(), type === 'success' ? 5000 : 10000);
+        }
+
+        function setSearchButtonState(loading = false, text = null) {
+            const button = document.getElementById('searchButton');
+            button.innerHTML = loading ? '<span class="spinner"></span> Consultando...' : (text || 'Consultar');
+            button.disabled = loading;
+        }
+
+        function updateInterfaceForDataSource(source) {
+            const title = document.querySelector('h1');
+            const subtitle = document.querySelector('.subtitle');
+            
+            if (source === 'all') {
+                title.textContent = 'Pesquisa Integrada';
+                subtitle.textContent = 'Busca em todas as bases: Jurisprudência, Súmulas TJGO, STJ e STF';
+            } else if (DATA_SOURCES[source]) {
+                const sourceInfo = DATA_SOURCES[source];
+                title.textContent = source === '0' ? 'Pesquisa de Jurisprudência' : 'Pesquisa de Súmulas';
+                subtitle.textContent = sourceInfo.name;
             }
         }
         
-        // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
-        return allResults.sort((a, b) => {
-            const priorityA = getSourcePriority(a.dataSource);
-            const priorityB = getSourcePriority(b.dataSource);
+        function resetSearch() {
+            document.getElementById('allBlocks').innerHTML = '';
+            document.getElementById('resultCount').textContent = '';
+            document.getElementById('pagination').innerHTML = '';
+            const relatorSelect = document.getElementById('relator');
+            relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
+        }
 
-            // 1. Compara Prioridade (1 vs 2): Se diferente, Súmula (1) vem antes.
-            if (priorityA !== priorityB) {
-                return priorityA - priorityB;
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                const date = new Date(dateString);
+                if (!isNaN(date.getTime())) return date.toLocaleDateString('pt-BR');
+                const parts = dateString.split('/');
+                if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
+                return dateString;
+            } catch (e) {
+                return dateString;
             }
+        }
 
-            // 2. Se as prioridades são iguais, ordena por data (mais recente primeiro)
-            const dateA = parseDate(a.Publicação) || new Date(0);
-            const dateB = parseDate(b.Publicação) || new Date(0);
-            return dateB - dateA;
-        });
-    }
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            try {
+                const parts = dateString.split('/');
+                if (parts.length === 3) {
+                    const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+                    return !isNaN(date.getTime()) ? date : null;
+                }
+                const date = new Date(dateString);
+                return !isNaN(date.getTime()) ? date : null;
+            } catch (e) {
+                return null;
+            }
+        }
 
-    function loadSingleDataset(url) {
-        return new Promise((resolve, reject) => {
-            Papa.parse(url, {
+        function populateFilters() {
+            const relators = [...new Set(dataset.map(item => item.Relator))].filter(Boolean);
+            const select = document.getElementById('relator');
+            
+            while (select.children.length > 1) select.removeChild(select.lastChild);
+            
+            relators.sort().forEach(relator => {
+                const option = document.createElement('option');
+                option.value = relator;
+                option.textContent = relator;
+                select.appendChild(option);
+            });
+        }
+
+        // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
+        function getSourcePriority(gid) {
+            if (['2110972132', '1277187400', '503544784'].includes(gid)) {
+                return 1; // Súmulas (mais alta)
+            }
+            return 2; // Jurisprudência (gid '0')
+        }
+
+        // ============== FUNÇÕES DE DADOS E BUSCA ==============
+
+        function loadDataset() {
+            const dataSource = document.getElementById('dataSource').value;
+            if (dataSource !== '0') return; 
+
+            const sourceInfo = DATA_SOURCES[dataSource];
+            const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${sourceInfo.gid}&single=true&output=csv`;
+            
+            updateInterfaceForDataSource(dataSource);
+            document.getElementById('datasetInfo').textContent = `Conectando ao banco de dados ${sourceInfo.name}...`;
+            setSearchButtonState(true, 'Carregando dados...');
+            
+            Papa.parse(csvUrl, {
                 download: true,
                 header: true,
                 complete: function(results) {
                     if (results.errors?.length > 0) {
-                        reject(new Error(results.errors.map(e => e.message).join(', ')));
-                    } else {
-                        resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
+                        handleDataError('Erro na formatação dos dados');
+                        return;
                     }
+                    
+                    dataset = results.data.filter(item => item && item.Processo);
+                    
+                    if (dataset.length === 0) {
+                        handleDataError('Nenhum dado encontrado na planilha');
+                        return;
+                    }
+                    
+                    updateDatasetInfo();
+                    populateFilters();
+                    setSearchButtonState(false);
+                    showAlert(`Base de dados carregada com ${dataset.length} registros.`, 'success');
                 },
-                error: (error) => reject(new Error(`Falha no download: ${error.message}`))
+                error: function(error) {
+                    handleDataError('Erro ao carregar dados da planilha');
+                    console.error('Erro detalhado:', error);
+                }
             });
-        });
-    }
+        }
 
-    // ============== FUNÇÕES DE EXIBIÇÃO E DESTAQUE ==============
+        function handleDataError(message) {
+            document.getElementById('datasetInfo').textContent = message;
+            showAlert(message, 'error');
+            setSearchButtonState(false);
+        }
 
-    function displayResults(results) {
-        const allBlocks = document.getElementById('allBlocks');
-        const resultCount = document.getElementById('resultCount');
-        const pagination = document.getElementById('pagination');
-        
-        allBlocks.innerHTML = '';
-        pagination.innerHTML = '';
-        
-        if (results.length === 0) {
-            resultCount.textContent = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
+        function updateDatasetInfo() {
+            const dataSource = document.getElementById('dataSource').value;
+            const sourceName = DATA_SOURCES[dataSource]?.name || 'Base de dados';
+            
+            let latestDateString = '';
+            let latestDateValue = new Date(0); 
+
+            dataset.forEach(item => {
+                if (item.Publicação) {
+                    const itemDate = parseDate(item.Publicação); 
+                    
+                    if (itemDate && itemDate > latestDateValue) {
+                        latestDateValue = itemDate;
+                        latestDateString = item.Publicação; 
+                    }
+                }
+            });
+            
+            const updateText = latestDateString ? `Última atualização: ${latestDateString}` : '';
+            document.getElementById('datasetInfo').textContent = `${sourceName}: ${dataset.length} registros. ${updateText}`;
+        }
+
+        function performSearch() {
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+
+            const searchTerms = document.getElementById('terms').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const relator = document.getElementById('relator').value;
+            const useFuzzy = document.getElementById('fuzzy').checked;
+            const dataSource = document.getElementById('dataSource').value;
+            
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showAlert('A data de início não pode ser maior que a data de fim.', 'error');
+                return;
+            }
+            
+            currentSearchTerms = searchTerms;
+            setSearchButtonState(true);
+            
+            setTimeout(async () => {
+                try {
+                    if (dataSource === '') {
+                        filteredData = await searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy);
+                    } else {
+                        const dataToFilter = dataSource === '0' ? dataset : await loadSingleDataset(`${SPREADSHEET_BASE_URL}?gid=${DATA_SOURCES[dataSource].gid}&single=true&output=csv`);
+
+                        filteredData = filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource);
+                    }
+                    
+                    displayResults(filteredData);
+                    setSearchButtonState(false);
+                } catch (error) {
+                    console.error('Erro na busca:', error);
+                    showAlert('Erro durante a busca. Tente novamente. Detalhe: ' + error.message, 'error');
+                    setSearchButtonState(false);
+                }
+            }, 100);
+        }
+
+        function filterSingleDataset(dataToFilter, searchTerms, startDate, endDate, relator, useFuzzy, dataSource) {
+            
+            return dataToFilter.filter(item => {
+                const isJurisprudencia = dataSource === '0';
+                
+                if (isJurisprudencia && relator && item.Relator !== relator) return false;
+                
+                if (startDate || endDate) {
+                    const itemDate = parseDate(item.Publicação);
+                    if (!itemDate) return false;
+                    if (startDate && itemDate < new Date(startDate)) return false;
+                    if (endDate && itemDate > new Date(endDate)) return false;
+                }
+                
+                if (searchTerms) {
+                    const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''}`.toLowerCase();
+                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                }
+                
+                return true; 
+            }).map(item => ({
+                ...item,
+                dataSource: dataSource,
+                baseName: DATA_SOURCES[dataSource].name
+            })).sort((a, b) => {
+                const dateA = parseDate(a.Publicação) || new Date(0);
+                const dateB = parseDate(b.Publicação) || new Date(0);
+                return dateB - dateA;
+            });
+        }
+
+        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
+            const allGids = ['2110972132', '1277187400', '503544784', '0']; 
+            let allResults = [];
+            let loadedCount = 0;
+            
+            setSearchButtonState(true, `Carregando bases...`);
+            
+            for (const gid of allGids) {
+                try {
+                    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
+                    const data = await loadSingleDataset(csvUrl);
+                    loadedCount++;
+                    
+                    setSearchButtonState(true, `Filtrando base ${loadedCount}/${allGids.length}...`);
+
+                    const isJurisprudencia = gid === '0';
+
+                    const filtered = data.filter(item => {
+                        if (isJurisprudencia && relator && item.Relator !== relator) return false;
+                        
+                        if (startDate || endDate) {
+                            const itemDate = parseDate(item.Publicação);
+                            if (!itemDate) return false;
+                            if (startDate && itemDate < new Date(startDate)) return false;
+                            if (endDate && itemDate > new Date(endDate)) return false;
+                        }
+                        
+                        if (searchTerms) {
+                            const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
+                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                        }
+                        
+                        return true;
+                    }).map(item => ({
+                        ...item,
+                        dataSource: gid,
+                        baseName: DATA_SOURCES[gid].name
+                    }));
+                    
+                    allResults = allResults.concat(filtered);
+
+                } catch (error) {
+                    console.error(`Erro ao carregar base ${gid}:`, error);
+                    showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}. Resultados podem estar incompletos.`, 'warning');
+                }
+            }
+            
+            // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
+            return allResults.sort((a, b) => {
+                const priorityA = getSourcePriority(a.dataSource);
+                const priorityB = getSourcePriority(b.dataSource);
+
+                // 1. Compara Prioridade (1 vs 2): Se diferente, Súmula (1) vem antes.
+                if (priorityA !== priorityB) {
+                    return priorityA - priorityB;
+                }
+
+                // 2. Se as prioridades são iguais, ordena por data (mais recente primeiro)
+                const dateA = parseDate(a.Publicação) || new Date(0);
+                const dateB = parseDate(b.Publicação) || new Date(0);
+                return dateB - dateA;
+            });
+        }
+
+        function loadSingleDataset(url) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    complete: function(results) {
+                        if (results.errors?.length > 0) {
+                            reject(new Error(results.errors.map(e => e.message).join(', ')));
+                        } else {
+                            // Filtra linhas vazias. Verifica se pelo menos uma chave de item não está vazia.
+                            resolve(results.data.filter(item => item && Object.values(item).some(v => v)));
+                        }
+                    },
+                    error: (error) => reject(new Error(`Falha no download: ${error.message}`))
+                });
+            });
+        }
+
+        // Busca avançada em português (Mantida inalterada)
+        function portugueseAdvancedSearch(text, query, useFuzzy = false) {
+            if (!query?.trim()) return true;
+
+            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const normalizedText = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+            // ... (restante da lógica de busca inalterada)
+            const quotedTerms = [];
+            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+                quotedTerms.push(p1.trim());
+                return ` QUOTED_${quotedTerms.length - 1}_TERM `;
+            });
+
+            const tokens = processedQuery.split(/\s+/).filter(Boolean);
+            let logicalStructure = [];
+            let currentGroup = { type: 'AND', terms: [] };
+
+            tokens.forEach((token, index) => {
+                const lowerToken = token.toLowerCase();
+                let isOperator = false;
+                
+                if (lowerToken === 'e' || lowerToken === ';') {
+                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+                    currentGroup = { type: 'AND', terms: [] };
+                    isOperator = true;
+                } else if (lowerToken === 'ou') {
+                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+                    currentGroup = { type: 'OR', terms: [] };
+                    isOperator = true;
+                } else if (lowerToken === 'não' || token.startsWith('-')) {
+                    if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+                    let nextToken = tokens[index + 1];
+                    if (token.startsWith('-')) nextToken = token.substring(1);
+                    if (nextToken) {
+                        logicalStructure.push({ type: 'NOT', terms: [createSearchRegex(nextToken)] });
+                    }
+                    currentGroup = { type: 'AND', terms: [] };
+                    if (lowerToken === 'não') tokens[index + 1] = null;
+                    isOperator = true;
+                }
+                
+                if (!isOperator && token) {
+                    let finalTerm = token;
+                    if (token.startsWith('QUOTED_')) {
+                        const qIndex = parseInt(token.replace('QUOTED_', '').replace('_TERM', ''));
+                        finalTerm = quotedTerms[qIndex];
+                    }
+                    if (finalTerm) currentGroup.terms.push(createSearchRegex(finalTerm));
+                }
+            });
+
+            if (currentGroup.terms.length > 0) logicalStructure.push(currentGroup);
+            
+            for (const group of logicalStructure) {
+                if (useFuzzy) {
+                    if (group.type === 'NOT') {
+                        if (group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+                    } else if (group.type === 'AND') {
+                        if (!group.terms.every(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+                    } else if (group.type === 'OR') {
+                        if (!group.terms.some(term => fuzzyMatch(normalizedText, term.source.replace(/\\b/g, '')))) return false;
+                    }
+                } else {
+                    if (group.type === 'NOT') {
+                        if (group.terms.some(regex => regex.test(normalizedText))) return false;
+                    } else if (group.type === 'AND') {
+                        if (!group.terms.every(regex => regex.test(normalizedText))) return false;
+                    } else if (group.type === 'OR') {
+                        if (!group.terms.some(regex => regex.test(normalizedText))) return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        function createSearchRegex(term) {
+            const escapedTerm = term.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+            if (escapedTerm.includes('*')) {
+                return new RegExp(escapedTerm.replace(/\*/g, '.*'), 'i');
+            } else {
+                return new RegExp(`\\b${escapedTerm}\\b`, 'i');
+            }
+        }
+
+        function fuzzyMatch(text, term) {
+            if (term.length <= 3) return text.includes(term);
+            
+            const termLen = term.length;
+            for (let i = 0; i <= text.length - termLen; i++) {
+                const substring = text.substr(i, termLen);
+                if (calculateSimilarity(substring, term) >= 0.8) return true;
+            }
+            return false;
+        }
+
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            if (longer.length === 0) return 1.0;
+            return (longer.length - editDistance(longer, shorter)) / parseFloat(longer.length);
+        }
+
+        function editDistance(str1, str2) {
+            str1 = str1.toLowerCase();
+            str2 = str2.toLowerCase();
+            
+            const costs = [];
+            for (let i = 0; i <= str1.length; i++) {
+                let lastValue = i;
+                for (let j = 0; j <= str2.length; j++) {
+                    if (i === 0) {
+                        costs[j] = j;
+                    } else if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (str1.charAt(i - 1) !== str2.charAt(j - 1)) {
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        }
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+                if (i > 0) costs[str2.length] = lastValue;
+            }
+            return costs[str2.length];
+        }
+
+        // Funções de exibição (Mantidas inalteradas)
+        function displayResults(results) {
+            const allBlocks = document.getElementById('allBlocks');
+            const resultCount = document.getElementById('resultCount');
+            const pagination = document.getElementById('pagination');
+            
+            allBlocks.innerHTML = '';
+            pagination.innerHTML = '';
+            
+            if (results.length === 0) {
+                resultCount.textContent = 'Nenhum resultado encontrado. Tente ajustar os critérios de busca.';
+                resultCount.style.display = 'block';
+                allBlocks.style.display = 'none';
+                pagination.style.display = 'none';
+                return;
+            }
+            
+            const totalPages = Math.ceil(results.length / resultsPerPage);
+            currentPage = Math.min(currentPage, totalPages);
+            
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = Math.min(startIndex + resultsPerPage, results.length);
+            const pageResults = results.slice(startIndex, endIndex);
+            
+            resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
             resultCount.style.display = 'block';
-            allBlocks.style.display = 'none';
-            pagination.style.display = 'none';
-            return;
-        }
-        
-        const totalPages = Math.ceil(results.length / resultsPerPage);
-        currentPage = Math.min(currentPage, totalPages);
-        
-        const startIndex = (currentPage - 1) * resultsPerPage;
-        const endIndex = Math.min(startIndex + resultsPerPage, results.length);
-        const pageResults = results.slice(startIndex, endIndex);
-        
-        resultCount.textContent = `${results.length} resultado(s) encontrado(s). Exibindo ${startIndex + 1}-${endIndex} de ${results.length}. Página ${currentPage} de ${totalPages}.`;
-        resultCount.style.display = 'block';
-        allBlocks.style.display = 'block';
-        
-        pageResults.forEach((item, index) => {
-            const block = createResultBlock(item, index);
-            allBlocks.appendChild(block);
-        });
-        
-        if (totalPages > 1) {
-            createPagination(totalPages);
-            pagination.style.display = 'flex';
-        } else {
-            pagination.style.display = 'none';
-        }
-    }
-
-    function createResultBlock(item, index) {
-        const block = document.createElement('div');
-        block.className = 'block';
-        
-        // Classes de estilo
-        if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-        else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-        else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-        else block.classList.add('jurisprudencia');
-        
-        let conteudo, referencia;
-        
-        // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
-        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-
-        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-            // Usa o enunciado diretamente para EVITAR a duplicação do prefixo
-            conteudo = ementaOuEnunciado; 
+            allBlocks.style.display = 'block';
             
-            // Remove a data de publicação na exibição.
-            referencia = ''; 
-            
-        } else {
-            // FORMATO JURISPRUDÊNCIA (Base '0')
-            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-            
-            conteudo = ementaOuEnunciado;
-            // Referência completa, incluindo Publicação
-            referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-        }
-        
-        // Aplicação do destaque e montagem do bloco de resultados
-        const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-        const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
-        
-        // Insere o span de referência apenas se houver conteúdo em 'referencia'
-        const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
-
-        block.innerHTML = `
-            <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-            <div class="ementa-content">
-                ${conteudoComDestaque} ${refHtml}
-            </div>
-        `;
-        
-        return block;
-    }
-
-    function getTribunalName(dataSource) {
-        const tribunais = {
-            '2110972132': 'TJGO',
-            '1277187400': 'STJ', 
-            '503544784': 'STF',
-            '0': 'TJGO'
-        };
-        return tribunais[dataSource] || 'TRIBUNAL';
-    }
-
-    function extractSearchTerms(query) {
-        if (!query?.trim()) return [];
-        
-        const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const quotedTerms = [];
-        
-        let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
-            if (p1) quotedTerms.push(p1);
-            return ' ';
-        });
-
-        const individualTerms = processedQuery
-            .split(/\s+/)
-            .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
-
-        return [...new Set([...quotedTerms, ...individualTerms])];
-    }
-
-    function createAccentInsensitiveRegexString(text) {
-        return text.replace(/a/g, '[aáàâã]')
-                    .replace(/e/g, '[eéèêë]')
-                    .replace(/i/g, '[iíìîî]')
-                    .replace(/o/g, '[oóòôõö]')
-                    .replace(/u/g, '[uúùûü]')
-                    .replace(/c/g, '[cç]')
-                    .replace(/\*/g, '.*'); // Adicionado suporte a curinga no destaque
-    }
-
-    function highlightText(text, searchTerms) {
-        if (!searchTerms || !text) return text;
-
-        const terms = extractSearchTerms(searchTerms);
-        if (terms.length === 0) return text;
-
-        terms.sort((a, b) => b.length - a.length);
-
-        const accentInsensitiveTerms = terms.map(term => {
-            const escapedTerm = escapeRegex(term);
-            return createAccentInsensitiveRegexString(escapedTerm);
-        });
-
-        // Cria uma expressão regular que busca qualquer um dos termos, de forma insensível a acentos
-        const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
-        return text.replace(regex, '<span class="highlight">$&</span>');
-    }
-
-    function escapeRegex(string) {
-        // Escapa caracteres especiais do regex, exceto o '*' para o curinga.
-        return string.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '*');
-    }
-
-    function createPagination(totalPages) {
-        const pagination = document.getElementById('pagination');
-        pagination.innerHTML = '';
-        
-        // Botão Anterior
-        const prevButton = document.createElement('button');
-        prevButton.innerHTML = '‹';
-        prevButton.disabled = currentPage === 1;
-        prevButton.onclick = () => changePage(currentPage - 1);
-        pagination.appendChild(prevButton);
-        
-        // Páginas
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, startPage + 4);
-        
-        for (let i = startPage; i <= endPage; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.textContent = i;
-            pageButton.className = i === currentPage ? 'active' : '';
-            pageButton.onclick = () => changePage(i);
-            pagination.appendChild(pageButton);
-        }
-        
-        // Botão Próximo
-        const nextButton = document.createElement('button');
-        nextButton.innerHTML = '›';
-        nextButton.disabled = currentPage === totalPages;
-        nextButton.onclick = () => changePage(currentPage + 1);
-        pagination.appendChild(nextButton);
-    }
-
-    function changePage(newPage) {
-        currentPage = newPage;
-        displayResults(filteredData);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function copyToClipboard(event, index) {
-        const actualIndex = (currentPage - 1) * resultsPerPage + index;
-        const item = filteredData[actualIndex];
-        
-        if (!item) {
-            showAlert('Erro ao copiar: item não encontrado.', 'error');
-            return;
-        }
-        
-        let textToCopy;
-
-        // Mapeamento Abrangente para o Número (copia)
-        const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-        const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-        
-        if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-            // Usa o enunciado diretamente para evitar a duplicação do prefixo
-            textToCopy = ementaOuEnunciado; 
-            
-        } else {
-            // FORMATO JURISPRUDÊNCIA: Mantém o padrão
-            const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-            textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-        }
-        
-        // Usa a API de Clipboard moderna, se disponível
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const btn = event.currentTarget;
-                const originalHTML = btn.innerHTML;
-                btn.innerHTML = '✓';
-                btn.classList.add('copied');
-                
-                setTimeout(() => {
-                    btn.innerHTML = originalHTML;
-                    btn.classList.remove('copied');
-                }, 2000);
-                
-                showAlert('Conteúdo copiado para a área de transferência!', 'success');
-            }).catch(err => {
-                console.error('Erro ao copiar: ', err);
-                showAlert('Erro ao copiar para a área de transferência', 'error');
+            pageResults.forEach((item, index) => {
+                const block = createResultBlock(item, index);
+                allBlocks.appendChild(block);
             });
-        } else {
-            // Fallback para navegadores mais antigos (código original mantido)
-            const textArea = document.createElement('textarea');
-            textArea.value = textToCopy;
-            textArea.style.position = 'fixed'; 
-            document.body.appendChild(textArea);
-            textArea.select();
             
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
+            if (totalPages > 1) {
+                createPagination(totalPages);
+                pagination.style.display = 'flex';
+            } else {
+                pagination.style.display = 'none';
+            }
+        }
+
+        function createResultBlock(item, index) {
+            const block = document.createElement('div');
+            block.className = 'block';
+            
+            // Classes de estilo
+            if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+            else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+            else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+            else block.classList.add('jurisprudencia');
+            
+            let conteudo, referencia;
+            
+            // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
+            const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+            const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+
+            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+                // *** CORREÇÃO DEFINITIVA: RECONSTRÓI O PREFIXO DA SÚMULA ***
+                const tribunal = getTribunalName(item.dataSource);
+                
+                // CONTEÚDO: Junta o prefixo (Súmula n.º X do TJGO: ) + Enunciado
+                conteudo = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`; 
+                
+                // Remove a data de publicação na exibição.
+                referencia = ''; 
+                
+            } else {
+                // FORMATO JURISPRUDÊNCIA (Base '0')
+                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+                
+                conteudo = ementaOuEnunciado;
+                // Referência completa, incluindo Publicação
+                referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+            }
+            
+            // Aplicação do destaque e montagem do bloco de resultados
+            const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
+            const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
+            
+            // Insere o span de referência apenas se houver conteúdo em 'referencia'
+            const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+
+            block.innerHTML = `
+                <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
+                <div class="ementa-content">
+                    ${conteudoComDestaque} ${refHtml}
+                </div>
+            `;
+            
+            return block;
+        }
+
+        function copyToClipboard(event, index) {
+            const actualIndex = (currentPage - 1) * resultsPerPage + index;
+            const item = filteredData[actualIndex];
+            
+            if (!item) {
+                showAlert('Erro ao copiar: item não encontrado.', 'error');
+                return;
+            }
+            
+            let textToCopy;
+
+            // Mapeamento Abrangente para o Número (copia)
+            const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+            const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+            
+            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+                // *** CORREÇÃO FINAL: RECONSTRUÇÃO DO PREFIXO PARA CÓPIA ***
+                const tribunal = getTribunalName(item.dataSource);
+                textToCopy = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`; 
+                
+            } else {
+                // FORMATO JURISPRUDÊNCIA: Mantém o padrão
+                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+                textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+            }
+            
+            // Usa a API de Clipboard moderna, se disponível
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
                     const btn = event.currentTarget;
                     const originalHTML = btn.innerHTML;
                     btn.innerHTML = '✓';
@@ -1250,34 +1274,150 @@
                     }, 2000);
                     
                     showAlert('Conteúdo copiado para a área de transferência!', 'success');
-                } else {
+                }).catch(err => {
+                    console.error('Erro ao copiar: ', err);
+                    showAlert('Erro ao copiar para a área de transferência', 'error');
+                });
+            } else {
+                // Fallback para navegadores mais antigos (código original mantido)
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                textArea.style.position = 'fixed'; 
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        const btn = event.currentTarget;
+                        const originalHTML = btn.innerHTML;
+                        btn.innerHTML = '✓';
+                        btn.classList.add('copied');
+                        
+                        setTimeout(() => {
+                            btn.innerHTML = originalHTML;
+                            btn.classList.remove('copied');
+                        }, 2000);
+                        
+                        showAlert('Conteúdo copiado para a área de transferência!', 'success');
+                    } else {
+                        showAlert('Erro ao copiar para a área de transferência', 'error');
+                    }
+                } catch (err) {
                     showAlert('Erro ao copiar para a área de transferência', 'error');
                 }
-            } catch (err) {
-                showAlert('Erro ao copiar para a área de transferência', 'error');
+                
+                document.body.removeChild(textArea);
+            }
+        }
+        
+        // ... funções getTribunalName, extractSearchTerms, etc.
+
+        function getTribunalName(dataSource) {
+            const tribunais = {
+                '2110972132': 'TJGO',
+                '1277187400': 'STJ', 
+                '503544784': 'STF',
+                '0': 'TJGO'
+            };
+            return tribunais[dataSource] || 'TRIBUNAL';
+        }
+
+        function extractSearchTerms(query) {
+            if (!query?.trim()) return [];
+            
+            const normalizedQuery = query.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const quotedTerms = [];
+            
+            let processedQuery = normalizedQuery.replace(/"([^"]+)"/g, (match, p1) => {
+                if (p1) quotedTerms.push(p1);
+                return ' ';
+            });
+
+            const individualTerms = processedQuery
+                .split(/\s+/)
+                .filter(term => term.length > 2 && !['e', 'ou', 'não', ';'].includes(term) && !term.startsWith('-'));
+
+            return [...new Set([...quotedTerms, ...individualTerms])];
+        }
+
+        function createAccentInsensitiveRegexString(text) {
+            return text.replace(/a/g, '[aáàâã]')
+                        .replace(/e/g, '[eéèêë]')
+                        .replace(/i/g, '[iíìîî]')
+                        .replace(/o/g, '[oóòôõö]')
+                        .replace(/u/g, '[uúùûü]')
+                        .replace(/c/g, '[cç]')
+                        .replace(/\*/g, '.*'); // Adicionado suporte a curinga no destaque
+        }
+
+        function highlightText(text, searchTerms) {
+            if (!searchTerms || !text) return text;
+
+            const terms = extractSearchTerms(searchTerms);
+            if (terms.length === 0) return text;
+
+            terms.sort((a, b) => b.length - a.length);
+
+            const accentInsensitiveTerms = terms.map(term => {
+                const escapedTerm = escapeRegex(term);
+                return createAccentInsensitiveRegexString(escapedTerm);
+            });
+
+            // Cria uma expressão regular que busca qualquer um dos termos, de forma insensível a acentos
+            const regex = new RegExp(`(${accentInsensitiveTerms.join('|')})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$&</span>');
+        }
+
+        function escapeRegex(string) {
+            // Escapa caracteres especiais do regex, exceto o '*' para o curinga.
+            return string.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '*');
+        }
+
+        function createPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // Botão Anterior
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '‹';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => changePage(currentPage - 1);
+            pagination.appendChild(prevButton);
+            
+            // Páginas
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.textContent = i;
+                pageButton.className = i === currentPage ? 'active' : '';
+                pageButton.onclick = () => changePage(i);
+                pagination.appendChild(pageButton);
             }
             
-            document.body.removeChild(textArea);
+            // Botão Próximo
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '›';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => changePage(currentPage + 1);
+            pagination.appendChild(nextButton);
         }
-    }
 
-    function resetSearch() {
-        document.getElementById('allBlocks').innerHTML = '';
-        document.getElementById('resultCount').textContent = '';
-        document.getElementById('pagination').innerHTML = '';
-        // Limpa o filtro de relatores, mas mantém a primeira opção
-        const relatorSelect = document.getElementById('relator');
-        relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
-    }
-
-    // LÓGICA DE PRIORIDADE (para ordenar Súmulas no topo)
-    function getSourcePriority(gid) {
-        // Retorna 1 (Súmula) para alta prioridade, 2 (Jurisprudência) para baixa
-        if (['2110972132', '1277187400', '503544784'].includes(gid)) {
-            return 1; // Súmulas
+        function changePage(newPage) {
+            currentPage = newPage;
+            displayResults(filteredData);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-        return 2; // Jurisprudência (gid '0')
-    }
+
+        function resetSearch() {
+            document.getElementById('allBlocks').innerHTML = '';
+            document.getElementById('resultCount').textContent = '';
+            document.getElementById('pagination').innerHTML = '';
+            const relatorSelect = document.getElementById('relator');
+            relatorSelect.innerHTML = '<option value="">Relator (todos)</option>';
+        }
     </script>
 </body>
 </html>
