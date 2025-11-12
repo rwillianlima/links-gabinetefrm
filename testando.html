@@ -641,7 +641,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.3.1</div>
+    <div id="version-tag">v.3.2</div>
 
     <script>
         // Variáveis globais
@@ -1194,7 +1194,7 @@
             }
         }
 
-        function createResultBlock(item, index) {
+     function createResultBlock(item, index) {
     const block = document.createElement('div');
     block.className = 'block';
     
@@ -1208,46 +1208,41 @@
     
     // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
     const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
-    
+    let ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
+
     if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-        // --- INÍCIO DA CORREÇÃO PARA DUPLICAÇÃO DA SÚMULA ---
+        // --- CORREÇÃO SIMPLIFICADA PARA EVITAR DUPLICAÇÃO ---
         
         const tribunal = getTribunalName(item.dataSource);
         
-        // 1. Define o prefixo correto que queremos exibir
+        // 1. Define o prefixo correto que queremos exibir: "Súmula n.º X do TJGO:"
         const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
 
-        // 2. Limpa o enunciado se ele já começar com a numeração (o que causa a duplicação)
-        let enunciadoLimpo = ementaOuEnunciado;
-        const lowerCaseEnunciado = enunciadoLimpo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-        // Tenta remover o prefixo redundante (e suas variações como 'sumula n.º X') do texto
-        const regexPrefix = new RegExp(`s[uú]mula n[\\.]* [º|°]*\\s*${numeroProcessoOuSumula}\\s*`, 'i');
+        // 2. Tenta limpar o início do enunciado de origem (ementaOuEnunciado) 
+        //    removendo a parte que provavelmente está duplicada (Ex: 'Súmula n.º 1:')
         
-        if (regexPrefix.test(lowerCaseEnunciado)) {
-             // Se encontrar o número no início, remove o trecho.
-             // O caso mais comum é remover até o primeiro ':'.
-             const match = enunciadoLimpo.match(regexPrefix);
-             if (match) {
-                 const indexAfterMatch = enunciadoLimpo.toLowerCase().indexOf(match[0].toLowerCase()) + match[0].length;
-                 enunciadoLimpo = enunciadoLimpo.substring(indexAfterMatch).trim();
+        // Remove 'Súmula n.º ' e o número (case insensitive, ignoring accents)
+        let cleanedEnunciado = ementaOuEnunciado.replace(/súmula n\.\º\s*(\d+)/i, '').trim();
 
-                 // Tenta remover pontuações iniciais desnecessárias
-                 if (enunciadoLimpo.startsWith(':') || enunciadoLimpo.startsWith('-')) {
-                     enunciadoLimpo = enunciadoLimpo.substring(1).trim();
-                 }
-             }
+        // Se ainda começar com o número ou pontuação, remove:
+        if (cleanedEnunciado.startsWith(numeroProcessoOuSumula)) {
+            cleanedEnunciado = cleanedEnunciado.substring(numeroProcessoOuSumula.length).trim();
         }
-        
+
+        // Remove dois pontos, hífen ou espaço extra no início
+        while (cleanedEnunciado.startsWith(':') || cleanedEnunciado.startsWith('-') || cleanedEnunciado.startsWith(' ')) {
+            cleanedEnunciado = cleanedEnunciado.substring(1).trim();
+        }
+
         // 3. Junta o prefixo corrigido com o conteúdo limpo.
-        conteudo = `${prefixoCorreto} ${enunciadoLimpo}`;      
- 
+        conteudo = `${prefixoCorreto} ${cleanedEnunciado}`;
+        
+        // --- FIM DA CORREÇÃO ---
         
         referencia = ''; // Remove a data de publicação na exibição de Súmulas.
         
     } else {
-        // FORMATO JURISPRUDÊNCIA (Base '0') - Inalterado
+        // FORMATO JURISPRUDÊNCIA (Base '0')
         const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
         
         conteudo = ementaOuEnunciado;
@@ -1272,59 +1267,52 @@
     return block;
 }
        function copyToClipboard(event, index) {
-                const actualIndex = (currentPage - 1) * resultsPerPage + index;
-                const item = filteredData[actualIndex];
-                
-                if (!item) {
-                    showAlert('Erro ao copiar: item não encontrado.', 'error');
-                    return;
-                }
-                
-                let textToCopy;
-            
-                // Mapeamento Abrangente para o Número (copia)
-                const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-                const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-                
-                if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-                    // --- INÍCIO DA CORREÇÃO PARA CÓPIA (Lógica de limpeza) ---
-                    
-                    const tribunal = getTribunalName(item.dataSource);
-                    
-                    // 1. Define o prefixo correto que queremos exibir
-                    const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
-            
-                    // 2. Limpa o enunciado se ele já começar com a numeração (o que causa a duplicação)
-                    let enunciadoLimpo = ementaOuEnunciado;
-                    const lowerCaseEnunciado = enunciadoLimpo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-            
-                    // Regex para encontrar "súmula n.º X" no início do texto
-                    const regexPrefix = new RegExp(`s[uú]mula n[\\.]* [º|°]*\\s*${numeroProcessoOuSumula}\\s*`, 'i');
-                    
-                    if (regexPrefix.test(lowerCaseEnunciado)) {
-                        const match = enunciadoLimpo.match(regexPrefix);
-                        if (match) {
-                            // Encontra o índice após a correspondência e remove o prefixo duplicado
-                            const indexAfterMatch = enunciadoLimpo.toLowerCase().indexOf(match[0].toLowerCase()) + match[0].length;
-                            enunciadoLimpo = enunciadoLimpo.substring(indexAfterMatch).trim();
-            
-                            // Tenta remover pontuações iniciais desnecessárias (ex: se o enunciado começar com um ':')
-                            if (enunciadoLimpo.startsWith(':') || enunciadoLimpo.startsWith('-')) {
-                                enunciadoLimpo = enunciadoLimpo.substring(1).trim();
-                            }
-                        }
-                    }
-                    
-                    // 3. Junta o prefixo corrigido com o conteúdo limpo.
-                    textToCopy = `${prefixoCorreto} ${enunciadoLimpo}`;
-                    
-                    // --- FIM DA CORREÇÃO PARA CÓPIA ---
-                    
-                } else {
-                    // FORMATO JURISPRUDÊNCIA: Mantém o padrão
-                    const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-                    textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-                }
+    const actualIndex = (currentPage - 1) * resultsPerPage + index;
+    const item = filteredData[actualIndex];
+    
+    if (!item) {
+        showAlert('Erro ao copiar: item não encontrado.', 'error');
+        return;
+    }
+    
+    let textToCopy;
+
+    // Mapeamento Abrangente para o Número (copia)
+    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+    let ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
+    
+    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+        // --- CORREÇÃO SIMPLIFICADA PARA EVITAR DUPLICAÇÃO NA CÓPIA ---
+        
+        const tribunal = getTribunalName(item.dataSource);
+        const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
+
+        // 1. Tenta limpar o início do enunciado de origem (ementaOuEnunciado) 
+        //    removendo a parte que provavelmente está duplicada (Ex: 'Súmula n.º 1:')
+        
+        // Remove 'Súmula n.º ' e o número (case insensitive, ignoring accents)
+        let cleanedEnunciado = ementaOuEnunciado.replace(/súmula n\.\º\s*(\d+)/i, '').trim();
+
+        // Se ainda começar com o número ou pontuação, remove:
+        if (cleanedEnunciado.startsWith(numeroProcessoOuSumula)) {
+            cleanedEnunciado = cleanedEnunciado.substring(numeroProcessoOuSumula.length).trim();
+        }
+
+        // Remove dois pontos, hífen ou espaço extra no início
+        while (cleanedEnunciado.startsWith(':') || cleanedEnunciado.startsWith('-') || cleanedEnunciado.startsWith(' ')) {
+            cleanedEnunciado = cleanedEnunciado.substring(1).trim();
+        }
+
+        // 2. Junta o prefixo corrigido com o conteúdo limpo.
+        textToCopy = `${prefixoCorreto} ${cleanedEnunciado}`;
+        
+        // --- FIM DA CORREÇÃO NA CÓPIA ---
+        
+    } else {
+        // FORMATO JURISPRUDÊNCIA: Mantém o padrão
+        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+        textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+    }
     
     // Usa a API de Clipboard moderna, se disponível
     if (navigator.clipboard) {
@@ -1337,7 +1325,8 @@
             setTimeout(() => {
                 btn.innerHTML = originalHTML;
                 btn.classList.remove('copied');
-            }, 2000);            
+            }, 2000);
+            
             showAlert('Conteúdo copiado para a área de transferência!', 'success');
         }).catch(err => {
             // Se o navigator.clipboard falhar (permissões negadas), tentamos o fallback
@@ -1348,7 +1337,6 @@
         performFallbackCopy(event, textToCopy);
     }
 }
-
 // Lembre-se de ter a função performFallbackCopy no seu script, conforme a correção anterior.
 
     // ADICIONE ESTA NOVA FUNÇÃO DE FALLBACK
