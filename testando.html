@@ -641,7 +641,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.3</div>
+    <div id="version-tag">v.3.1</div>
 
     <script>
         // Variáveis globais
@@ -1272,56 +1272,59 @@ else block.classList.add('jurisprudencia');
             }
             
             // Usa a API de Clipboard moderna, se disponível
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    const btn = event.currentTarget;
-                    const originalHTML = btn.innerHTML;
-                    btn.innerHTML = '✓';
-                    btn.classList.add('copied');
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalHTML;
-                        btn.classList.remove('copied');
-                    }, 2000);
-                    
-                    showAlert('Conteúdo copiado para a área de transferência!', 'success');
-                }).catch(err => {
-                    console.error('Erro ao copiar: ', err);
-                    showAlert('Erro ao copiar para a área de transferência', 'error');
-                });
-            } else {
-                // Fallback para navegadores mais antigos (código original mantido)
-                const textArea = document.createElement('textarea');
-                textArea.value = textToCopy;
-                textArea.style.position = 'fixed'; 
-                document.body.appendChild(textArea);
-                textArea.select();
-                
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        const btn = event.currentTarget;
-                        const originalHTML = btn.innerHTML;
-                        btn.innerHTML = '✓';
-                        btn.classList.add('copied');
-                        
-                        setTimeout(() => {
-                            btn.innerHTML = originalHTML;
-                            btn.classList.remove('copied');
-                        }, 2000);
-                        
-                        showAlert('Conteúdo copiado para a área de transferência!', 'success');
-                    } else {
-                        showAlert('Erro ao copiar para a área de transferência', 'error');
-                    }
-                } catch (err) {
-                    showAlert('Erro ao copiar para a área de transferência', 'error');
-                }
-                
-                document.body.removeChild(textArea);
-            }
+           if (navigator.clipboard) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                // ... (código de sucesso inalterado) ...
+            }).catch(err => {
+                // Se o navigator.clipboard falhar (permissões negadas), tentamos o fallback
+                performFallbackCopy(event, textToCopy);
+            });
+        } else {
+            // Fallback direto para navegadores sem navigator.clipboard
+            performFallbackCopy(event, textToCopy);
         }
+    }
+
+    // ADICIONE ESTA NOVA FUNÇÃO DE FALLBACK
+    function performFallbackCopy(event, textToCopy) {
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        const textArea = document.createElement('textarea');
         
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed'; 
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.opacity = '0'; // Deixa o textarea invisível
+        document.body.appendChild(textArea);
+        
+        try {
+            // Tenta focar e selecionar
+            textArea.focus();
+            textArea.select();
+            
+            // Se conseguir copiar
+            const successful = document.execCommand('copy');
+            if (successful) {
+                btn.innerHTML = '✓';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copied');
+                }, 2000);
+                
+                showAlert('Conteúdo copiado para a área de transferência!', 'success');
+            } else {
+                showAlert('Erro ao copiar: O navegador bloqueou o acesso à área de transferência.', 'error');
+            }
+        } catch (err) {
+            console.error('Erro de fallback ao copiar: ', err);
+            showAlert('Erro ao copiar para a área de transferência (Falha no Fallback).', 'error');
+        } finally {
+            document.body.removeChild(textArea);
+        }
+    }
         // ... funções getTribunalName, extractSearchTerms, etc.
 
         function getTribunalName(dataSource) {
