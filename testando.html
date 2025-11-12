@@ -5,16 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pesquisa de Jurisprudência – 6ª Câmara Cível</title>
     <style>
-        :root {
-            --primary-color: #2f4050;
-            --secondary-color: #3b5165;
-            --background-color: #f4f4f4;
-            --text-color: #222;
-            --white: #fff;
-            --success-color: #28a745;
-            --error-color: #dc3545;
-            --warning-color: #ffc107;
-        }
+:root {
+    --primary-color: #2f4050;
+    --secondary-color: #3b5165;
+    --background-color: #f4f4f4;
+    --text-color: #222;
+    --white: #fff;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --warning-color: #ffc107;
+    /* NOVAS CORES PARA DESTAQUE */
+    --sumula-stf-color: #6f42c1; /* Roxo */
+    --sumula-stj-color: #17a2b8; /* Ciano */
+    --sumula-tjgo-color: #28a745; /* Verde */
+    --highlight-bg-strong: #fff3cd; /* Amarelo-claro para fundo de destaque */
+}
 
         * {
             box-sizing: border-box;
@@ -260,26 +265,33 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* Cores diferenciadas para Súmulas */
-        .block.sumula-tjgo {
-            border-left: 4px solid #28a745;
-            background: linear-gradient(90deg, #f8fff9 0%, #ffffff 50px);
-        }
+     .block.sumula-tjgo {
+    border-left: 4px solid var(--sumula-tjgo-color);
+    background: linear-gradient(90deg, #f0fff4 0%, var(--white) 50px);
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2); /* Sombra suave verde */
+}
 
-        .block.sumula-stj {
-            border-left: 4px solid #17a2b8;
-            background: linear-gradient(90deg, #f0fcff 0%, #ffffff 50px);
-        }
+.block.sumula-stj {
+    border-left: 4px solid var(--sumula-stj-color);
+    background: linear-gradient(90deg, #e0f7fa 0%, var(--white) 50px);
+    box-shadow: 0 4px 10px rgba(23, 162, 184, 0.2); /* Sombra suave ciano */
+}
 
-        .block.sumula-stf {
-            border-left: 4px solid #6f42c1;
-            background: linear-gradient(90deg, #f8f6ff 0%, #ffffff 50px);
-        }
+.block.sumula-stf {
+    border-left: 4px solid var(--sumula-stf-color);
+    background: linear-gradient(90deg, #f4f0ff 0%, var(--white) 50px);
+    box-shadow: 0 4px 10px rgba(111, 66, 193, 0.2); /* Sombra suave roxa */
+}
 
-        .block.jurisprudencia {
-            border-left: 4px solid #2f4050;
-            background: var(--white);
-        }
+.block.jurisprudencia {
+    border-left: 4px solid var(--primary-color);
+    background: var(--white);
+}
+
+.block:hover {
+    transform: translateY(-3px); /* Aumenta um pouco o movimento para o destaque */
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15); /* Sombra mais visível ao passar o mouse */
+}
 
         .copy-btn {
             position: absolute;
@@ -629,7 +641,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.2</div>
+    <div id="version-tag">v.3</div>
 
     <script>
         // Variáveis globais
@@ -1187,11 +1199,10 @@
             block.className = 'block';
             
             // Classes de estilo
-            if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-            else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-            else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-            else block.classList.add('jurisprudencia');
-            
+        if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+else block.classList.add('jurisprudencia');
             let conteudo, referencia;
             
             // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
