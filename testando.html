@@ -642,7 +642,7 @@
         <div id="pagination" class="pagination"></div>
     </div>
     
-    <div id="version-tag">v.3.2</div>
+    <div id="version-tag">v.3.3</div>
 
     <script>
         // Variáveis globais
@@ -944,52 +944,70 @@
             });
         }
 
-        async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
-            const allGids = ['2110972132', '1277187400', '503544784', '0']; 
-            let allResults = [];
-            let loadedCount = 0;
+       async function searchAllDatabases(searchTerms, startDate, endDate, relator, useFuzzy) {
+    const allGids = ['2110972132', '1277187400', '503544784', '0']; 
+    let allResults = [];
+    let loadedCount = 0;
+    
+    setSearchButtonState(true, `Carregando bases...`);
+    
+    for (const gid of allGids) {
+        try {
+            const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
+            const data = await loadSingleDataset(csvUrl); // Esta linha carrega os dados
+            loadedCount++;
             
-            setSearchButtonState(true, `Carregando bases...`);
-            
-            for (const gid of allGids) {
-                try {
-                    const csvUrl = `${SPREADSHEET_BASE_URL}?gid=${gid}&single=true&output=csv`;
-                    const data = await loadSingleDataset(csvUrl);
-                    loadedCount++;
-                    
-                    setSearchButtonState(true, `Filtrando base ${loadedCount}/${allGids.length}...`);
+            console.log(`--- INSPEÇÃO DE DADOS: GID ${gid} (${DATA_SOURCES[gid].name}) ---`);
+            console.log(`URL do CSV: ${csvUrl}`);
+            console.log(`Número de registros carregados: ${data.length}`);
 
-                    const isJurisprudencia = gid === '0';
-
-                    const filtered = data.filter(item => {
-                        if (isJurisprudencia && relator && item.Relator !== relator) return false;
-                        
-                        if (startDate || endDate) {
-                            const itemDate = parseDate(item.Publicação);
-                            if (!itemDate) return false;
-                            if (startDate && itemDate < new Date(startDate)) return false;
-                            if (endDate && itemDate > new Date(endDate)) return false;
-                        }
-                        
-                        if (searchTerms) {
-                            const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
-                            return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
-                        }
-                        
-                        return true;
-                    }).map(item => ({
-                        ...item,
-                        dataSource: gid,
-                        baseName: DATA_SOURCES[gid].name
-                    }));
-                    
-                    allResults = allResults.concat(filtered);
-
-                } catch (error) {
-                    console.error(`Erro ao carregar base ${gid}:`, error);
-                    showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}. Resultados podem estar incompletos.`, 'warning');
-                }
+            if (data.length > 0) {
+                console.log('PRIMEIRO ITEM CARREGADO:');
+                console.log(data[0]); // Mostra todo o primeiro item
+                console.log('CONTEÚDO DA COLUNA "EMENTA" (se existir):', data[0].Ementa);
+                console.log('CONTEÚDO DA COLUNA "ENUNCIADO" (se existir):', data[0].Enunciado);
+                console.log('TODAS AS COLUNAS (cabeçalhos) detectadas:', Object.keys(data[0]));
+            } else {
+                console.log('AVISO: NENHUM REGISTRO ENCONTRADO PARA ESTA BASE!');
             }
+            console.log('--- FIM DA INSPEÇÃO DE DADOS ---');
+            
+            // ... (o restante do seu código dentro do loop continua aqui)
+
+            const isJurisprudencia = gid === '0';
+
+            const filtered = data.filter(item => {
+                // ... (seu código de filtro continua aqui) ...
+
+                if (searchTerms) {
+                    const searchText = `${item.Ementa || item.Enunciado || ''} ${item.Processo || ''} ${item.Relator || ''}`.toLowerCase();
+                    
+                    // AQUI É MUITO IMPORTANTE! VEJA SE SEU searchText NÃO ESTÁ VAZIO PARA SÚMULAS
+                    if (!isJurisprudencia) { // Para as Súmulas (GID diferente de '0')
+                        console.log(`  --- FILTRO SÚMULA: GID ${gid} ---`);
+                        console.log(`  Item sendo filtrado (Processo/Numero): ${item.Processo || item.Numero || item['Número da Súmula']}`);
+                        console.log(`  searchText Gerado para este item: "${searchText}"`);
+                        console.log(`  Query de busca: "${searchTerms}"`);
+                        console.log(`  Resultado da busca: ${portugueseAdvancedSearch(searchText, searchTerms, useFuzzy)}`);
+                    }
+
+                    return portugueseAdvancedSearch(searchText, searchTerms, useFuzzy);
+                }
+                
+                return true;
+            }).map(item => ({
+                ...item,
+                dataSource: gid,
+                baseName: DATA_SOURCES[gid].name
+            }));
+            
+            allResults = allResults.concat(filtered);
+
+        } catch (error) {
+            console.error(`Erro ao carregar base ${gid}:`, error);
+            showAlert(`Aviso: Falha ao carregar a base ${DATA_SOURCES[gid].name}. Resultados podem estar incompletos.`, 'warning');
+        }
+    }
             
             // LÓGICA DE ORDENAÇÃO MULTINÍVEL (Prioriza Súmulas, depois a data)
             return allResults.sort((a, b) => {
