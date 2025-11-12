@@ -1195,95 +1195,161 @@
         }
 
         function createResultBlock(item, index) {
-            const block = document.createElement('div');
-            block.className = 'block';
-            
-            // Classes de estilo
-        if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
-else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
-else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
-else block.classList.add('jurisprudencia');
-            let conteudo, referencia;
-            
-            // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
-            const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-            const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+    const block = document.createElement('div');
+    block.className = 'block';
+    
+    // Classes de estilo
+    if (item.dataSource === '2110972132') block.classList.add('sumula-tjgo');
+    else if (item.dataSource === '1277187400') block.classList.add('sumula-stj');
+    else if (item.dataSource === '503544784') block.classList.add('sumula-stf');
+    else block.classList.add('jurisprudencia');
+    
+    let conteudo, referencia;
+    
+    // Mapeamento Abrangente para o Número (incluindo variações de leitura do PapaParse)
+    const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+    const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; // Texto base
+    
+    if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+        // --- INÍCIO DA CORREÇÃO PARA DUPLICAÇÃO DA SÚMULA ---
+        
+        const tribunal = getTribunalName(item.dataSource);
+        
+        // 1. Define o prefixo correto que queremos exibir
+        const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
 
-            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-                // *** CORREÇÃO DEFINITIVA: RECONSTRÓI O PREFIXO DA SÚMULA ***
-                const tribunal = getTribunalName(item.dataSource);
-                
-                // CONTEÚDO: Junta o prefixo (Súmula n.º X do TJGO: ) + Enunciado
-                conteudo = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`; 
-                
-                // Remove a data de publicação na exibição.
-                referencia = ''; 
-                
-            } else {
-                // FORMATO JURISPRUDÊNCIA (Base '0')
-                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-                
-                conteudo = ementaOuEnunciado;
-                // Referência completa, incluindo Publicação
-                referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-            }
-            
-            // Aplicação do destaque e montagem do bloco de resultados
-            const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
-            const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
-            
-            // Insere o span de referência apenas se houver conteúdo em 'referencia'
-            const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+        // 2. Limpa o enunciado se ele já começar com a numeração (o que causa a duplicação)
+        let enunciadoLimpo = ementaOuEnunciado;
+        const lowerCaseEnunciado = enunciadoLimpo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-            block.innerHTML = `
-                <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
-                <div class="ementa-content">
-                    ${conteudoComDestaque} ${refHtml}
-                </div>
-            `;
-            
-            return block;
+        // Tenta remover o prefixo redundante (e suas variações como 'sumula n.º X') do texto
+        const regexPrefix = new RegExp(`s[uú]mula n[\\.]* [º|°]*\\s*${numeroProcessoOuSumula}\\s*`, 'i');
+        
+        if (regexPrefix.test(lowerCaseEnunciado)) {
+             // Se encontrar o número no início, remove o trecho.
+             // O caso mais comum é remover até o primeiro ':'.
+             const match = enunciadoLimpo.match(regexPrefix);
+             if (match) {
+                 const indexAfterMatch = enunciadoLimpo.toLowerCase().indexOf(match[0].toLowerCase()) + match[0].length;
+                 enunciadoLimpo = enunciadoLimpo.substring(indexAfterMatch).trim();
+
+                 // Tenta remover pontuações iniciais desnecessárias
+                 if (enunciadoLimpo.startsWith(':') || enunciadoLimpo.startsWith('-')) {
+                     enunciadoLimpo = enunciadoLimpo.substring(1).trim();
+                 }
+             }
         }
-
-        function copyToClipboard(event, index) {
-            const actualIndex = (currentPage - 1) * resultsPerPage + index;
-            const item = filteredData[actualIndex];
-            
-            if (!item) {
-                showAlert('Erro ao copiar: item não encontrado.', 'error');
-                return;
-            }
-            
-            let textToCopy;
-
-            // Mapeamento Abrangente para o Número (copia)
-            const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
-            const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
-            
-            if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
-                // *** CORREÇÃO FINAL: RECONSTRUÇÃO DO PREFIXO PARA CÓPIA ***
-                const tribunal = getTribunalName(item.dataSource);
-                textToCopy = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}: ${ementaOuEnunciado}`; 
-                
-            } else {
-                // FORMATO JURISPRUDÊNCIA: Mantém o padrão
-                const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
-                textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
-            }
-            
-            // Usa a API de Clipboard moderna, se disponível
-           if (navigator.clipboard) {
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                // ... (código de sucesso inalterado) ...
-            }).catch(err => {
-                // Se o navigator.clipboard falhar (permissões negadas), tentamos o fallback
-                performFallbackCopy(event, textToCopy);
-            });
-        } else {
-            // Fallback direto para navegadores sem navigator.clipboard
-            performFallbackCopy(event, textToCopy);
-        }
+        
+        // 3. Junta o prefixo corrigido com o conteúdo limpo.
+        conteudo = `${prefixoCorreto} ${enunciadoLimpo}`;      
+ 
+        
+        referencia = ''; // Remove a data de publicação na exibição de Súmulas.
+        
+    } else {
+        // FORMATO JURISPRUDÊNCIA (Base '0') - Inalterado
+        const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+        
+        conteudo = ementaOuEnunciado;
+        // Referência completa, incluindo Publicação
+        referencia = `(TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
     }
+    
+    // Aplicação do destaque e montagem do bloco de resultados
+    const conteudoComDestaque = highlightText(conteudo, currentSearchTerms);
+    const referenciaComDestaque = highlightText(referencia, currentSearchTerms);
+    
+    // Insere o span de referência apenas se houver conteúdo em 'referencia'
+    const refHtml = referencia ? `<span class="referencia">${referenciaComDestaque}</span>` : '';
+
+    block.innerHTML = `
+        <button class="copy-btn" onclick="copyToClipboard(event, ${index})" title="Copiar">📋</button>
+        <div class="ementa-content">
+            ${conteudoComDestaque} ${refHtml}
+        </div>
+    `;
+    
+    return block;
+}
+       function copyToClipboard(event, index) {
+                const actualIndex = (currentPage - 1) * resultsPerPage + index;
+                const item = filteredData[actualIndex];
+                
+                if (!item) {
+                    showAlert('Erro ao copiar: item não encontrado.', 'error');
+                    return;
+                }
+                
+                let textToCopy;
+            
+                // Mapeamento Abrangente para o Número (copia)
+                const numeroProcessoOuSumula = item['Número da Súmula'] || item.Processo || item.Número || item['Número'] || item['Numero da Sumula'] || item['Numero_da_Sumula'] || '--';
+                const ementaOuEnunciado = item.Enunciado || item.Ementa || 'Sem conteúdo'; 
+                
+                if (['2110972132', '1277187400', '503544784'].includes(item.dataSource)) {
+                    // --- INÍCIO DA CORREÇÃO PARA CÓPIA (Lógica de limpeza) ---
+                    
+                    const tribunal = getTribunalName(item.dataSource);
+                    
+                    // 1. Define o prefixo correto que queremos exibir
+                    const prefixoCorreto = `Súmula n.º ${numeroProcessoOuSumula} do ${tribunal}:`;
+            
+                    // 2. Limpa o enunciado se ele já começar com a numeração (o que causa a duplicação)
+                    let enunciadoLimpo = ementaOuEnunciado;
+                    const lowerCaseEnunciado = enunciadoLimpo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            
+                    // Regex para encontrar "súmula n.º X" no início do texto
+                    const regexPrefix = new RegExp(`s[uú]mula n[\\.]* [º|°]*\\s*${numeroProcessoOuSumula}\\s*`, 'i');
+                    
+                    if (regexPrefix.test(lowerCaseEnunciado)) {
+                        const match = enunciadoLimpo.match(regexPrefix);
+                        if (match) {
+                            // Encontra o índice após a correspondência e remove o prefixo duplicado
+                            const indexAfterMatch = enunciadoLimpo.toLowerCase().indexOf(match[0].toLowerCase()) + match[0].length;
+                            enunciadoLimpo = enunciadoLimpo.substring(indexAfterMatch).trim();
+            
+                            // Tenta remover pontuações iniciais desnecessárias (ex: se o enunciado começar com um ':')
+                            if (enunciadoLimpo.startsWith(':') || enunciadoLimpo.startsWith('-')) {
+                                enunciadoLimpo = enunciadoLimpo.substring(1).trim();
+                            }
+                        }
+                    }
+                    
+                    // 3. Junta o prefixo corrigido com o conteúdo limpo.
+                    textToCopy = `${prefixoCorreto} ${enunciadoLimpo}`;
+                    
+                    // --- FIM DA CORREÇÃO PARA CÓPIA ---
+                    
+                } else {
+                    // FORMATO JURISPRUDÊNCIA: Mantém o padrão
+                    const camara = item.Câmara || item.Camara || item.Origem || '6ª Câmara Cível';
+                    textToCopy = `${ementaOuEnunciado} (TJGO, ${numeroProcessoOuSumula}, ${item.Relator || ''}, ${camara}, Publicação em ${item.Publicação || ''})`;
+                }
+    
+    // Usa a API de Clipboard moderna, se disponível
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);            
+            showAlert('Conteúdo copiado para a área de transferência!', 'success');
+        }).catch(err => {
+            // Se o navigator.clipboard falhar (permissões negadas), tentamos o fallback
+            performFallbackCopy(event, textToCopy);
+        });
+    } else {
+        // Fallback direto para navegadores sem navigator.clipboard
+        performFallbackCopy(event, textToCopy);
+    }
+}
+
+// Lembre-se de ter a função performFallbackCopy no seu script, conforme a correção anterior.
 
     // ADICIONE ESTA NOVA FUNÇÃO DE FALLBACK
     function performFallbackCopy(event, textToCopy) {
